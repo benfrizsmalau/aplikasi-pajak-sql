@@ -466,6 +466,8 @@ async function handleCreateFiskal(data) {
         }])
         .select('*')
         .single();
-    if (error) throw new Error('Gagal membuat dokumen fiskal: ' + error.message);
-    return inserted;
+    if (error) {
+        return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+    }
+    return { status: 'sukses', ...inserted };
 }
