@@ -79,6 +79,9 @@ exports.handler = async (event) => {
                 case 'deleteKetetapan':
                     responseData = await handleDeleteKetetapan(body);
                     break;
+                case 'createPembayaran':
+                    responseData = await handleCreatePembayaran(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -355,4 +358,25 @@ async function handleDeleteKetetapan(data) {
         .eq('ID_Ketetapan', data.id_ketetapan);
     if (error) throw new Error('Gagal hapus ketetapan: ' + error.message);
     return { message: 'Ketetapan berhasil dihapus!' };
+}
+
+// Handler create pembayaran
+async function handleCreatePembayaran(data) {
+    // Generate ID_Pembayaran otomatis (pakai timestamp + random)
+    const ID_Pembayaran = 'BYR' + Date.now() + Math.floor(Math.random()*1000);
+    const { error } = await supabase
+        .from('RiwayatPembayaran')
+        .insert([{
+            ID_Pembayaran,
+            ID_Ketetapan: data.id_ketetapan,
+            NPWPD: data.npwpd,
+            TanggalBayar: data.tanggalBayar,
+            JumlahBayar: Number(data.jumlahBayar),
+            MetodeBayar: data.metodeBayar,
+            WaktuInput: data.waktuInput,
+            Operator: data.operator,
+            StatusPembayaran: data.statusPembayaran
+        }]);
+    if (error) throw new Error('Gagal mencatat pembayaran: ' + error.message);
+    return { message: 'Pembayaran berhasil dicatat!' };
 }
