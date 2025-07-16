@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cetak Bukti Pembayaran</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .bukti-container { max-width: 800px; margin: 24px auto; background: #fff; padding: 24px; box-shadow: 0 0 8px #ccc; }
+    @media print { .no-print { display: none; } }
+    .no-print { margin: 16px 0; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()">🖨️ Print</button>
+    <button onclick="window.close()">Tutup</button>
+  </div>
+  <div id="bukti-print"></div>
+  <script>
+    function getIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id') || '';
+    }
+    async function fetchAllData() {
+      const res = await fetch('/.netlify/functions/api');
+      return await res.json();
+    }
+    function terbilang(nilai) {
+      const satuan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+      nilai = parseInt(nilai, 10);
+      if (nilai < 12) return satuan[nilai];
+      if (nilai < 20) return terbilang(nilai - 10) + " Belas";
+      if (nilai < 100) return terbilang(Math.floor(nilai / 10)) + " Puluh " + terbilang(nilai % 10);
+      if (nilai < 200) return "Seratus " + terbilang(nilai - 100);
+      if (nilai < 1000) return terbilang(Math.floor(nilai / 100)) + " Ratus " + terbilang(nilai % 100);
+      if (nilai < 2000) return "Seribu " + terbilang(nilai - 1000);
+      if (nilai < 1000000) return terbilang(Math.floor(nilai / 1000)) + " Ribu " + terbilang(nilai % 1000);
+      if (nilai < 1000000000) return terbilang(Math.floor(nilai / 1000000)) + " Juta " + terbilang(nilai % 1000000);
+      return "Terlalu Besar";
+    }
+    function formatRupiah(angka) {
+      if (!angka) return 'Rp 0';
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    }
+    async function main() {
+      const id = getIdFromUrl();
+      if (!id) {
+        document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">ID pembayaran tidak ditemukan.</p>';
+        return;
+      }
+      document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#888;">Mengambil data...</p>';
+      try {
+        const data = await fetchAllData();
+        const pembayaran = (data.pembayaran || []).find(p => p.ID_Pembayaran === id);
+        if (!pembayaran) {
+          document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">Data pembayaran tidak ditemukan.</p>';
+          return;
+        }
+        const wajibPajak = (data.wajibPajak || []).find(wp => wp.NPWPD === pembayaran.NPWPD) || {};
+        const ketetapan = (data.ketetapan || []).find(k => k.ID_Ketetapan === pembayaran.ID_Ketetapan) || {};
+        const master = (data.masterPajak || []).find(m => m.KodeLayanan === ketetapan.KodeLayanan) || {};
+        const ayat = master.NomorRekening || '-';
+        const jenisPajak = master.NamaLayanan || '-';
+        let jenis = 'SSPD';
+        if ((pembayaran.ID_Ketetapan || '').toUpperCase().includes('SKRD')) jenis = 'SSRD';
+        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+        const tgl = new Date();
+        const idPembayaranStr = pembayaran.ID_Pembayaran || '';
+        const nomorUrut = idPembayaranStr.split('/')[0].padStart(7, '0');
+        const nomorDok = `${nomorUrut}/${jenis}/${bulanRomawi[tgl.getMonth()]}/${tgl.getFullYear()}`;
+        const jumlahBayar = Number(pembayaran.JumlahBayar || 0);
+        const jumlahBayarStr = jumlahBayar.toLocaleString('id-ID');
+        const terbilangStr = terbilang(jumlahBayar) + ' Rupiah';
+        const html = `
+        <div class="bukti-container">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <img src="images/logo.png" style="height:70px;">
+                <div style="flex:1;text-align:center;">
+                    <div style="font-size:18px;font-weight:bold;">PEMERINTAH KABUPATEN MAMBERAMO RAYA</div>
+                    <div style="font-size:17px;font-weight:bold;">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</div>
+                    <div style="font-size:13px;">Perkantoran Otonom Burmeso, Distrik Mamberamo Tengah<br>Kabupaten Mamberamo Raya, Provinsi Papua</div>
+                </div>
+            </div>
+            <hr>
+            <div style="text-align:center;margin:16px 0 8px 0;">
+                <div style="font-size:15px;font-weight:bold;">SURAT SETORAN PAJAK / RETRIBUSI DAERAH</div>
+                <div style="font-size:15px;font-weight:bold;">(${jenis})</div>
+                <div style="font-size:14px;">Nomor : <b>${nomorDok}</b></div>
+            </div>
+            <table style="width:100%;margin-bottom:8px;font-size:13px;">
+                <tr><td style="width:160px;">Nama Usaha</td><td>: ${wajibPajak['Nama Usaha'] || '-'}</td></tr>
+                <tr><td>Alamat</td><td>: ${wajibPajak.Alamat || '-'}</td></tr>
+                <tr><td>NPWPD</td><td>: ${pembayaran.NPWPD || '-'}</td></tr>
+                <tr><td>Menyetor Atas Dasar</td><td>: ${pembayaran.ID_Ketetapan || '-'}</td></tr>
+            </table>
+            <table border="1" style="border-collapse:collapse;width:100%;font-size:13px;margin-bottom:8px;">
+                <tr style="background:#f3f3f3;text-align:center;">
+                    <th style="width:40px;">No</th>
+                    <th>Ayat</th>
+                    <th>Jenis Pajak / Retribusi Daerah</th>
+                    <th style="width:150px;">Jumlah (Rp)</th>
+                </tr>
+                <tr>
+                    <td style="text-align:center;">1</td>
+                    <td style="text-align:center;">${ayat}</td>
+                    <td>${jenisPajak}</td>
+                    <td style="text-align:right;">Rp. ${jumlahBayarStr}</td>
+                </tr>
+            </table>
+            <div style="margin-bottom:8px;font-size:13px;">Terbilang: <i>${terbilangStr}</i></div>
+            <div style="margin-top:32px;text-align:right;font-size:13px;">Burmeso, ${tgl.toLocaleDateString('id-ID')}<br><br><br><br><b>Bendahara Penerimaan</b><br><br><br>____________________</div>
+        </div>
+        `;
+        document.getElementById('bukti-print').innerHTML = html;
+        setTimeout(() => window.print(), 500);
+      } catch (err) {
+        document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">Gagal mengambil data.</p>';
+      }
+    }
+    main();
+  </script>
+</body>
+</html> 
