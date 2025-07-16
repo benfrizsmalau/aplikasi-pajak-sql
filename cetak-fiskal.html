@@ -42,7 +42,7 @@
         }
         .header h3 {
             margin: 5px 0;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: normal;
         }
         .header-line {
@@ -53,14 +53,14 @@
             text-align: center;
             font-size: 14px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 20px 0 5px 0;
             text-decoration: underline;
             text-transform: uppercase;
         }
         .document-number {
             text-align: center;
             font-size: 12px;
-            margin: 10px 0;
+            margin: 5px 0 20px 0;
         }
         .info-section {
             margin: 20px 0;
@@ -102,6 +102,10 @@
         }
         .footer {
             margin-top: 40px;
+            text-align: right;
+        }
+        .footer-info {
+            margin-bottom: 10px;
         }
         .signature-section {
             margin-top: 30px;
@@ -112,11 +116,18 @@
             width: 200px;
             float: right;
         }
-        .signature-line {
-            border-top: 1px solid #000;
-            margin-top: 50px;
-            padding-top: 5px;
+        .signature-space {
+            height: 60px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 5px;
+        }
+        .signature-name {
+            font-weight: bold;
             font-size: 12px;
+        }
+        .signature-nip {
+            font-size: 10px;
+            margin-top: 5px;
         }
         .print-button {
             position: fixed;
@@ -206,23 +217,27 @@
     </div>
 
     <div class="footer">
-        <div class="info-row">
+        <div class="footer-info">
             <div class="info-label">Dikeluarkan di :</div>
             <div class="info-value">Burmeso</div>
         </div>
-        <div class="info-row">
+        <div class="footer-info">
             <div class="info-label">Pada Tanggal :</div>
             <div class="info-value" id="tanggalCetak">-</div>
         </div>
-        <div class="info-row">
+        <div class="footer-info">
             <div class="info-label">An. KEPALA BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</div>
+        </div>
+        <div class="footer-info">
+            <div class="info-label">KEPALA BIDANG</div>
         </div>
     </div>
 
     <div class="signature-section">
         <div class="signature-box">
-            <div class="signature-line">HERMAN TARIBABA, SE</div>
-            <div style="font-size: 10px; margin-top: 5px;">NIP. 197610202003121007</div>
+            <div class="signature-space"></div>
+            <div class="signature-name">HERMAN TARIBABA, SE</div>
+            <div class="signature-nip">NIP. 197610202003121007</div>
         </div>
     </div>
 
@@ -256,11 +271,11 @@
                 document.getElementById('namaPemilik').textContent = wp['Nama Pemilik'] || '-';
                 document.getElementById('alamat').textContent = wp['Alamat'] || '-';
 
-                // Generate nomor fiskal
+                // Generate nomor fiskal dengan format yang benar
                 const now = new Date();
                 const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
                 const tahun = now.getFullYear();
-                const nomorUrut = Math.floor(Math.random() * 9999).toString().padStart(6, '0');
+                const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
                 const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
                 document.getElementById('nomorFiskal').textContent = nomorFiskal;
 
@@ -276,5 +291,4 @@
         }
     </script>
 </body>
-</html> 
 </html> 
