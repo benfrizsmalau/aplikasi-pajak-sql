@@ -215,6 +215,7 @@
                     namaUsahaInput.value = '';
                     masaPajakInput.value = '';
                     jumlahTagihanInput.value = '';
+                    window.location.reload(); // Tambahkan ini agar data ketetapan di-refresh
                 } else {
                     statusSetoran.textContent = resJson.message || 'Gagal mencatat pembayaran!';
                     statusSetoran.style.color = 'red';
