@@ -148,9 +148,14 @@
 
     function printFiskal(npwpd, wp) {
         // 1. Minta input nama operator
-        const operator = prompt('Masukkan nama operator yang mencetak dokumen fiskal:');
+        let operator = prompt('Masukkan nama operator yang mencetak dokumen fiskal:');
         if (!operator) {
             alert('Nama operator wajib diisi!');
+            return;
+        }
+        operator = operator.trim();
+        if (operator.length < 2) {
+            alert('Nama operator minimal 2 karakter!');
             return;
         }
         // 2. Kirim data ke backend untuk generate & simpan dokumen fiskal
