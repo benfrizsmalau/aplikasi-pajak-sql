@@ -483,8 +483,10 @@
             setTimeout(() => loadKetetapanData(), 500);
           }
         } else if (aksi === 'print') {
-          // Print semua yang dicentang (buka tab baru untuk setiap ID)
-          ids.forEach(id => printKetetapan(id));
+          // Print semua yang dicentang (buka tab baru untuk setiap ID) - HARUS langsung di event handler klik!
+          for (let i = 0; i < ids.length; i++) {
+            window.open(`cetak-skpd.html?id=${ids[i]}`, '_blank');
+          }
         } else if (aksi === 'edit') {
           if (ids.length > 1) {
             alert('Edit hanya bisa untuk satu ketetapan sekaligus!');
