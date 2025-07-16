@@ -8,129 +8,138 @@
         @media print {
             body { margin: 0; }
             .no-print { display: none !important; }
+            @page { size: A4; margin: 1cm; }
         }
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             line-height: 1.6;
             font-size: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
         }
         .header {
-            text-align: center;
-            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 16px;
         }
-        .header img {
-            height: 60px;
-            float: left;
-            margin-right: 20px;
+        .logo {
+            flex-shrink: 0;
+            width: 80px;
+            height: 96px;
+            background: #2563eb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: #fbbf24;
+            border-radius: 50%;
+            margin: 0 auto 4px;
         }
         .header-text {
+            flex: 1;
             text-align: center;
-            margin-top: 10px;
         }
         .header h1 {
-            margin: 5px 0;
-            font-size: 16px;
+            margin: 0 0 4px 0;
+            font-size: 18px;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header h2 {
-            margin: 5px 0;
-            font-size: 14px;
+            margin: 0 0 4px 0;
+            font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
         }
-        .header h3 {
-            margin: 5px 0;
-            font-size: 10px;
-            font-weight: normal;
-        }
-        .header-line {
-            border-top: 1px solid #000;
-            margin: 10px 0;
+        .header p {
+            margin: 0;
+            font-size: 12px;
         }
         .document-title {
             text-align: center;
-            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .document-title h3 {
+            font-size: 18px;
             font-weight: bold;
-            margin: 20px 0 5px 0;
             text-decoration: underline;
+            margin: 0 0 8px 0;
             text-transform: uppercase;
         }
         .document-number {
-            text-align: center;
-            font-size: 12px;
-            margin: 5px 0 20px 0;
+            font-weight: bold;
+            margin: 0;
         }
-        .info-section {
-            margin: 20px 0;
+        .content {
+            margin-bottom: 24px;
         }
-        .info-row {
-            margin: 8px 0;
+        .content p {
+            margin: 0 0 16px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 20px 1fr;
+            gap: 8px;
+            margin-bottom: 24px;
         }
         .info-label {
-            font-weight: bold;
+            font-weight: normal;
         }
-        .status-section {
-            margin: 20px 0;
-            text-align: center;
+        .info-value {
+            font-weight: bold;
         }
         .status-text {
             font-weight: bold;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        .purpose-section {
-            margin: 20px 0;
-        }
-        .purpose-title {
-            font-weight: bold;
-            margin-bottom: 10px;
+            margin: 16px 0;
         }
         .purpose-list {
-            margin-left: 20px;
+            margin: 8px 0 16px 20px;
         }
         .purpose-list li {
-            margin: 5px 0;
+            margin: 4px 0;
         }
-        .validity-section {
-            margin: 20px 0;
+        .validity-text {
+            margin: 16px 0;
         }
-        .closing-section {
-            margin: 20px 0;
+        .closing-text {
+            margin: 32px 0;
             font-style: italic;
         }
-        .footer {
-            margin-top: 40px;
-            text-align: right;
-            padding-right: 80px;
-        }
-        .footer-info {
-            margin-bottom: 10px;
-        }
         .signature-section {
-            margin-top: 30px;
-            text-align: right;
-            padding-right: 80px;
+            display: flex;
+            justify-content: flex-end;
         }
         .signature-box {
             text-align: center;
-            width: 200px;
-            margin-left: auto;
-            margin-right: 0;
+        }
+        .signature-info {
+            margin-bottom: 4px;
         }
         .signature-space {
-            height: 60px;
+            height: 64px;
             border-bottom: 1px solid #000;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            display: inline-block;
+            min-width: 200px;
         }
         .signature-name {
             font-weight: bold;
-            font-size: 12px;
+            margin: 0;
         }
         .signature-nip {
             font-size: 10px;
-            margin-top: 5px;
+            margin: 4px 0 0 0;
         }
         .print-button {
             position: fixed;
@@ -147,91 +156,76 @@
         .print-button:hover {
             background: #0056b3;
         }
-        .clear {
-            clear: both;
-        }
     </style>
 </head>
 <body>
     <button class="print-button no-print" onclick="window.print()">🖨️ Print</button>
     
     <div class="header">
-        <img src="images/logo.png" alt="Logo">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <div style="font-size: 10px;">LOGO</div>
+        </div>
+        
         <div class="header-text">
             <h1>PEMERINTAH KABUPATEN MAMBERAMO RAYA</h1>
-            <h2>BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</h2>
-            <h3>KOMPLEKS PERKANTORAN OTOMOM, BURMESO DISTRIK MAMBERAMO TENGAH, KABUPATEN MAMBERAMO RAYA, PROVINSI PAPUA</h3>
+            <h2>BADAN PENDAPATAN PENGELOLAAN KEUANGAN</h2>
+            <h2>DAN ASET DAERAH</h2>
+            <p>KOMPLEKS PERKANTORAN OTONOM, BURMESO DISTRIK MAMBERAMO TENGAH,<br/>KABUPATEN MAMBERAMO RAYA, PROVINSI PAPUA</p>
         </div>
-        <div class="clear"></div>
-        <div class="header-line"></div>
     </div>
 
     <div class="document-title">
-        FISKAL PEMBAYARAN PAJAK DAN RETRIBUSI DAERAH
+        <h3>FISKAL PEMBAYARAN PAJAK DAN RETRIBUSI DAERAH</h3>
+        <p class="document-number">NOMOR : <span id="nomorFiskal">-</span></p>
     </div>
 
-    <div class="document-number">
-        NOMOR : <span id="nomorFiskal">-</span>
-    </div>
+    <div class="content">
+        <p>Atas Nama Bupati Kabupaten Mamberamo Raya menerangkan bahwa Wajib Pajak dibawah ini :</p>
 
-    <div class="info-section">
-        <div class="info-row">
-            <div class="info-label">Atas Nama Bupati Kabupaten Mamberamo Raya menerangkan bahwa Wajib Pajak dibawah ini :</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Nama Pemilik :</div>
+        <div class="info-grid">
+            <div class="info-label">Nama Pemilik</div>
+            <div>:</div>
             <div class="info-value" id="namaPemilik">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Nama Usaha :</div>
+            
+            <div class="info-label">Nama Usaha</div>
+            <div>:</div>
             <div class="info-value" id="namaUsaha">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Alamat :</div>
+            
+            <div class="info-label">Alamat</div>
+            <div>:</div>
             <div class="info-value" id="alamat">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">NPWPD :</div>
+            
+            <div class="info-label">NPWPD</div>
+            <div>:</div>
             <div class="info-value" id="npwpd">-</div>
         </div>
-    </div>
 
-    <div class="status-section">
-        <div class="status-text">
-            TELAH MELAKSANAKAN KEWAJIBAN PEMBAYARAN PAJAK DAERAH DAN RETRIBUSI DAERAH DENGAN BAIK
-        </div>
-    </div>
+        <p class="status-text">TELAH MELAKSANAKAN KEWAJIBAN PEMBAYARAN PAJAK DAERAH DAN RETRIBUSI DAERAH DENGAN BAIK</p>
 
-    <div class="purpose-section">
-        <div class="purpose-title">Surat Fiskal ini diberikan atas nama pemohon yang bersangkutan untuk keperluan untuk :</div>
+        <p>Surat Fiskal ini diberikan atas nama pemohon yang bersangkutan untuk keperluan untuk :</p>
+
         <ol class="purpose-list">
             <li>Mengurus Surat Izin Jasa Konstruksi</li>
             <li>Surat Izin Usaha Perdagangan (SIUP)</li>
             <li>Tanda Daftar Perusahaan (TDP)</li>
         </ol>
-    </div>
 
-    <div class="validity-section">
-        <p><strong>Surat ini berlaku sampai dengan tanggal <span id="tanggalBerlaku">-</span> dan hanya berlaku untuk penggunaan di Kabupaten Mamberamo Raya.</strong></p>
-    </div>
+        <p class="validity-text">Surat ini berlaku sampai dengan tanggal <span class="info-value" id="tanggalBerlaku">-</span> dan hanya berlaku untuk penggunaan di Kabupaten Mamberamo Raya.</p>
 
-    <div class="closing-section">
-        <p>Demikian surat Fiskal ini diberikan untuk dapat dipergunakan sebagaimana mestinya.</p>
-    </div>
-
-    <div class="footer">
-        <div class="footer-info">Dikeluarkan di : Burmeso</div>
-        <div class="footer-info">Pada Tanggal : <span id="tanggalCetak">-</span></div>
-        <div class="footer-info">An. KEPALA BADAN PENDAPATAN</div>
-        <div class="footer-info">PENGELOLAAN KEUANGAN DAN ASET DAERAH</div>
-        <div class="footer-info">Kepala Bidang Pendapatan</div>
+        <p class="closing-text">Demikian surat Fiskal ini diberikan untuk dapat dipergunakan sebagaimana mestinya.</p>
     </div>
 
     <div class="signature-section">
         <div class="signature-box">
+            <p class="signature-info">Dikeluarkan di : <span id="tempatDikeluarkan">Burmeso</span></p>
+            <p class="signature-info">Pada Tanggal : <span id="tanggalCetak">-</span></p>
+            <p class="signature-info">An. KEPALA BADAN PENDAPATAN</p>
+            <p class="signature-info">PENGELOLAAN KEUANGAN DAN ASET DAERAH</p>
+            
             <div class="signature-space"></div>
-            <div class="signature-name">HERMAN TARIBABA, SE</div>
-            <div class="signature-nip">NIP. 197610202003121007</div>
+            <p class="signature-name">HERMAN TARIBABA, SE</p>
+            <p class="signature-nip">NIP. 197610202003121007</p>
         </div>
     </div>
 
