@@ -92,14 +92,14 @@ async function handleCreateWp(data) {
 
     // Logika untuk membuat NPWPD baru
     if (data.generate_mode === true) {
-        // Ambil data terakhir untuk mendapatkan nomor urut
-        const { data: lastWp, error: countError } = await supabase
+        // Ambil jumlah data WP untuk menentukan urutan berikutnya
+        const { count, error: countError } = await supabase
             .from('datawp')
-            .select('NPWPD', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true });
         
         if (countError) throw new Error(`Gagal menghitung data WP: ${countError.message}`);
         
-        const nextSequence = (lastWp.length + 1).toString().padStart(6, '0');
+        const nextSequence = ((count || 0) + 1).toString().padStart(6, '0');
         newNpwpd = `P.${data.jenisWp}.${nextSequence}.${data.kodeKecamatan}.${data.kodeKelurahan}`;
     } else {
         // Mode manual, gunakan NPWPD yang diinput
@@ -112,7 +112,7 @@ async function handleCreateWp(data) {
             .select('NPWPD')
             .eq('NPWPD', newNpwpd);
         if (findError) throw new Error(`Gagal mengecek NPWPD: ${findError.message}`);
-        if (existingWp.length > 0) throw new Error(`NPWPD ${newNpwpd} sudah terdaftar.`);
+        if (existingWp && existingWp.length > 0) throw new Error(`NPWPD ${newNpwpd} sudah terdaftar.`);
     }
 
     // Untuk saat ini, kita lewati upload foto
