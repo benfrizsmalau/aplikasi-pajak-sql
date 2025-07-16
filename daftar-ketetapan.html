@@ -351,6 +351,40 @@
         document.getElementById('editKetetapanCatatan').value = dataToEdit.Catatan;
         document.getElementById('editKetetapanModal').style.display = 'block';
     }
+
+    // Tambahkan event listener submit pada form editKetetapanForm
+    document.addEventListener('DOMContentLoaded', function() {
+        const editForm = document.getElementById('editKetetapanForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const updateButton = document.getElementById('updateKetetapanButton');
+                updateButton.disabled = true; updateButton.textContent = 'Menyimpan...';
+                try {
+                    const updatedData = {
+                        action: 'updateKetetapan',
+                        id_ketetapan: document.getElementById('editKetetapanId').value,
+                        masaPajak: document.getElementById('editKetetapanMasaPajak').value,
+                        jumlahPokok: document.getElementById('editKetetapanJumlahPokok').value,
+                        catatan: document.getElementById('editKetetapanCatatan').value
+                    };
+                    const response = await fetch('/.netlify/functions/api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+                    const result = await response.json();
+                    alert(result.message || 'Ketetapan berhasil diperbarui!');
+                    document.getElementById('editKetetapanModal').style.display = 'none';
+                    await loadKetetapanData(); // refresh data setelah edit
+                } catch (error) {
+                    alert('Gagal memperbarui data: ' + error.message);
+                } finally {
+                    updateButton.disabled = false; updateButton.textContent = 'Simpan Perubahan';
+                }
+            });
+        }
+    });
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
