@@ -104,17 +104,8 @@
         <div style="font-size:13px; margin-bottom:10px;"><b>Terbilang :</b> ${terbilangStr}</div>
         <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:30px;">
           <div style="width:33%; text-align:left;">Ruang untuk teraan Kas<br>Register / Tanda Tangan / Cap</div>
-          <div style="width:33%; text-align:center;">Diterima Oleh<br>Kepala Bidang Pendapatan</div>
-          <div style="width:33%; text-align:right;">Burmeso, ${tanggalCetak}<br>Penyetor</div>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:13px; margin-top:50px;">
-          <div style="width:50%; text-align:center;">
-            <b>HERMAN TARIBABA, SE</b><br>
-            NIP. 197610202003121007
-          </div>
-          <div style="width:50%; text-align:center; font-weight:bold;">
-            ${(wajibPajak['Nama Usaha'] || '-').toUpperCase()}
-          </div>
+          <div style="width:33%; text-align:center;">Diterima Oleh<br>Kepala Bidang Pendapatan<br><br><b>HERMAN TARIBABA, SE</b><br>NIP. 197610202003121007</div>
+          <div style="width:33%; text-align:right;">Burmeso, ${tanggalCetak}<br>Penyetor<br><br><b>${(wajibPajak['Nama Usaha'] || '-').toUpperCase()}</b></div>
         </div>
       </div>
       `;
@@ -151,4 +142,4 @@
     main();
   </script>
 </body>
-</html> 
+</html>
