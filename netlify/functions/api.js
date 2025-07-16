@@ -371,8 +371,31 @@ async function handleDeleteKetetapan(data) {
 
 // Handler create pembayaran
 async function handleCreatePembayaran(data) {
-    // Generate ID_Pembayaran otomatis (pakai timestamp + random)
-    const ID_Pembayaran = 'BYR' + Date.now() + Math.floor(Math.random()*1000);
+    // Ambil nomor urut terakhir dari tabel RiwayatPembayaran
+    const { count, error: countError } = await supabase
+        .from('RiwayatPembayaran')
+        .select('*', { count: 'exact', head: true });
+    if (countError) throw new Error('Gagal mengambil nomor urut pembayaran.');
+    const nomorUrut = ((count || 0) + 1).toString().padStart(7, '0');
+
+    // Ambil ID_Ketetapan untuk menentukan SSPD/SSRD
+    let kodeSurat = 'SSPD';
+    if (data.id_ketetapan && typeof data.id_ketetapan === 'string') {
+        if (data.id_ketetapan.includes('SKRD')) {
+            kodeSurat = 'SSRD';
+        } else if (data.id_ketetapan.includes('SKPD')) {
+            kodeSurat = 'SSPD';
+        }
+    }
+
+    // Bulan romawi dan tahun
+    const now = new Date();
+    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+    const tahun = now.getFullYear();
+
+    // Gabungkan ID_Pembayaran
+    const ID_Pembayaran = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+
     const { error } = await supabase
         .from('RiwayatPembayaran')
         .insert([{
