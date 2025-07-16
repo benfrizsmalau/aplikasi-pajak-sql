@@ -383,8 +383,14 @@ async function handleDeleteKetetapanClick(idKetetapan) {
 }
 
 function handleEditKetetapanClick(idKetetapan) {
-    const dataToEdit = dataKetetapanGlobal.find(item => item.ID_Ketetapan == idKetetapan);
-    if (!dataToEdit) { alert('Data ketetapan tidak ditemukan!'); return; }
+    const dataToEdit = dataKetetapanGlobal.find(item => 
+        String(item.ID_Ketetapan).trim() === String(idKetetapan).trim()
+    );
+    if (!dataToEdit) { 
+        console.warn('Data ketetapan tidak ditemukan! ID:', idKetetapan, 'List:', dataKetetapanGlobal.map(d=>d.ID_Ketetapan));
+        alert('Data ketetapan tidak ditemukan!'); 
+        return; 
+    }
     document.getElementById('editKetetapanId').value = dataToEdit.ID_Ketetapan;
     document.getElementById('editKetetapanMasaPajak').value = dataToEdit.MasaPajak;
     document.getElementById('editKetetapanJumlahPokok').value = dataToEdit.JumlahPokok;
