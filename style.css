@@ -1434,3 +1434,13 @@ th {
 .row-belum-lunas {
     background-color: #ffebee !important; /* merah muda */
 }
+
+/* Pewarnaan baris ketetapan sesuai status NPWPD */
+.row-lunas td {
+  color: #007bff !important; /* biru */
+  font-weight: bold;
+}
+.row-belum-lunas td {
+  color: #dc3545 !important; /* merah */
+  font-weight: bold;
+}
