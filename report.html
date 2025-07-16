@@ -459,18 +459,31 @@
         function filterDataByDateRange(data, dateRange) {
             const { startDate, endDate } = dateRange;
             
-            // Filter ketetapan
+            // Filter ketetapan - lebih longgar untuk debugging
             const filteredKetetapan = (data.ketetapan || []).filter(k => {
-                if (!k.TanggalKetetapan) return false;
+                if (!k.TanggalKetetapan) return true; // Include if no date
                 const ketetapanDate = new Date(k.TanggalKetetapan);
                 return ketetapanDate >= startDate && ketetapanDate <= endDate;
             });
             
-            // Filter pembayaran
+            // Filter pembayaran - lebih longgar untuk debugging
             const filteredPembayaran = (data.pembayaran || []).filter(p => {
-                if (!p.TanggalBayar) return false;
+                if (!p.TanggalBayar) return true; // Include if no date
                 const pembayaranDate = new Date(p.TanggalBayar);
                 return pembayaranDate >= startDate && pembayaranDate <= endDate;
+            });
+            
+            // Debug: log data counts
+            console.log('Original data counts:', {
+                ketetapan: data.ketetapan?.length || 0,
+                pembayaran: data.pembayaran?.length || 0,
+                wajibPajak: data.wajibPajak?.length || 0,
+                masterPajak: data.masterPajak?.length || 0
+            });
+            
+            console.log('Filtered data counts:', {
+                ketetapan: filteredKetetapan.length,
+                pembayaran: filteredPembayaran.length
             });
             
             return {
@@ -486,9 +499,20 @@
                 return sum + (parseFloat(p.JumlahBayar) || 0);
             }, 0);
             
-            const activeWp = new Set(data.pembayaran.map(p => p.NPWPD)).size;
+            // Count active WP from all data, not just pembayaran
+            const activeWp = data.wajibPajak?.length || 0;
             const totalKetetapan = data.ketetapan.length;
             const successPayment = data.pembayaran.filter(p => p.StatusPembayaran === 'Sukses').length;
+            
+            // Debug: log calculations
+            console.log('Summary calculations:', {
+                totalRevenue,
+                activeWp,
+                totalKetetapan,
+                successPayment,
+                pembayaranCount: data.pembayaran.length,
+                ketetapanCount: data.ketetapan.length
+            });
             
             // Update summary values
             document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
@@ -585,6 +609,15 @@
                 }
                 return sum + amount;
             }, 0);
+            
+            // Debug: log revenue data
+            console.log('Revenue data:', {
+                totalRevenue,
+                revenueByType,
+                pembayaranCount: data.pembayaran.length,
+                ketetapanCount: data.ketetapan.length,
+                masterPajakCount: data.masterPajak?.length || 0
+            });
             
             // Update revenue breakdown
             const revenueTypes = ['Hotel', 'Restoran', 'Hiburan', 'Reklame', 'Sampah'];
@@ -785,6 +818,12 @@
             const activeFiskal = totalFiskal; // Placeholder
             const expiredFiskal = 0; // Placeholder
             
+            // Debug: log fiskal data
+            console.log('Fiskal data:', {
+                totalFiskal,
+                fiskalData: data.fiskal || []
+            });
+            
             // Update statistics
             document.getElementById('totalFiskalCount').textContent = totalFiskal;
             document.getElementById('activeFiskalCount').textContent = activeFiskal;
@@ -794,7 +833,7 @@
             const tbody = document.getElementById('fiskalTableBody');
             tbody.innerHTML = '';
             
-            if (data.fiskal) {
+            if (data.fiskal && data.fiskal.length > 0) {
                 data.fiskal.forEach(f => {
                     const wpData = data.wajibPajak?.find(w => w.NPWPD === f.NPWPD);
                     const row = document.createElement('tr');
@@ -808,6 +847,15 @@
                     `;
                     tbody.appendChild(row);
                 });
+            } else {
+                // Show message if no fiskal data
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" style="text-align: center; color: #666; font-style: italic;">
+                        Belum ada data fiskal yang tersedia
+                    </td>
+                `;
+                tbody.appendChild(row);
             }
         }
         
