@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Cetak Gabungan SKPD/SKRD</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .dokumen-print { width: 210mm; min-height: 297mm; margin: 0 auto 20mm auto; background: #fff; padding: 24px; box-sizing: border-box; }
     .page-break { page-break-after: always; }
     @media print {
-      body { background: none; }
-      .page-break { display: block; page-break-after: always; }
       .no-print { display: none; }
+      .page-break { display: block; page-break-after: always; }
     }
     .no-print { margin: 16px 0; text-align: center; }
   </style>
@@ -48,32 +46,101 @@
       const tgl = ketetapan.TanggalKetetapan ? new Date(ketetapan.TanggalKetetapan).toLocaleDateString('id-ID') : '-';
       // Format rupiah
       const rupiah = n => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n || 0);
-      // HTML dokumen
+      // Terbilang (sederhana)
+      const terbilang = (n) => {
+        // Hanya contoh, bisa diganti dengan fungsi terbilang sebenarnya
+        return rupiah(n).replace('Rp', '').trim() + ' rupiah';
+      };
       return `
-      <div class="dokumen-print">
-        <h2 style="text-align:center; margin-bottom:0;">${labelSurat}</h2>
-        <div style="text-align:center; font-size:1.1em; margin-bottom:16px;">${ketetapan.ID_Ketetapan}</div>
-        <table style="width:100%; margin-bottom:16px;">
-          <tr><td style="width:140px;">NPWPD</td><td>: ${ketetapan.NPWPD}</td></tr>
-          <tr><td>Nama Usaha</td><td>: ${wp['Nama Usaha'] || '-'}</td></tr>
-          <tr><td>Nama Pemilik</td><td>: ${wp['Nama Pemilik'] || '-'}</td></tr>
-          <tr><td>Alamat</td><td>: ${wp.Alamat || '-'}</td></tr>
-          <tr><td>Jenis Pajak</td><td>: ${namaLayanan}</td></tr>
-          <tr><td>Masa Pajak</td><td>: ${ketetapan.MasaPajak}</td></tr>
-          <tr><td>Tanggal Ketetapan</td><td>: ${tgl}</td></tr>
-        </table>
-        <table style="width:100%; border-collapse:collapse;">
-          <tr><th style="border:1px solid #333; padding:4px;">Jumlah Pokok</th><th style="border:1px solid #333; padding:4px;">Denda</th><th style="border:1px solid #333; padding:4px;">Total Tagihan</th></tr>
-          <tr>
-            <td style="border:1px solid #333; padding:4px; text-align:right;">${rupiah(ketetapan.JumlahPokok)}</td>
-            <td style="border:1px solid #333; padding:4px; text-align:right;">${rupiah(ketetapan.Denda)}</td>
-            <td style="border:1px solid #333; padding:4px; text-align:right; font-weight:bold;">${rupiah(ketetapan.TotalTagihan)}</td>
-          </tr>
-        </table>
-        <div style="margin-top:32px;">Catatan: ${ketetapan.Catatan || '-'}</div>
-        <div style="margin-top:48px; text-align:right;">Petugas,<br><br><br>____________________</div>
+      <div class="cetak-container">
+        <header class="skpd-header">
+            <img src="images/logo.png" alt="Logo" class="logo">
+            <div class="header-text">
+                <p>PEMERINTAH KABUPATEN MAMBERAMO RAYA</p>
+                <p>BADAN PENDAPATAN PENGELOLAAN</p>
+                <p>KEUANGAN DAN ASET DAERAH</p>
+            </div>
+        </header>
+        <main class="skpd-body">
+            <div class="judul">
+                <h3>SURAT KETETAPAN PAJAK/RETRIBUSI DAERAH</h3>
+                <p>(SKPD/SKRD)</p>
+                <p>Nomor: <span>${ketetapan.ID_Ketetapan}</span></p>
+            </div>
+            <table class="info-wp">
+                <tr>
+                    <td>Nama Usaha</td>
+                    <td>: ${wp['Nama Usaha'] || '-'}</td>
+                </tr>
+                <tr>
+                    <td>Alamat</td>
+                    <td>: ${wp.Alamat || '-'}</td>
+                </tr>
+                <tr>
+                    <td>NPWPD</td>
+                    <td>: ${ketetapan.NPWPD}</td>
+                </tr>
+            </table>
+            <table class="rincian-biaya">
+                <thead>
+                    <tr>
+                        <th>NO</th>
+                        <th>AYAT</th>
+                        <th>JENIS PAJAK/RETRIBUSI DAERAH</th>
+                        <th>JUMLAH</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td></td>
+                        <td>${namaLayanan}</td>
+                        <td>${rupiah(ketetapan.JumlahPokok)}</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td colspan="2">Jumlah Sanksi</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td colspan="2">a. Bunga 2% / bulan</td>
+                        <td>${rupiah(ketetapan.Denda)}</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td colspan="2">b. Kenaikan 100%</td>
+                        <td>Rp 0</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td colspan="2"><strong>Jumlah keseluruhan</strong></td>
+                        <td><strong>${rupiah(ketetapan.TotalTagihan)}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="terbilang">
+                <strong>DENGAN HURUF:</strong> <span>${terbilang(ketetapan.TotalTagihan)}</span>
+            </p>
+            <div class="catatan-kaki">
+                <div class="perhatian">
+                    <p><strong>PERHATIAN:</strong></p>
+                    <ol>
+                        <li>Harap penyetoran dilakukan melalui BKP atau Rekening PENERIMAAN KAB.MAMBERAMO RAYA BPD PAPUA, Cabang Kasonaweja: 111.01060.00221 dengan menggunakan Surat Ketetapan Pajak Daerah (SKPD)</li>
+                        <li>Apabila SKPD ini tidak atau kurang dibayar setelah lewat paling lama 30 hari sejak SKPD ini diterima dikenakan sanksi administrasi berupa bunga sebesar 2% per bulan.</li>
+                    </ol>
+                </div>
+                <div class="signature-block">
+                    <p>Burmeso, <span>${tgl}</span></p>
+                    <p>An. Kepala Badan Pendapatan<br>Pengelolaan Keuangaan dan Aset Daerah<br>Kabupaten Mamberamo Raya</p>
+                    <p><strong>KEPALA BIDANG PENDAPATAN</strong></p>
+                    <br><br><br><br><br>
+                    <p class="nama-pejabat">HERMAN TARIBABA.SE</p>
+                    <p class="nip-pejabat">NIP.197610202003121007</p>
+                </div>
+            </div>
+        </main>
       </div>
-      <div class="page-break"></div>
       `;
     }
 
@@ -90,12 +157,15 @@
         const wpList = data.wajibPajak || [];
         const masterList = data.masterPajak || [];
         // Filter ketetapan sesuai ids
-        const dokumens = ids.map(id => {
+        const dokumens = ids.map((id, idx) => {
           const ketetapan = ketetapanList.find(k => String(k.ID_Ketetapan) === String(id));
-          if (!ketetapan) return `<div class='dokumen-print'><b>Data ketetapan ${id} tidak ditemukan.</b></div><div class='page-break'></div>`;
+          if (!ketetapan) return `<div class='cetak-container'><b>Data ketetapan ${id} tidak ditemukan.</b></div>`;
           const wp = wpList.find(w => w.NPWPD === ketetapan.NPWPD) || {};
           const master = masterList.find(m => m.KodeLayanan === ketetapan.KodeLayanan);
-          return renderDokumenKetetapan(ketetapan, wp, master);
+          let html = renderDokumenKetetapan(ketetapan, wp, master);
+          // Tambahkan page-break di antara dokumen, kecuali terakhir
+          if (idx < ids.length - 1) html += '<div class="page-break"></div>';
+          return html;
         });
         document.getElementById('container-print').innerHTML = dokumens.join('');
         setTimeout(() => window.print(), 500); // Otomatis print setelah render
