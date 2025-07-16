@@ -459,27 +459,21 @@
         function filterDataByDateRange(data, dateRange) {
             const { startDate, endDate } = dateRange;
             
-            // Filter ketetapan - lebih longgar untuk debugging
-            const filteredKetetapan = (data.ketetapan || []).filter(k => {
-                if (!k.TanggalKetetapan) return true; // Include if no date
-                const ketetapanDate = new Date(k.TanggalKetetapan);
-                return ketetapanDate >= startDate && ketetapanDate <= endDate;
-            });
+            // Untuk sementara, kita skip filter tanggal agar semua data muncul
+            // Ini akan membantu debugging masalah data
+            const filteredKetetapan = data.ketetapan || [];
+            const filteredPembayaran = data.pembayaran || [];
             
-            // Filter pembayaran - lebih longgar untuk debugging
-            const filteredPembayaran = (data.pembayaran || []).filter(p => {
-                if (!p.TanggalBayar) return true; // Include if no date
-                const pembayaranDate = new Date(p.TanggalBayar);
-                return pembayaranDate >= startDate && pembayaranDate <= endDate;
-            });
-            
-            // Debug: log data counts
+            // Debug: log data counts dan sample data
             console.log('Original data counts:', {
                 ketetapan: data.ketetapan?.length || 0,
                 pembayaran: data.pembayaran?.length || 0,
                 wajibPajak: data.wajibPajak?.length || 0,
                 masterPajak: data.masterPajak?.length || 0
             });
+            
+            console.log('Sample pembayaran data:', data.pembayaran?.slice(0, 3));
+            console.log('Sample ketetapan data:', data.ketetapan?.slice(0, 3));
             
             console.log('Filtered data counts:', {
                 ketetapan: filteredKetetapan.length,
@@ -496,7 +490,9 @@
         function updateSummaryReport(data) {
             // Calculate summary statistics
             const totalRevenue = data.pembayaran.reduce((sum, p) => {
-                return sum + (parseFloat(p.JumlahBayar) || 0);
+                const amount = parseFloat(p.JumlahBayar) || 0;
+                console.log(`Pembayaran ${p.ID_Pembayaran}: ${amount}`);
+                return sum + amount;
             }, 0);
             
             // Count active WP from all data, not just pembayaran
@@ -511,7 +507,8 @@
                 totalKetetapan,
                 successPayment,
                 pembayaranCount: data.pembayaran.length,
-                ketetapanCount: data.ketetapan.length
+                ketetapanCount: data.ketetapan.length,
+                samplePembayaran: data.pembayaran.slice(0, 2)
             });
             
             // Update summary values
@@ -751,6 +748,15 @@
             const successCount = data.pembayaran.filter(p => p.StatusPembayaran === 'Sukses').length;
             const failedCount = totalPembayaran - successCount;
             const totalNilai = data.pembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+            
+            // Debug: log pembayaran data
+            console.log('Pembayaran report data:', {
+                totalPembayaran,
+                successCount,
+                failedCount,
+                totalNilai,
+                samplePembayaran: data.pembayaran.slice(0, 3)
+            });
             
             // Update statistics
             document.getElementById('totalPembayaranCount').textContent = totalPembayaran;
