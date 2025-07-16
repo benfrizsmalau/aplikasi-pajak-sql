@@ -155,14 +155,16 @@
                     option.dataset.namaUsaha = (dataWajibPajak.find(wp => wp.NPWPD === selectedNpwpd)?.['Nama Usaha']) || '';
                     ketetapanSelect.appendChild(option);
                 });
+            } else {
+                ketetapanSelect.disabled = true;
             }
         });
 
         ketetapanSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
-            namaUsahaInput.value = selectedOption.dataset.namaUsaha || '';
-            masaPajakInput.value = selectedOption.dataset.masaPajak || '';
-            jumlahTagihanInput.value = selectedOption.dataset.jumlahTagihan || '';
+            namaUsahaInput.value = selectedOption?.dataset.namaUsaha || '';
+            masaPajakInput.value = selectedOption?.dataset.masaPajak || '';
+            jumlahTagihanInput.value = selectedOption?.dataset.jumlahTagihan || '';
         });
 
         formSetoran.addEventListener('submit', async function(e) {
@@ -176,8 +178,15 @@
             const operator = operatorInput.value;
             const waktuInput = new Date().toISOString();
             const statusPembayaran = 'Sukses';
+            // Cek ulang status ketetapan sebelum submit (antisipasi data tidak sinkron)
+            const ketetapan = dataKetetapan.find(k => k.ID_Ketetapan === idKetetapan);
             if (!idKetetapan || !npwpd || !tanggalBayar || !jumlahBayar || !metodeBayar || !operator) {
                 statusSetoran.textContent = 'Semua field wajib diisi!';
+                statusSetoran.style.color = 'red';
+                return;
+            }
+            if (!ketetapan || ketetapan.Status !== 'Belum Lunas') {
+                statusSetoran.textContent = 'Ketetapan ini sudah lunas atau tidak valid!';
                 statusSetoran.style.color = 'red';
                 return;
             }
