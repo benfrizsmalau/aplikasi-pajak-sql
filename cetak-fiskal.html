@@ -13,84 +13,104 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             line-height: 1.6;
+            font-size: 12px;
         }
         .header {
             text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
             margin-bottom: 20px;
         }
         .header img {
             height: 60px;
-            margin-bottom: 10px;
+            float: left;
+            margin-right: 20px;
+        }
+        .header-text {
+            text-align: center;
+            margin-top: 10px;
         }
         .header h1 {
             margin: 5px 0;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
+            text-transform: uppercase;
         }
         .header h2 {
             margin: 5px 0;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
+            text-transform: uppercase;
         }
         .header h3 {
             margin: 5px 0;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: normal;
+        }
+        .header-line {
+            border-top: 1px solid #000;
+            margin: 10px 0;
         }
         .document-title {
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             margin: 20px 0;
             text-decoration: underline;
+            text-transform: uppercase;
+        }
+        .document-number {
+            text-align: center;
+            font-size: 12px;
+            margin: 10px 0;
         }
         .info-section {
             margin: 20px 0;
         }
         .info-row {
-            display: flex;
             margin: 8px 0;
         }
         .info-label {
-            width: 150px;
             font-weight: bold;
         }
-        .info-value {
-            flex: 1;
-        }
-        .requirements {
+        .status-section {
             margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #000;
-            background-color: #f9f9f9;
+            text-align: center;
         }
-        .requirements h4 {
-            margin: 0 0 10px 0;
-            font-size: 14px;
+        .status-text {
             font-weight: bold;
-        }
-        .requirements ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-        .requirements li {
-            margin: 5px 0;
             font-size: 12px;
+            text-transform: uppercase;
+        }
+        .purpose-section {
+            margin: 20px 0;
+        }
+        .purpose-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .purpose-list {
+            margin-left: 20px;
+        }
+        .purpose-list li {
+            margin: 5px 0;
+        }
+        .validity-section {
+            margin: 20px 0;
+        }
+        .closing-section {
+            margin: 20px 0;
+            font-style: italic;
         }
         .footer {
             margin-top: 40px;
-            text-align: right;
         }
         .signature-section {
             margin-top: 30px;
-            display: flex;
-            justify-content: space-between;
+            text-align: right;
         }
         .signature-box {
             text-align: center;
             width: 200px;
+            float: right;
         }
         .signature-line {
             border-top: 1px solid #000;
@@ -113,82 +133,96 @@
         .print-button:hover {
             background: #0056b3;
         }
-        .qr-code {
-            text-align: center;
-            margin: 20px 0;
-        }
-        .qr-code canvas {
-            border: 1px solid #ccc;
+        .clear {
+            clear: both;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <button class="print-button no-print" onclick="window.print()">🖨️ Print</button>
     
     <div class="header">
         <img src="images/logo.png" alt="Logo">
-        <h1>BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</h1>
-        <h2>KABUPATEN MAMBERAMO RAYA</h2>
-        <h3>BIDANG PENDAPATAN DAERAH</h3>
+        <div class="header-text">
+            <h1>PEMERINTAH KABUPATEN MAMBERAMO RAYA</h1>
+            <h2>BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</h2>
+            <h3>KOMPLEKS PERKANTORAN OTOMOM, BURMESO DISTRIK MAMBERAMO TENGAH, KABUPATEN MAMBERAMO RAYA, PROVINSI PAPUA</h3>
+        </div>
+        <div class="clear"></div>
+        <div class="header-line"></div>
     </div>
 
     <div class="document-title">
-        DOKUMEN FISKAL
+        FISKAL PEMBAYARAN PAJAK DAN RETRIBUSI DAERAH
+    </div>
+
+    <div class="document-number">
+        NOMOR : <span id="nomorFiskal">-</span>
     </div>
 
     <div class="info-section">
         <div class="info-row">
-            <div class="info-label">Nomor Fiskal:</div>
-            <div class="info-value" id="nomorFiskal">-</div>
+            <div class="info-label">Atas Nama Bupati Kabupaten Mamberamo Raya menerangkan bahwa Wajib Pajak dibawah ini :</div>
         </div>
         <div class="info-row">
-            <div class="info-label">Tanggal Cetak:</div>
-            <div class="info-value" id="tanggalCetak">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">NPWPD:</div>
-            <div class="info-value" id="npwpd">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Nama Usaha:</div>
-            <div class="info-value" id="namaUsaha">-</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Nama Pemilik:</div>
+            <div class="info-label">Nama Pemilik :</div>
             <div class="info-value" id="namaPemilik">-</div>
         </div>
         <div class="info-row">
-            <div class="info-label">Alamat:</div>
+            <div class="info-label">Nama Usaha :</div>
+            <div class="info-value" id="namaUsaha">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Alamat :</div>
             <div class="info-value" id="alamat">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">NPWPD :</div>
+            <div class="info-value" id="npwpd">-</div>
         </div>
     </div>
 
-    <div class="requirements">
-        <h4>SYARAT PENERBITAN DOKUMEN FISKAL:</h4>
-        <ul>
-            <li>Wajib Pajak telah melunasi Pajak Reklame</li>
-            <li>Wajib Pajak telah melunasi Retribusi Persampahan</li>
-            <li>Data Wajib Pajak lengkap dan valid</li>
-            <li>Tidak ada tunggakan pajak lainnya</li>
-        </ul>
+    <div class="status-section">
+        <div class="status-text">
+            TELAH MELAKSANAKAN KEWAJIBAN PEMBAYARAN PAJAK DAERAH DAN RETRIBUSI DAERAH DENGAN BAIK
+        </div>
     </div>
 
-    <div class="qr-code">
-        <div id="qrcode"></div>
-        <p style="font-size: 12px; margin-top: 10px;">Scan QR Code untuk verifikasi</p>
+    <div class="purpose-section">
+        <div class="purpose-title">Surat Fiskal ini diberikan atas nama pemohon yang bersangkutan untuk keperluan untuk :</div>
+        <ol class="purpose-list">
+            <li>Mengurus Surat Izin Jasa Konstruksi</li>
+            <li>Surat Izin Usaha Perdagangan (SIUP)</li>
+            <li>Tanda Daftar Perusahaan (TDP)</li>
+        </ol>
+    </div>
+
+    <div class="validity-section">
+        <p><strong>Surat ini berlaku sampai dengan tanggal <span id="tanggalBerlaku">-</span> dan hanya berlaku untuk penggunaan di Kabupaten Mamberamo Raya.</strong></p>
+    </div>
+
+    <div class="closing-section">
+        <p>Demikian surat Fiskal ini diberikan untuk dapat dipergunakan sebagaimana mestinya.</p>
     </div>
 
     <div class="footer">
-        <p><strong>Dokumen ini berlaku sampai:</strong> <span id="tanggalBerlaku">-</span></p>
+        <div class="info-row">
+            <div class="info-label">Dikeluarkan di :</div>
+            <div class="info-value">Burmeso</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Pada Tanggal :</div>
+            <div class="info-value" id="tanggalCetak">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">An. KEPALA BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</div>
+        </div>
     </div>
 
     <div class="signature-section">
         <div class="signature-box">
-            <div class="signature-line">Kepala Bidang Pendapatan Daerah</div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line">Operator</div>
+            <div class="signature-line">HERMAN TARIBABA, SE</div>
+            <div style="font-size: 10px; margin-top: 5px;">NIP. 197610202003121007</div>
         </div>
     </div>
 
@@ -226,7 +260,7 @@
                 const now = new Date();
                 const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
                 const tahun = now.getFullYear();
-                const nomorUrut = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+                const nomorUrut = Math.floor(Math.random() * 9999).toString().padStart(6, '0');
                 const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
                 document.getElementById('nomorFiskal').textContent = nomorFiskal;
 
@@ -235,14 +269,6 @@
                 const tanggalBerlaku = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
                 document.getElementById('tanggalBerlaku').textContent = tanggalBerlaku.toLocaleDateString('id-ID');
 
-                // Generate QR Code
-                const qrData = `NPWPD: ${npwpd}\nNomor: ${nomorFiskal}\nTanggal: ${now.toLocaleDateString('id-ID')}`;
-                new QRCode(document.getElementById('qrcode'), {
-                    text: qrData,
-                    width: 128,
-                    height: 128
-                });
-
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: Gagal memuat data</h1>';
@@ -250,4 +276,5 @@
         }
     </script>
 </body>
+</html> 
 </html> 
