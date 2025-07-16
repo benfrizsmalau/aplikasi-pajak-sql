@@ -91,6 +91,9 @@ exports.handler = async (event) => {
                 case 'deleteFiskal':
                     responseData = await handleDeleteFiskal(body);
                     break;
+                case 'getNextFiskalNumber':
+                    responseData = await handleGetNextFiskalNumber();
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -521,4 +524,33 @@ async function handleDeleteFiskal(data) {
         .match(filter);
     if (error) throw new Error('Gagal hapus data fiskal: ' + error.message);
     return { message: 'Data fiskal berhasil dihapus!' };
+}
+
+// Handler untuk mendapatkan nomor fiskal berikutnya
+async function handleGetNextFiskalNumber() {
+    try {
+        // Ambil nomor urut terakhir dari tabel Fiskal
+        const { count, error: countError } = await supabase
+            .from('Fiskal')
+            .select('*', { count: 'exact', head: true });
+        if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
+        const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
+
+        // Bulan romawi dan tahun
+        const now = new Date();
+        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+        const tahun = now.getFullYear();
+
+        // Gabungkan nomor_fiskal
+        const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+
+        return { 
+            nomor_fiskal,
+            nomor_urut: nomorUrut,
+            bulan_romawi: bulanRomawi,
+            tahun: tahun
+        };
+    } catch (error) {
+        throw new Error('Gagal mendapatkan nomor fiskal: ' + error.message);
+    }
 }

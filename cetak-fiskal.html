@@ -252,13 +252,35 @@
                 document.getElementById('namaPemilik').textContent = wp['Nama Pemilik'] || '-';
                 document.getElementById('alamat').textContent = wp['Alamat'] || '-';
 
-                // Generate nomor fiskal dengan format yang benar
-                const now = new Date();
-                const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
-                const tahun = now.getFullYear();
-                const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
-                const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
-                document.getElementById('nomorFiskal').textContent = nomorFiskal;
+                // Generate nomor fiskal yang berurut dari database
+                try {
+                    const nomorResponse = await fetch('/.netlify/functions/api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'getNextFiskalNumber' })
+                    });
+                    const nomorData = await nomorResponse.json();
+                    if (nomorData.status === 'sukses') {
+                        document.getElementById('nomorFiskal').textContent = nomorData.nomor_fiskal;
+                    } else {
+                        // Fallback jika gagal, gunakan random
+                        const now = new Date();
+                        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+                        const tahun = now.getFullYear();
+                        const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+                        const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                        document.getElementById('nomorFiskal').textContent = nomorFiskal;
+                    }
+                } catch (error) {
+                    console.error('Error getting fiskal number:', error);
+                    // Fallback jika gagal
+                    const now = new Date();
+                    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+                    const tahun = now.getFullYear();
+                    const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+                    const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                    document.getElementById('nomorFiskal').textContent = nomorFiskal;
+                }
 
                 // Tanggal cetak dan berlaku
                 document.getElementById('tanggalCetak').textContent = now.toLocaleDateString('id-ID');
