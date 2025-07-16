@@ -88,6 +88,9 @@ exports.handler = async (event) => {
                 case 'createFiskal':
                     responseData = await handleCreateFiskal(body);
                     break;
+                case 'deleteFiskal':
+                    responseData = await handleDeleteFiskal(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -479,4 +482,23 @@ async function handleCreateFiskal(data) {
         return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
     }
     return { status: 'sukses', ...inserted };
+}
+
+// Handler hapus fiskal
+async function handleDeleteFiskal(data) {
+    // Hapus berdasarkan id_fiskal jika ada, jika tidak pakai NPWPD
+    let filter = {};
+    if (data.id_fiskal) {
+        filter = { id_fiskal: data.id_fiskal };
+    } else if (data.npwpd) {
+        filter = { NPWPD: data.npwpd };
+    } else {
+        throw new Error('ID fiskal atau NPWPD wajib diisi untuk hapus data fiskal!');
+    }
+    const { error } = await supabase
+        .from('Fiskal')
+        .delete()
+        .match(filter);
+    if (error) throw new Error('Gagal hapus data fiskal: ' + error.message);
+    return { message: 'Data fiskal berhasil dihapus!' };
 }
