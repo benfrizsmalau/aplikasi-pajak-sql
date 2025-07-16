@@ -1480,3 +1480,482 @@ th {
   background: #1976d2;
   color: #fff;
 }
+
+/* Report Page Styles */
+#page-report .main-content {
+    padding: 24px;
+}
+
+.filter-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(60,60,120,0.08);
+    margin-bottom: 24px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #fff;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.btn-primary {
+    background: #1976d2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #1565c0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Report Sections */
+.report-section {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(60,60,120,0.08);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.report-section h3 {
+    padding: 20px 24px 16px;
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* Summary Report */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 24px;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+}
+
+.summary-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.summary-change {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.summary-change.positive {
+    color: #4caf50;
+}
+
+.summary-change.negative {
+    color: #f44336;
+}
+
+.summary-change.neutral {
+    color: #ff9800;
+}
+
+/* Revenue Report */
+.revenue-breakdown {
+    padding: 24px;
+}
+
+.revenue-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.revenue-item:last-child {
+    border-bottom: none;
+}
+
+.revenue-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.revenue-value {
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.revenue-percentage {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* WP Report */
+.wp-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 24px;
+    background: #f8f9fa;
+}
+
+.wp-stat {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.wp-stat h4 {
+    margin: 0 0 12px 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.wp-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+/* Ketetapan Report */
+.ketetapan-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 24px;
+    background: #f8f9fa;
+}
+
+.ketetapan-stat {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ketetapan-stat h4 {
+    margin: 0 0 12px 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.ketetapan-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+/* Pembayaran Report */
+.pembayaran-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 24px;
+    background: #f8f9fa;
+}
+
+.pembayaran-stat {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.pembayaran-stat h4 {
+    margin: 0 0 12px 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.pembayaran-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+/* Fiskal Report */
+.fiskal-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 24px;
+    background: #f8f9fa;
+}
+
+.fiskal-stat {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.fiskal-stat h4 {
+    margin: 0 0 12px 0;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.fiskal-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+/* Performance Report */
+.performance-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 24px;
+}
+
+.metric-card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #1976d2;
+}
+
+.metric-card h4 {
+    margin: 0 0 16px 0;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 16px;
+}
+
+.metric-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.metric-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1976d2, #42a5f5);
+    transition: width 0.3s ease;
+}
+
+/* Chart Container */
+.chart-container {
+    padding: 24px;
+    background: #f8f9fa;
+}
+
+/* Table Container */
+.table-container {
+    padding: 24px;
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.data-table thead th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.data-table tbody tr:nth-child(odd) {
+    background-color: #f8f9fa;
+}
+
+.data-table tbody tr:hover {
+    background-color: #e3f2fd;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        min-width: auto;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .wp-stats,
+    .ketetapan-stats,
+    .pembayaran-stats,
+    .fiskal-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .performance-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .data-table {
+        min-width: 600px;
+    }
+    
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #page-report .main-content {
+        padding: 16px;
+    }
+    
+    .filter-section {
+        padding: 16px;
+    }
+    
+    .report-section h3 {
+        padding: 16px 20px 12px;
+        font-size: 1.2rem;
+    }
+    
+    .summary-grid,
+    .revenue-breakdown,
+    .wp-stats,
+    .ketetapan-stats,
+    .pembayaran-stats,
+    .fiskal-stats,
+    .performance-metrics,
+    .chart-container,
+    .table-container {
+        padding: 16px;
+    }
+}
