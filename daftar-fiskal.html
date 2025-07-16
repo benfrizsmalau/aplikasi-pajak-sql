@@ -43,28 +43,20 @@
                         <span id="totalRecords">Total: 0 fiskal</span>
                     </div>
                 </div>
-                <!-- Aksi Terpusat -->
-                <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
-                  <select id="aksiFiskal" style="width: 110px;">
-                    <option value="">Aksi...</option>
-                    <option value="print">Print</option>
-                  </select>
-                  <button id="prosesAksiFiskal" disabled>Proses</button>
-                </div>
                 <div class="table-content">
                     <table id="fiskalTable" class="standard-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="checkAllFiskal"></th>
                                 <th>No</th>
                                 <th>NPWPD</th>
                                 <th>Nama Usaha</th>
                                 <th>Pajak Reklame</th>
                                 <th>Retribusi Persampahan</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="7" class="table-loading">Memuat data...</td></tr>
+                            <tr><td colspan="6" class="table-loading">Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -79,7 +71,6 @@
     let wajibPajakDataGlobal = [];
     document.addEventListener('DOMContentLoaded', async () => {
         await loadFiskalData();
-        setupAksiFiskal();
     });
 
     async function loadFiskalData() {
@@ -120,7 +111,7 @@
             fiskalDataGlobal = hasil;
             displayFiskalData(fiskalDataGlobal);
         } catch (err) {
-            document.querySelector('#fiskalTable tbody').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
+            document.querySelector('#fiskalTable tbody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
         }
     }
 
@@ -141,13 +132,15 @@
         }
         function renderTable(pageData) {
             const tableConfig = {
-                showCheckbox: true,
                 columns: [
                     { key: 'index', label: 'No', type: 'text' },
                     { key: 'npwpd', label: 'NPWPD', type: 'text' },
                     { key: 'namaUsaha', label: 'Nama Usaha', type: 'text' },
                     { key: 'lunasReklame', label: 'Pajak Reklame', type: 'status', statusColors: { 'Lunas': 'green' } },
                     { key: 'lunasSampah', label: 'Retribusi Persampahan', type: 'status', statusColors: { 'Lunas': 'green' } }
+                ],
+                actions: [
+                    { type: 'print', key: 'npwpd', onClick: 'printFiskal', icon: '🖨️' }
                 ],
                 emptyMessage: 'Tidak ada data fiskal.'
             };
@@ -180,37 +173,9 @@
         renderPage(1);
     }
 
-    function setupAksiFiskal() {
-      const aksiSelect = document.getElementById('aksiFiskal');
-      const prosesBtn = document.getElementById('prosesAksiFiskal');
-      const checkAll = document.getElementById('checkAllFiskal');
-      const table = document.getElementById('fiskalTable');
-      function updateProsesBtn() {
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
-        prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
-      }
-      aksiSelect.addEventListener('change', updateProsesBtn);
-      table.addEventListener('change', function(e) {
-        if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
-        if (e.target.id === 'checkAllFiskal') {
-          const all = table.querySelectorAll('.rowCheckKetetapan');
-          all.forEach(cb => cb.checked = e.target.checked);
-          updateProsesBtn();
-        }
-      });
-      prosesBtn.addEventListener('click', function() {
-        const aksi = aksiSelect.value;
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
-        const npwpds = Array.from(checked).map(cb => cb.closest('tr').querySelector('td:nth-child(3)').textContent.trim());
-        if (!aksi || npwpds.length === 0) return;
-        if (aksi === 'print') {
-          if (npwpds.length === 1) {
-            window.open(`cetak-fiskal.html?npwpd=${npwpds[0]}`, '_blank');
-          } else if (npwpds.length > 1) {
-            window.open(`cetak-fiskal-multi.html?npwpds=${npwpds.join(',')}`, '_blank');
-          }
-        }
-      });
+    // Fungsi untuk print fiskal
+    function printFiskal(npwpd) {
+        window.open(`cetak-fiskal.html?npwpd=${npwpd}`, '_blank');
     }
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
