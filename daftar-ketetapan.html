@@ -483,9 +483,11 @@
             setTimeout(() => loadKetetapanData(), 500);
           }
         } else if (aksi === 'print') {
-          // Print semua yang dicentang (buka tab baru untuk setiap ID) - HARUS langsung di event handler klik!
-          for (let i = 0; i < ids.length; i++) {
-            window.open(`cetak-skpd.html?id=${ids[i]}`, '_blank');
+          // Print satu: buka cetak-skpd.html?id=ID, banyak: buka cetak-skpd-multi.html?ids=ID1,ID2,...
+          if (ids.length === 1) {
+            window.open(`cetak-skpd.html?id=${ids[0]}`, '_blank');
+          } else if (ids.length > 1) {
+            window.open(`cetak-skpd-multi.html?ids=${ids.join(',')}`, '_blank');
           }
         } else if (aksi === 'edit') {
           if (ids.length > 1) {
