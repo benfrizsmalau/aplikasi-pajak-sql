@@ -129,7 +129,9 @@
         // Format nomor dokumen
         const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
         const tgl = new Date(); // tanggal print
-        const nomorUrut = (data.ID_Pembayaran || '').replace(/[^0-9]/g, '').padStart(7, '0');
+        // Ambil nomor urut dari ID_Pembayaran (sebelum '/')
+        const idPembayaranStr = data.ID_Pembayaran || '';
+        const nomorUrut = idPembayaranStr.split('/')[0].padStart(7, '0');
         const nomorDok = `${nomorUrut}/${jenis}/${bulanRomawi[tgl.getMonth()]}/${tgl.getFullYear()}`;
         // Data WP
         const wp = wajibPajakDataGlobal.find(wp => wp.NPWPD === data.NPWPD) || {};
