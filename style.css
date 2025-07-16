@@ -776,6 +776,7 @@ th {
   flex-direction: column;
   align-items: flex-start;
   padding-top: 120px;
+  margin-top: 110px;
 }
 .sidebar-menu nav {
   width: 100%;
