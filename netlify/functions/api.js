@@ -421,10 +421,30 @@ async function handleCreatePembayaran(data) {
         }]);
     if (error) throw new Error('Gagal mencatat pembayaran: ' + error.message);
 
-    // Update status ketetapan menjadi Lunas
+    // Hitung total pembayaran untuk ketetapan ini
+    const { data: pembayaranList, error: pembayaranError } = await supabase
+        .from('RiwayatPembayaran')
+        .select('JumlahBayar')
+        .eq('ID_Ketetapan', data.id_ketetapan);
+    if (pembayaranError) throw new Error('Gagal mengambil riwayat pembayaran: ' + pembayaranError.message);
+    const totalBayar = (pembayaranList || []).reduce((sum, p) => sum + Number(p.JumlahBayar), 0);
+
+    // Ambil total tagihan dari KetetapanPajak
+    const { data: ketetapan, error: ketetapanError } = await supabase
+        .from('KetetapanPajak')
+        .select('TotalTagihan')
+        .eq('ID_Ketetapan', data.id_ketetapan)
+        .single();
+    if (ketetapanError) throw new Error('Gagal mengambil data ketetapan: ' + ketetapanError.message);
+
+    // Update status ketetapan sesuai total pembayaran
+    let statusBaru = 'Belum Lunas';
+    if (totalBayar >= Number(ketetapan.TotalTagihan)) {
+        statusBaru = 'Lunas';
+    }
     const { error: updateError } = await supabase
         .from('KetetapanPajak')
-        .update({ Status: 'Lunas' })
+        .update({ Status: statusBaru })
         .eq('ID_Ketetapan', data.id_ketetapan);
     if (updateError) throw new Error('Gagal update status ketetapan: ' + updateError.message);
 
