@@ -314,8 +314,10 @@
             setTimeout(() => loadPembayaranData(), 500);
           }
         } else if (aksi === 'print') {
-          for (let i = 0; i < ids.length; i++) {
-            window.open(`cetak-bukti.html?id=${ids[i]}`, '_blank');
+          if (ids.length === 1) {
+            window.open(`cetak-bukti.html?id=${ids[0]}`, '_blank');
+          } else if (ids.length > 1) {
+            window.open(`cetak-bukti-multi.html?ids=${ids.join(',')}`, '_blank');
           }
         }
       });
