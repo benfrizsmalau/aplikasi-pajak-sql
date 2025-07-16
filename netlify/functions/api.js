@@ -73,6 +73,12 @@ exports.handler = async (event) => {
                 case 'createKetetapan':
                     responseData = await handleCreateKetetapan(body);
                     break;
+                case 'updateKetetapan':
+                    responseData = await handleUpdateKetetapan(body);
+                    break;
+                case 'deleteKetetapan':
+                    responseData = await handleDeleteKetetapan(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -302,4 +308,51 @@ async function handleCreateKetetapan(data) {
         }]);
     if (error) throw new Error('Gagal membuat ketetapan: ' + error.message);
     return { message: 'Ketetapan berhasil dibuat!' };
+}
+
+// Handler update ketetapan
+async function handleUpdateKetetapan(data) {
+    // Ambil data lama
+    const { data: lama, error: errLama } = await supabase
+        .from('KetetapanPajak')
+        .select('*')
+        .eq('ID_Ketetapan', data.id_ketetapan)
+        .single();
+    if (errLama || !lama) throw new Error('Data ketetapan tidak ditemukan!');
+
+    // Hitung denda dan total tagihan ulang
+    let denda = 0;
+    let tanggalKetetapan = lama.TanggalKetetapan ? new Date(lama.TanggalKetetapan) : new Date();
+    if (lama.TanggalKetetapan) {
+        const today = new Date();
+        let bulanTunggakan = (today.getFullYear() - tanggalKetetapan.getFullYear()) * 12 + (today.getMonth() - tanggalKetetapan.getMonth());
+        if (today.getDate() > tanggalKetetapan.getDate()) bulanTunggakan += 1;
+        if (bulanTunggakan < 1) bulanTunggakan = 1;
+        denda = bulanTunggakan * 0.02 * Number(data.jumlahPokok);
+    }
+    denda = Math.round(denda);
+    const jumlahPokok = Number(data.jumlahPokok);
+    const totalTagihan = jumlahPokok + denda;
+
+    const { error } = await supabase
+        .from('KetetapanPajak')
+        .update({
+            MasaPajak: data.masaPajak,
+            JumlahPokok: jumlahPokok,
+            Denda: denda,
+            TotalTagihan: totalTagihan
+        })
+        .eq('ID_Ketetapan', data.id_ketetapan);
+    if (error) throw new Error('Gagal update ketetapan: ' + error.message);
+    return { message: 'Ketetapan berhasil diperbarui!' };
+}
+
+// Handler hapus ketetapan
+async function handleDeleteKetetapan(data) {
+    const { error } = await supabase
+        .from('KetetapanPajak')
+        .delete()
+        .eq('ID_Ketetapan', data.id_ketetapan);
+    if (error) throw new Error('Gagal hapus ketetapan: ' + error.message);
+    return { message: 'Ketetapan berhasil dihapus!' };
 }
