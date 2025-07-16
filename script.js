@@ -783,6 +783,11 @@ function createStandardTable(tableId, data, config) {
     // Buat baris data
     data.forEach((rowData, index) => {
         const row = document.createElement('tr');
+        // Terapkan class baris jika ada config.rowClass
+        if (config.rowClass) {
+            const rowClass = config.rowClass(rowData);
+            if (rowClass) row.classList.add(rowClass);
+        }
         
         config.columns.forEach(column => {
             const cell = document.createElement('td');
