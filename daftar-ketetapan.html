@@ -97,6 +97,8 @@
                     </table>
                 </div>
             </div>
+            <!-- Navigasi Pagination -->
+            <div id="pagination" class="pagination-container"></div>
         </main>
     </div>
 
@@ -190,70 +192,99 @@
         const totalRecords = document.getElementById('totalRecords');
         totalRecords.textContent = `Total: ${data.length} ketetapan`;
         
-        // Konfigurasi tabel standar
-        const tableConfig = {
-            columns: [
-                { key: 'index', label: 'No', type: 'text' },
-                { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
-                { key: 'NPWPD', label: 'NPWPD', type: 'link', linkUrl: 'detail.html?npwpd=', linkKey: 'NPWPD' },
-                { key: 'namaUsaha', label: 'Nama Usaha', type: 'text' },
-                { key: 'namaLayanan', label: 'Jenis Pajak', type: 'text' },
-                { key: 'MasaPajak', label: 'Masa Pajak', type: 'text' },
-                { key: 'JumlahPokok', label: 'Jumlah Pokok', type: 'rupiah' },
-                { key: 'Denda', label: 'Denda', type: 'rupiah' },
-                { key: 'TotalTagihan', label: 'Total Tagihan', type: 'rupiah' },
-                { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' },
-                { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' },
-                { key: 'status', label: 'Status', type: 'status', statusColors: { 'Lunas': 'green', 'Belum Lunas': 'red' } },
-                { key: 'TanggalKetetapan', label: 'Tanggal', type: 'date' }
-            ],
-            actions: [
-                { type: 'print', key: 'ID_Ketetapan', onClick: 'printKetetapan', icon: '🖨️' },
-                { type: 'edit', key: 'ID_Ketetapan', onClick: 'handleEditKetetapanClick', icon: '✏️' },
-                { type: 'delete', key: 'ID_Ketetapan', onClick: 'handleDeleteKetetapanClick', icon: '🗑️' }
-            ],
-            emptyMessage: 'Tidak ada data ketetapan.'
-        };
+        // PAGINATION
+        const rowsPerPage = 10;
+        let currentPage = 1;
+        const paginationContainer = document.getElementById('pagination');
         
-        // Proses data untuk tabel
-        // Hitung status lunas per NPWPD
-        const npwpdStatusMap = {};
-        ketetapanDataGlobal.forEach(item => {
-            if (!npwpdStatusMap[item.NPWPD]) npwpdStatusMap[item.NPWPD] = [];
-            npwpdStatusMap[item.NPWPD].push(item.Status);
-        });
-        // Proses data untuk tabel
-        const processedData = data.map((item, index) => {
-            const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
-            const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
-            const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '-';
-            // Gunakan status dari backend
-            const status = item.Status || 'Belum Lunas';
-            // Hitung jumlah terbayar
-            const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
-            const jumlahTerbayar = pembayaranKetetapan.reduce((sum, p) => sum + Number(p.JumlahBayar || 0), 0);
-            const sisaTagihan = Math.max(Number(item.TotalTagihan || 0) - jumlahTerbayar, 0);
-            // Tentukan warna baris berdasarkan status semua ketetapan NPWPD
-            const semuaLunas = npwpdStatusMap[item.NPWPD]?.every(s => s === 'Lunas');
-            const rowColor = semuaLunas ? 'row-lunas' : 'row-belum-lunas';
-            return {
-                ...item,
-                index: index + 1,
-                namaUsaha: wp['Nama Usaha'] || '-',
-                namaLayanan: namaLayanan,
-                status: status,
-                jumlahTerbayar: jumlahTerbayar,
-                sisaTagihan: sisaTagihan,
-                rowColor: rowColor
+        function renderPage(page) {
+            currentPage = page;
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = data.slice(start, end);
+            renderTable(pageData);
+            renderPagination();
+        }
+        function renderTable(pageData) {
+            // Konfigurasi tabel standar
+            const tableConfig = {
+                columns: [
+                    { key: 'index', label: 'No', type: 'text' },
+                    { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
+                    { key: 'NPWPD', label: 'NPWPD', type: 'link', linkUrl: 'detail.html?npwpd=', linkKey: 'NPWPD' },
+                    { key: 'namaUsaha', label: 'Nama Usaha', type: 'text' },
+                    { key: 'namaLayanan', label: 'Jenis Pajak', type: 'text' },
+                    { key: 'MasaPajak', label: 'Masa Pajak', type: 'text' },
+                    { key: 'JumlahPokok', label: 'Jumlah Pokok', type: 'rupiah' },
+                    { key: 'Denda', label: 'Denda', type: 'rupiah' },
+                    { key: 'TotalTagihan', label: 'Total Tagihan', type: 'rupiah' },
+                    { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' },
+                    { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' },
+                    { key: 'status', label: 'Status', type: 'status', statusColors: { 'Lunas': 'green', 'Belum Lunas': 'red' } },
+                    { key: 'TanggalKetetapan', label: 'Tanggal', type: 'date' }
+                ],
+                actions: [
+                    { type: 'print', key: 'ID_Ketetapan', onClick: 'printKetetapan', icon: '🖨️' },
+                    { type: 'edit', key: 'ID_Ketetapan', onClick: 'handleEditKetetapanClick', icon: '✏️' },
+                    { type: 'delete', key: 'ID_Ketetapan', onClick: 'handleDeleteKetetapanClick', icon: '🗑️' }
+                ],
+                emptyMessage: 'Tidak ada data ketetapan.',
+                rowClass: row => row.rowColor
             };
-        });
-        // Update tableConfig untuk kolom baru dan pewarnaan baris
-        tableConfig.columns.splice(9, 0, { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' });
-        tableConfig.columns.splice(9, 0, { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' });
-        tableConfig.rowClass = row => row.rowColor;
-        
-        // Gunakan fungsi standar tabel
-        createStandardTable('ketetapanTable', processedData, tableConfig);
+            // Proses data untuk tabel
+            // Hitung status lunas per NPWPD
+            const npwpdStatusMap = {};
+            ketetapanDataGlobal.forEach(item => {
+                if (!npwpdStatusMap[item.NPWPD]) npwpdStatusMap[item.NPWPD] = [];
+                npwpdStatusMap[item.NPWPD].push(item.Status);
+            });
+            const processedData = pageData.map((item, index) => {
+                const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
+                const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+                const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '-';
+                const status = item.Status || 'Belum Lunas';
+                const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
+                const jumlahTerbayar = pembayaranKetetapan.reduce((sum, p) => sum + Number(p.JumlahBayar || 0), 0);
+                const sisaTagihan = Math.max(Number(item.TotalTagihan || 0) - jumlahTerbayar, 0);
+                const semuaLunas = npwpdStatusMap[item.NPWPD]?.every(s => s === 'Lunas');
+                const rowColor = semuaLunas ? 'row-lunas' : 'row-belum-lunas';
+                return {
+                    ...item,
+                    index: (currentPage - 1) * rowsPerPage + index + 1,
+                    namaUsaha: wp['Nama Usaha'] || '-',
+                    namaLayanan: namaLayanan,
+                    status: status,
+                    jumlahTerbayar: jumlahTerbayar,
+                    sisaTagihan: sisaTagihan,
+                    rowColor: rowColor
+                };
+            });
+            // Update tableConfig untuk kolom baru dan pewarnaan baris
+            tableConfig.columns.splice(9, 0, { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' });
+            tableConfig.columns.splice(9, 0, { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' });
+            tableConfig.rowClass = row => row.rowColor;
+            
+            // Gunakan fungsi standar tabel
+            createStandardTable('ketetapanTable', processedData, tableConfig);
+        }
+        function renderPagination() {
+            const totalPages = Math.ceil(data.length / rowsPerPage);
+            let html = '';
+            if (totalPages > 1) {
+                html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage-1})">&laquo;</button>`;
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                }
+                html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage+1})">&raquo;</button>`;
+            }
+            paginationContainer.innerHTML = html;
+        }
+        window.goToPage = function(page) {
+            const totalPages = Math.ceil(data.length / rowsPerPage);
+            if (page < 1 || page > totalPages) return;
+            renderPage(page);
+        };
+        renderPage(1);
     }
 
     function setupEventListeners() {

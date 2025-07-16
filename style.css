@@ -1315,6 +1315,15 @@ th {
     color: #1976d2;
 }
 
+/* Header tabel sticky agar tetap terlihat saat scroll */
+.standard-table thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+  box-shadow: 0 2px 2px -1px #eee;
+}
+
 /* Responsive table */
 @media (max-width: 768px) {
     .standard-table-container .table-header {
@@ -1443,4 +1452,28 @@ th {
 .row-belum-lunas td {
   color: #dc3545 !important; /* merah */
   font-weight: bold;
+}
+
+/* Style untuk pagination */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0 32px 0;
+  gap: 4px;
+}
+.pagination-container button {
+  background: #fff;
+  border: 1px solid #1976d2;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.pagination-container button.active,
+.pagination-container button:hover {
+  background: #1976d2;
+  color: #fff;
 }
