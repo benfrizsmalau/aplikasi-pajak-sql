@@ -42,10 +42,20 @@
                         <span id="totalRecords">Total: 0 pembayaran</span>
                     </div>
                 </div>
+                <!-- Aksi Terpusat -->
+                <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
+                  <select id="aksiPembayaran" style="width: 110px;">
+                    <option value="">Aksi...</option>
+                    <option value="print">Print</option>
+                    <option value="delete">Hapus</option>
+                  </select>
+                  <button id="prosesAksiPembayaran" disabled>Proses</button>
+                </div>
                 <div class="table-content">
                     <table id="pembayaranTable" class="standard-table">
                         <thead>
                             <tr>
+                                <th><input type="checkbox" id="checkAllPembayaran"></th>
                                 <th>No</th>
                                 <th>ID Pembayaran</th>
                                 <th>ID Ketetapan</th>
@@ -55,11 +65,10 @@
                                 <th>Metode</th>
                                 <th>Operator</th>
                                 <th>Status</th>
-                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="10" class="table-loading">Memuat data...</td></tr>
+                            <tr><td colspan="11" class="table-loading">Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -113,6 +122,7 @@
         }
         function renderTable(pageData) {
             const tableConfig = {
+                showCheckbox: true,
                 columns: [
                     { key: 'index', label: 'No', type: 'text' },
                     { key: 'ID_Pembayaran', label: 'ID Pembayaran', type: 'text' },
@@ -123,10 +133,6 @@
                     { key: 'MetodeBayar', label: 'Metode', type: 'text' },
                     { key: 'Operator', label: 'Operator', type: 'text' },
                     { key: 'StatusPembayaran', label: 'Status', type: 'status', statusColors: { 'Sukses': 'green', 'Gagal': 'red' } }
-                ],
-                actions: [
-                    { type: 'print', key: 'ID_Pembayaran', onClick: 'printBuktiBayar', icon: '🖨️' },
-                    { type: 'delete', key: 'ID_Pembayaran', onClick: 'handleDeletePembayaranClick', icon: '🗑️' }
                 ],
                 emptyMessage: 'Tidak ada data pembayaran.'
             };
@@ -276,6 +282,44 @@
             alert('Gagal menghapus pembayaran.');
         }
     }
+    // Aksi terpusat pembayaran
+    document.addEventListener('DOMContentLoaded', function() {
+      const aksiSelect = document.getElementById('aksiPembayaran');
+      const prosesBtn = document.getElementById('prosesAksiPembayaran');
+      const checkAll = document.getElementById('checkAllPembayaran');
+      const table = document.getElementById('pembayaranTable');
+      function updateProsesBtn() {
+        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+        prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
+      }
+      aksiSelect.addEventListener('change', updateProsesBtn);
+      table.addEventListener('change', function(e) {
+        if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
+        if (e.target.id === 'checkAllPembayaran') {
+          const all = table.querySelectorAll('.rowCheckKetetapan');
+          all.forEach(cb => cb.checked = e.target.checked);
+          updateProsesBtn();
+        }
+      });
+      prosesBtn.addEventListener('click', function() {
+        const aksi = aksiSelect.value;
+        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+        const ids = Array.from(checked).map(cb => cb.closest('tr').querySelector('td:nth-child(3)').textContent.trim());
+        if (!aksi || ids.length === 0) return;
+        if (aksi === 'delete') {
+          if (confirm('Yakin hapus data terpilih?')) {
+            ids.forEach(async id => {
+              await handleDeletePembayaranClick(id);
+            });
+            setTimeout(() => loadPembayaranData(), 500);
+          }
+        } else if (aksi === 'print') {
+          for (let i = 0; i < ids.length; i++) {
+            window.open(`cetak-bukti.html?id=${ids[i]}`, '_blank');
+          }
+        }
+      });
+    });
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
