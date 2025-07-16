@@ -417,6 +417,14 @@ async function handleCreatePembayaran(data) {
             StatusPembayaran: data.statusPembayaran
         }]);
     if (error) throw new Error('Gagal mencatat pembayaran: ' + error.message);
+
+    // Update status ketetapan menjadi Lunas
+    const { error: updateError } = await supabase
+        .from('KetetapanPajak')
+        .update({ Status: 'Lunas' })
+        .eq('ID_Ketetapan', data.id_ketetapan);
+    if (updateError) throw new Error('Gagal update status ketetapan: ' + updateError.message);
+
     return { message: 'Pembayaran berhasil dicatat!' };
 }
 
