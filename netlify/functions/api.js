@@ -1,4 +1,3 @@
-// File: netlify/functions/api.js (Versi Final dengan CRUD WP)
 const { google } = require('googleapis');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -42,7 +41,7 @@ exports.handler = async (event) => {
                 case 'deleteWp':
                     responseData = await handleDeleteWp(body);
                     break;
-                // Logika untuk ketetapan akan ditambahkan nanti
+                // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
             }
@@ -69,6 +68,7 @@ async function handleGet() {
     const [
         { data: wajibPajak, error: wpError },
         { data: wilayah, error: wilayahError },
+        // Tambahkan pengambilan data lain jika perlu
     ] = await Promise.all([
         supabase.from('datawp').select('*'),
         supabase.from('Wilayah').select('*'),
@@ -80,23 +80,51 @@ async function handleGet() {
     return {
         wajibPajak: wajibPajak || [],
         wilayah: wilayah || [],
-        // Data lain kita kosongkan untuk saat ini
-        masterPajak: [],
+        masterPajak: [], // Kosongkan jika belum ada tabelnya
         ketetapan: [],
         pembayaran: [],
     };
 }
 
+// FUNGSI INI TELAH DIPERBAIKI
 async function handleCreateWp(data) {
-    // Logika untuk upload foto (jika diperlukan)
-    // const auth = await getAuthClient();
-    // const drive = google.drive({ version: 'v3', auth });
-    // const urlFotoPemilik = await uploadFile(drive, data.fotoPemilik, `pemilik_${data.npwpd}`);
+    let newNpwpd;
 
+    // Logika untuk membuat NPWPD baru
+    if (data.generate_mode === true) {
+        // Ambil data terakhir untuk mendapatkan nomor urut
+        const { data: lastWp, error: countError } = await supabase
+            .from('datawp')
+            .select('NPWPD', { count: 'exact', head: true });
+        
+        if (countError) throw new Error(`Gagal menghitung data WP: ${countError.message}`);
+        
+        const nextSequence = (lastWp.length + 1).toString().padStart(6, '0');
+        newNpwpd = `P.${data.jenisWp}.${nextSequence}.${data.kodeKecamatan}.${data.kodeKelurahan}`;
+    } else {
+        // Mode manual, gunakan NPWPD yang diinput
+        newNpwpd = data.npwpd;
+        if (!newNpwpd) throw new Error("NPWPD tidak boleh kosong untuk mode manual.");
+
+        // Cek duplikasi untuk mode manual
+        const { data: existingWp, error: findError } = await supabase
+            .from('datawp')
+            .select('NPWPD')
+            .eq('NPWPD', newNpwpd);
+        if (findError) throw new Error(`Gagal mengecek NPWPD: ${findError.message}`);
+        if (existingWp.length > 0) throw new Error(`NPWPD ${newNpwpd} sudah terdaftar.`);
+    }
+
+    // Untuk saat ini, kita lewati upload foto
+    const urlFotoPemilik = "";
+    const urlFotoUsaha = "";
+    const urlFotoKtp = "";
+
+    // Insert data baru ke Supabase
     const { data: result, error } = await supabase
         .from('datawp')
         .insert([{
-            NPWPD: data.npwpd,
+            NPWPD: newNpwpd, // Gunakan NPWPD yang sudah diproses
             JenisWP: data.jenisWp,
             "Nama Usaha": data.namaUsaha,
             "Nama Pemilik": data.namaPemilik,
@@ -105,11 +133,13 @@ async function handleCreateWp(data) {
             Telephone: data.telephone,
             Kelurahan: data.kelurahan,
             Kecamatan: data.kecamatan,
-            // "Foto Pemilik": urlFotoPemilik,
+            "Foto Pemilik": urlFotoPemilik,
+            "Foto Tempat Usaha": urlFotoUsaha,
+            "Foto KTP": urlFotoKtp,
         }]);
 
     if (error) throw new Error(`Gagal membuat WP di Supabase: ${error.message}`);
-    return { message: `Data WP dengan NPWPD ${data.npwpd} berhasil dibuat.` };
+    return { message: `Data WP dengan NPWPD ${newNpwpd} berhasil dibuat.` };
 }
 
 
