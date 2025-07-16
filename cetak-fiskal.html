@@ -283,8 +283,9 @@
                 }
 
                 // Tanggal cetak dan berlaku
-                document.getElementById('tanggalCetak').textContent = now.toLocaleDateString('id-ID');
-                const tanggalBerlaku = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+                const currentDate = new Date();
+                document.getElementById('tanggalCetak').textContent = currentDate.toLocaleDateString('id-ID');
+                const tanggalBerlaku = new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), currentDate.getDate());
                 document.getElementById('tanggalBerlaku').textContent = tanggalBerlaku.toLocaleDateString('id-ID');
 
             } catch (error) {
