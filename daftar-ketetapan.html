@@ -94,8 +94,8 @@
                                 <th>Jumlah Pokok</th>
                                 <th>Denda</th>
                                 <th>Total Tagihan</th>
-                                <th>Sisa Tagihan</th>
                                 <th>Jumlah Terbayar</th>
+                                <th>Sisa Tagihan</th>
                                 <th>Status</th>
                                 <th>Tanggal</th>
                             </tr>
@@ -217,6 +217,7 @@
         function renderTable(pageData) {
             // Konfigurasi tabel standar
             const tableConfig = {
+                showCheckbox: true,
                 columns: [
                     { key: 'index', label: 'No', type: 'text' },
                     { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
@@ -231,11 +232,6 @@
                     { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' },
                     { key: 'status', label: 'Status', type: 'status', statusColors: { 'Lunas': 'green', 'Belum Lunas': 'red' } },
                     { key: 'TanggalKetetapan', label: 'Tanggal', type: 'date' }
-                ],
-                actions: [
-                    { type: 'print', key: 'ID_Ketetapan', onClick: 'printKetetapan', icon: '🖨️' },
-                    { type: 'edit', key: 'ID_Ketetapan', onClick: 'handleEditKetetapanClick', icon: '✏️' },
-                    { type: 'delete', key: 'ID_Ketetapan', onClick: 'handleDeleteKetetapanClick', icon: '🗑️' }
                 ],
                 emptyMessage: 'Tidak ada data ketetapan.',
                 rowClass: row => row.rowColor
@@ -314,6 +310,65 @@
         filterStatus.addEventListener('change', applyFilters);
         filterJenisPajak.addEventListener('change', applyFilters);
         resetFilter.addEventListener('click', resetAllFilters);
+
+        // Aksi terpusat
+        setupAksiKetetapan();
+    }
+
+    function setupAksiKetetapan() {
+        const aksiSelect = document.getElementById('aksiKetetapan');
+        const prosesBtn = document.getElementById('prosesAksiKetetapan');
+        const checkAll = document.getElementById('checkAllKetetapan');
+        const table = document.getElementById('ketetapanTable');
+
+        function updateProsesBtn() {
+            const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+            prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
+        }
+
+        aksiSelect.addEventListener('change', updateProsesBtn);
+        table.addEventListener('change', function(e) {
+            if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
+            if (e.target.id === 'checkAllKetetapan') {
+                const all = table.querySelectorAll('.rowCheckKetetapan');
+                all.forEach(cb => cb.checked = e.target.checked);
+                updateProsesBtn();
+            }
+        });
+
+        prosesBtn.addEventListener('click', function() {
+            const aksi = aksiSelect.value;
+            const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+
+            if (!aksi || ids.length === 0) return;
+
+            if (aksi === 'print') {
+                if (ids.length === 1) {
+                    window.open(`cetak-skpd.html?id=${ids[0]}`, '_blank');
+                } else if (ids.length > 1) {
+                    window.open(`cetak-skpd-multi.html?ids=${ids.join(',')}`, '_blank');
+                }
+            } else if (aksi === 'delete') {
+                if (confirm(`Anda yakin ingin menghapus ${ids.length} ketetapan?`)) {
+                    ids.forEach(async (id) => {
+                        try {
+                            await postData({ action: 'deleteKetetapan', id_ketetapan: id });
+                        } catch (error) {
+                            console.error('Gagal hapus ketetapan:', error);
+                        }
+                    });
+                    alert('Ketetapan berhasil dihapus!');
+                    loadKetetapanData();
+                }
+            } else if (aksi === 'edit') {
+                if (ids.length === 1) {
+                    handleEditKetetapanClick(ids[0]);
+                } else {
+                    alert('Edit hanya bisa untuk satu ketetapan saja.');
+                }
+            }
+        });
     }
 
     function performSearch() {
