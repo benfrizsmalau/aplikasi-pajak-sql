@@ -840,13 +840,8 @@ th {
 
 /* Supaya header institusi tidak tertutup sidebar */
 .instansi-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 100;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  position: relative;
+  z-index: 1100;
 }
 
 /* Dashboard Statistik Card Modern */
