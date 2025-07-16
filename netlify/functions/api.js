@@ -10,6 +10,35 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const FOLDER_ID = "1x3EmFN0kM7x9Th0ZxsHEWX7hFNU6Vum8"; // ID Folder Google Drive Anda
 // --------------------
 
+// Konstanta mapping nama field Supabase untuk datawp
+const DATAWP_FIELDS = [
+    'NPWPD',
+    'JenisWP',
+    'Nama Usaha',
+    'Nama Pemilik',
+    'NIK KTP',
+    'Alamat',
+    'Telephone',
+    'Kelurahan',
+    'Kecamatan',
+    'Foto Pemilik',
+    'Foto Tempat Usaha',
+    'Foto KTP',
+];
+
+// Fungsi validasi data wajib
+function validateDatawpInput(data, isAuto) {
+    const required = [
+        'jenisWp', 'namaUsaha', 'namaPemilik', 'nikKtp', 'alamat', 'telephone', 'kelurahan', 'kecamatan',
+        ...(isAuto ? ['kodeKecamatan', 'kodeKelurahan'] : ['npwpd'])
+    ];
+    for (const key of required) {
+        if (!data[key] || typeof data[key] !== 'string' || data[key].trim() === '') {
+            throw new Error(`Field '${key}' wajib diisi dan harus berupa string.`);
+        }
+    }
+}
+
 // Fungsi otentikasi untuk Google Drive
 async function getAuthClient() {
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
@@ -89,6 +118,8 @@ async function handleGet() {
 // FUNGSI INI TELAH DIPERBAIKI
 async function handleCreateWp(data) {
     let newNpwpd;
+    // Validasi data masuk
+    validateDatawpInput(data, data.generate_mode === true);
 
     // Logika untuk membuat NPWPD baru
     if (data.generate_mode === true) {
@@ -96,22 +127,17 @@ async function handleCreateWp(data) {
         const { count, error: countError } = await supabase
             .from('datawp')
             .select('*', { count: 'exact', head: true });
-        
-        if (countError) throw new Error(`Gagal menghitung data WP: ${countError.message}`);
-        
+        if (countError) throw new Error('Gagal menghitung data WP.');
         const nextSequence = ((count || 0) + 1).toString().padStart(6, '0');
         newNpwpd = `P.${data.jenisWp}.${nextSequence}.${data.kodeKecamatan}.${data.kodeKelurahan}`;
     } else {
-        // Mode manual, gunakan NPWPD yang diinput
         newNpwpd = data.npwpd;
-        if (!newNpwpd) throw new Error("NPWPD tidak boleh kosong untuk mode manual.");
-
         // Cek duplikasi untuk mode manual
         const { data: existingWp, error: findError } = await supabase
             .from('datawp')
             .select('NPWPD')
             .eq('NPWPD', newNpwpd);
-        if (findError) throw new Error(`Gagal mengecek NPWPD: ${findError.message}`);
+        if (findError) throw new Error('Gagal mengecek NPWPD.');
         if (existingWp && existingWp.length > 0) throw new Error(`NPWPD ${newNpwpd} sudah terdaftar.`);
     }
 
@@ -120,25 +146,27 @@ async function handleCreateWp(data) {
     const urlFotoUsaha = "";
     const urlFotoKtp = "";
 
-    // Insert data baru ke Supabase
-    const { data: result, error } = await supabase
-        .from('datawp')
-        .insert([{
-            NPWPD: newNpwpd, // Gunakan NPWPD yang sudah diproses
-            JenisWP: data.jenisWp,
-            "Nama Usaha": data.namaUsaha,
-            "Nama Pemilik": data.namaPemilik,
-            "NIK KTP": data.nikKtp,
-            Alamat: data.alamat,
-            Telephone: data.telephone,
-            Kelurahan: data.kelurahan,
-            Kecamatan: data.kecamatan,
-            "Foto Pemilik": urlFotoPemilik,
-            "Foto Tempat Usaha": urlFotoUsaha,
-            "Foto KTP": urlFotoKtp,
-        }]);
+    // Mapping data ke field Supabase
+    const insertData = {
+        NPWPD: newNpwpd,
+        JenisWP: data.jenisWp,
+        "Nama Usaha": data.namaUsaha,
+        "Nama Pemilik": data.namaPemilik,
+        "NIK KTP": data.nikKtp,
+        Alamat: data.alamat,
+        Telephone: data.telephone,
+        Kelurahan: data.kelurahan,
+        Kecamatan: data.kecamatan,
+        "Foto Pemilik": urlFotoPemilik,
+        "Foto Tempat Usaha": urlFotoUsaha,
+        "Foto KTP": urlFotoKtp,
+    };
 
-    if (error) throw new Error(`Gagal membuat WP di Supabase: ${error.message}`);
+    // Insert data baru ke Supabase
+    const { error } = await supabase
+        .from('datawp')
+        .insert([insertData]);
+    if (error) throw new Error('Gagal membuat WP di Supabase.');
     return { message: `Data WP dengan NPWPD ${newNpwpd} berhasil dibuat.` };
 }
 
