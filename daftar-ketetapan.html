@@ -334,6 +334,23 @@
             minimumFractionDigits: 0 
         }).format(angka);
     }
+
+    // Pastikan fungsi edit ketetapan di daftar ketetapan pakai array global yang benar
+    function handleEditKetetapanClick(idKetetapan) {
+        const dataToEdit = ketetapanDataGlobal.find(item =>
+            String(item.ID_Ketetapan).trim() === String(idKetetapan).trim()
+        );
+        if (!dataToEdit) {
+            console.warn('Data ketetapan tidak ditemukan! ID:', idKetetapan, 'List:', ketetapanDataGlobal.map(d=>d.ID_Ketetapan));
+            alert('Data ketetapan tidak ditemukan!');
+            return;
+        }
+        document.getElementById('editKetetapanId').value = dataToEdit.ID_Ketetapan;
+        document.getElementById('editKetetapanMasaPajak').value = dataToEdit.MasaPajak;
+        document.getElementById('editKetetapanJumlahPokok').value = dataToEdit.JumlahPokok;
+        document.getElementById('editKetetapanCatatan').value = dataToEdit.Catatan;
+        document.getElementById('editKetetapanModal').style.display = 'block';
+    }
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
