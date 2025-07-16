@@ -209,7 +209,7 @@
                     namaUsahaInput.value = '';
                     masaPajakInput.value = '';
                     jumlahTagihanInput.value = '';
-                    window.location.reload();
+                    window.location.href = 'daftar-ketetapan.html'; // Redirect otomatis ke daftar ketetapan
                 } else {
                     statusSetoran.textContent = resJson.message || 'Gagal mencatat pembayaran!';
                     statusSetoran.style.color = 'red';
