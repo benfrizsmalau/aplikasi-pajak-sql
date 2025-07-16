@@ -94,6 +94,9 @@ exports.handler = async (event) => {
                 case 'getNextFiskalNumber':
                     responseData = await handleGetNextFiskalNumber();
                     break;
+                case 'autoCreateFiskal':
+                    responseData = await handleAutoCreateFiskal(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -562,5 +565,116 @@ async function handleGetNextFiskalNumber() {
         };
     } catch (error) {
         throw new Error('Gagal mendapatkan nomor fiskal: ' + error.message);
+    }
+}
+
+// Handler untuk auto-create fiskal saat kondisi terpenuhi
+async function handleAutoCreateFiskal(data) {
+    try {
+        const { npwpd } = data;
+        
+        // Ambil data pembayaran, ketetapan, dan master pajak
+        const [
+            { data: pembayaran },
+            { data: ketetapan },
+            { data: masterPajak },
+            { data: wajibPajak }
+        ] = await Promise.all([
+            supabase.from('RiwayatPembayaran').select('*').eq('NPWPD', npwpd),
+            supabase.from('KetetapanPajak').select('*'),
+            supabase.from('MasterPajakRetribusi').select('*'),
+            supabase.from('datawp').select('*').eq('NPWPD', npwpd).single()
+        ]);
+
+        // Cek apakah sudah ada fiskal untuk NPWPD ini
+        const { data: existingFiskal } = await supabase
+            .from('Fiskal')
+            .select('*')
+            .eq('NPWPD', npwpd);
+
+        if (existingFiskal && existingFiskal.length > 0) {
+            return { 
+                status: 'sukses', 
+                message: 'Fiskal sudah ada untuk NPWPD ini',
+                fiskal: existingFiskal[0]
+            };
+        }
+
+        // Cek pembayaran lunas Pajak Reklame dan Retribusi Persampahan
+        let lunasReklame = false;
+        let lunasSampah = false;
+
+        pembayaran.forEach(bayar => {
+            const ket = ketetapan.find(k => k.ID_Ketetapan === bayar.ID_Ketetapan);
+            if (!ket) return;
+            
+            const m = masterPajak.find(m => m.KodeLayanan === ket.KodeLayanan);
+            if (!m) return;
+            
+            if (m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') {
+                lunasReklame = true;
+            }
+            if (m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') {
+                lunasSampah = true;
+            }
+        });
+
+        // Jika kedua syarat terpenuhi, buat fiskal
+        if (lunasReklame && lunasSampah) {
+            // Ambil nomor urut terakhir dari tabel Fiskal
+            const { count, error: countError } = await supabase
+                .from('Fiskal')
+                .select('*', { count: 'exact', head: true });
+            if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
+            const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
+
+            // Bulan romawi dan tahun
+            const now = new Date();
+            const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+            const tahun = now.getFullYear();
+
+            // Gabungkan nomor_fiskal
+            const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+
+            // Tanggal cetak dan berlaku
+            const tanggal_cetak = now.toISOString();
+            const tanggal_berlaku = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString();
+
+            // Insert data ke tabel Fiskal
+            const { error, data: inserted } = await supabase
+                .from('Fiskal')
+                .insert([{
+                    nomor_fiskal,
+                    NPWPD: npwpd,
+                    "Nama Pemilik": wajibPajak?.['Nama Pemilik'] || '',
+                    "Nama Usaha": wajibPajak?.['Nama Usaha'] || '',
+                    Alamat: wajibPajak?.Alamat || '',
+                    tanggal_cetak,
+                    tanggal_berlaku,
+                    operator: 'Sistem',
+                    keterangan: 'Auto-generated saat syarat terpenuhi'
+                }])
+                .select('*')
+                .single();
+
+            if (error) {
+                return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+            }
+
+            return { 
+                status: 'sukses', 
+                message: 'Fiskal berhasil dibuat otomatis',
+                fiskal: inserted
+            };
+        } else {
+            return { 
+                status: 'gagal', 
+                message: 'NPWPD belum memenuhi syarat (belum lunas reklame dan sampah)',
+                requirements: { lunasReklame, lunasSampah }
+            };
+        }
+
+    } catch (error) {
+        throw new Error('Gagal auto-create fiskal: ' + error.message);
     }
 }

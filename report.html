@@ -813,10 +813,10 @@
         }
         
         function updateFiskalReport(data) {
-            // For now, we'll use placeholder data since fiskal data might not be available
+            // Use actual fiskal data from database
             const totalFiskal = data.fiskal?.length || 0;
-            const activeFiskal = totalFiskal; // Placeholder
-            const expiredFiskal = 0; // Placeholder
+            const activeFiskal = totalFiskal; // All fiskal are considered active for now
+            const expiredFiskal = 0; // Placeholder for future implementation
             
             // Debug: log fiskal data
             console.log('Fiskal data:', {
@@ -838,7 +838,7 @@
                     const wpData = data.wajibPajak?.find(w => w.NPWPD === f.NPWPD);
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${f.nomor_fiskal}</td>
+                        <td>${f.nomor_fiskal || '-'}</td>
                         <td>${f.NPWPD}</td>
                         <td>${wpData?.['Nama Usaha'] || f['Nama Usaha'] || '-'}</td>
                         <td>${f.tanggal_cetak ? new Date(f.tanggal_cetak).toLocaleDateString('id-ID') : '-'}</td>
@@ -852,7 +852,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td colspan="6" style="text-align: center; color: #666; font-style: italic;">
-                        Belum ada data fiskal yang tersedia
+                        Belum ada data fiskal yang tersedia. Klik tombol "Sync Fiskal" di halaman Daftar Fiskal untuk membuat data fiskal otomatis.
                     </td>
                 `;
                 tbody.appendChild(row);

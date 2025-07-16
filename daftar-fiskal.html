@@ -41,6 +41,9 @@
                     <h3>📄 Data Dokumen Fiskal</h3>
                     <div class="table-info">
                         <span id="totalRecords">Total: 0 fiskal</span>
+                        <button onclick="syncFiskalData()" class="btn-primary" style="margin-left: 16px;">
+                            🔄 Sync Fiskal ke Database
+                        </button>
                     </div>
                 </div>
                 <div class="table-content">
@@ -187,6 +190,64 @@
             currency: 'IDR', 
             minimumFractionDigits: 0 
         }).format(angka);
+    }
+
+    // Fungsi untuk sync fiskal data ke database
+    async function syncFiskalData() {
+        try {
+            const button = document.querySelector('button[onclick="syncFiskalData()"]');
+            button.disabled = true;
+            button.textContent = '🔄 Syncing...';
+            
+            let syncedCount = 0;
+            let errorCount = 0;
+            
+            // Loop melalui semua NPWPD yang memenuhi syarat
+            for (const fiskalItem of fiskalDataGlobal) {
+                try {
+                    const response = await fetch('/.netlify/functions/api', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'autoCreateFiskal',
+                            npwpd: fiskalItem.npwpd
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.status === 'sukses') {
+                        syncedCount++;
+                    } else {
+                        errorCount++;
+                        console.log(`Error for ${fiskalItem.npwpd}:`, result.message);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`Error syncing ${fiskalItem.npwpd}:`, error);
+                }
+            }
+            
+            // Reset button
+            button.disabled = false;
+            button.textContent = '🔄 Sync Fiskal ke Database';
+            
+            // Show result
+            alert(`Sync selesai!\nBerhasil: ${syncedCount} fiskal\nGagal: ${errorCount} fiskal`);
+            
+            // Reload data
+            await loadFiskalData();
+            
+        } catch (error) {
+            console.error('Error syncing fiskal data:', error);
+            alert('Gagal sync fiskal data: ' + error.message);
+            
+            // Reset button
+            const button = document.querySelector('button[onclick="syncFiskalData()"]');
+            button.disabled = false;
+            button.textContent = '🔄 Sync Fiskal ke Database';
+        }
     }
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
