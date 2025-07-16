@@ -70,6 +70,9 @@ exports.handler = async (event) => {
                 case 'deleteWp':
                     responseData = await handleDeleteWp(body);
                     break;
+                case 'createKetetapan':
+                    responseData = await handleCreateKetetapan(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -207,4 +210,48 @@ async function handleDeleteWp(data) {
 
     if (error) throw new Error(`Gagal hapus WP di Supabase: ${error.message}`);
     return { message: "Data WP berhasil dihapus" };
+}
+
+// =================================================================
+// FUNGSI-FUNGSI HANDLER TAMBAHAN
+// =================================================================
+
+async function handleCreateKetetapan(data) {
+    // Generate ID_Ketetapan (pakai timestamp + random)
+    const ID_Ketetapan = 'KT' + Date.now() + Math.floor(Math.random()*1000);
+    const now = new Date();
+    let tanggalKetetapan = now;
+    let denda = 0;
+    // Jika tanggal tunggakan diisi, hitung denda
+    if (data.tglTunggakan) {
+        tanggalKetetapan = new Date(data.tglTunggakan);
+        // Hitung jumlah bulan keterlambatan
+        const today = new Date();
+        let bulanTunggakan = (today.getFullYear() - tanggalKetetapan.getFullYear()) * 12 + (today.getMonth() - tanggalKetetapan.getMonth());
+        if (today.getDate() > tanggalKetetapan.getDate()) bulanTunggakan += 1;
+        if (bulanTunggakan < 1) bulanTunggakan = 1;
+        denda = bulanTunggakan * 0.02 * Number(data.jumlahPokok);
+    } else {
+        tanggalKetetapan = now;
+        denda = 0;
+    }
+    denda = Math.round(denda);
+    const jumlahPokok = Number(data.jumlahPokok);
+    const totalTagihan = jumlahPokok + denda;
+    const { error } = await supabase
+        .from('KetetapanPajak')
+        .insert([{
+            ID_Ketetapan,
+            KodeLayanan: data.kodeLayanan,
+            NPWPD: data.npwpd,
+            MasaPajak: data.masaPajak,
+            TanggalKetetapan: tanggalKetetapan,
+            JumlahPokok: jumlahPokok,
+            Denda: denda,
+            TotalTagihan: totalTagihan,
+            Status: 'Belum Lunas',
+            Catatan: data.catatan || ''
+        }]);
+    if (error) throw new Error('Gagal membuat ketetapan: ' + error.message);
+    return { message: 'Ketetapan berhasil dibuat!' };
 }
