@@ -76,6 +76,7 @@
                     <option value="">Aksi...</option>
                     <option value="print">Print</option>
                     <option value="delete">Hapus</option>
+                    <option value="edit">Edit</option>
                   </select>
                   <button id="prosesAksiKetetapan" disabled>Proses</button>
                 </div>
@@ -482,7 +483,16 @@
             setTimeout(() => loadKetetapanData(), 500);
           }
         } else if (aksi === 'print') {
+          // Print semua yang dicentang (buka tab baru untuk setiap ID)
           ids.forEach(id => printKetetapan(id));
+        } else if (aksi === 'edit') {
+          if (ids.length > 1) {
+            alert('Edit hanya bisa untuk satu ketetapan sekaligus!');
+            return;
+          }
+          if (ids.length === 1) {
+            handleEditKetetapanClick(ids[0]);
+          }
         }
       });
     });
