@@ -147,18 +147,8 @@
     }
 
     function printFiskal(npwpd, wp) {
-        // 1. Minta input nama operator
-        let operator = prompt('Masukkan nama operator yang mencetak dokumen fiskal:');
-        if (!operator) {
-            alert('Nama operator wajib diisi!');
-            return;
-        }
-        operator = operator.trim();
-        if (operator.length < 2) {
-            alert('Nama operator minimal 2 karakter!');
-            return;
-        }
-        // 2. Kirim data ke backend untuk generate & simpan dokumen fiskal
+        // Tidak perlu input operator, langsung proses
+        const operator = '';
         fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -173,7 +163,7 @@
         })
         .then(res => res.json())
         .then(result => {
-            if (!result || !result.nomor_fiskal) {
+            if (!result || result.status !== 'sukses' || !result.nomor_fiskal) {
                 alert(result.message || 'Gagal membuat dokumen fiskal!');
                 return;
             }
@@ -234,7 +224,6 @@
                 <div style="text-align:center;margin-top:32px;">
                     <button class="btn-cetak-print" onclick="window.print()" style="padding:10px 24px;font-size:15px;cursor:pointer;">Cetak</button>
                 </div>
-                <div style="position:fixed;bottom:24px;right:32px;font-size:12px;color:#888;">Print By \"${result.operator || '-'}\"</div>
             </div>
             `;
             // 4. Tampilkan hanya di window baru, tidak di halaman utama
