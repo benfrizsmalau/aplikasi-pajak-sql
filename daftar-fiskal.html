@@ -65,6 +65,7 @@
         </main>
     </div>
     
+    <script src="script.js"></script>
     <script>
     // Script khusus untuk halaman daftar fiskal
     let fiskalDataGlobal = [];
@@ -176,6 +177,16 @@
     // Fungsi untuk print fiskal
     function printFiskal(npwpd) {
         window.open(`cetak-fiskal.html?npwpd=${npwpd}`, '_blank');
+    }
+
+    // Fungsi helper untuk format rupiah
+    function formatRupiah(angka) {
+        if (!angka) return 'Rp 0';
+        return new Intl.NumberFormat('id-ID', { 
+            style: 'currency', 
+            currency: 'IDR', 
+            minimumFractionDigits: 0 
+        }).format(angka);
     }
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
