@@ -103,7 +103,8 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        return { statusCode: 500, headers, body: JSON.stringify({ status: 'gagal', message: error.message }) };
+        console.error('API ERROR:', error); // Logging error ke Netlify log
+        return { statusCode: 500, headers, body: JSON.stringify({ status: 'gagal', message: error.message || 'Terjadi error pada server.' }) };
     }
 };
 
