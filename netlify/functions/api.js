@@ -85,6 +85,9 @@ exports.handler = async (event) => {
                 case 'deletePembayaran':
                     responseData = await handleDeletePembayaran(body);
                     break;
+                case 'createFiskal':
+                    responseData = await handleCreateFiskal(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -424,4 +427,45 @@ async function handleDeletePembayaran(data) {
         .eq('ID_Pembayaran', data.id_pembayaran);
     if (error) throw new Error('Gagal hapus pembayaran: ' + error.message);
     return { message: 'Pembayaran berhasil dihapus!' };
+}
+
+// Handler create fiskal
+async function handleCreateFiskal(data) {
+    // Ambil nomor urut terakhir dari tabel Fiskal
+    const { count, error: countError } = await supabase
+        .from('Fiskal')
+        .select('*', { count: 'exact', head: true });
+    if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
+    const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
+
+    // Bulan romawi dan tahun
+    const now = new Date();
+    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+    const tahun = now.getFullYear();
+
+    // Gabungkan nomor_fiskal
+    const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+
+    // Tanggal cetak dan berlaku
+    const tanggal_cetak = now.toISOString();
+    const tanggal_berlaku = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString();
+
+    // Insert data ke tabel Fiskal
+    const { error, data: inserted } = await supabase
+        .from('Fiskal')
+        .insert([{
+            nomor_fiskal,
+            NPWPD: data.npwpd,
+            "Nama Pemilik": data.nama_pemilik,
+            "Nama Usaha": data.nama_usaha,
+            Alamat: data.alamat,
+            tanggal_cetak,
+            tanggal_berlaku,
+            operator: data.operator,
+            keterangan: data.keterangan || ''
+        }])
+        .select('*')
+        .single();
+    if (error) throw new Error('Gagal membuat dokumen fiskal: ' + error.message);
+    return inserted;
 }
