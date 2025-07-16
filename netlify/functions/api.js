@@ -133,6 +133,15 @@ async function handleGet() {
         ketetapan = [];
     }
 
+    // Query pembayaran (RiwayatPembayaran)
+    let pembayaran = [];
+    try {
+        const { data, error } = await supabase.from('RiwayatPembayaran').select('*');
+        if (!error) pembayaran = data || [];
+    } catch (e) {
+        pembayaran = [];
+    }
+
     if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
     if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
 
@@ -141,7 +150,7 @@ async function handleGet() {
         wilayah: wilayah || [],
         masterPajak: masterPajak,
         ketetapan: ketetapan,
-        pembayaran: [],
+        pembayaran: pembayaran,
     };
 }
 
