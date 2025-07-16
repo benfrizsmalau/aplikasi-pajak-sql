@@ -204,7 +204,54 @@ async function handleWpFormSubmit(event) {
     
     const generateMode = document.getElementById('generateNpwpd').checked;
     const kelurahanSelect = document.getElementById('kelurahan');
+    const kecamatanSelect = document.getElementById('kecamatan');
     const selectedKelurahanOption = kelurahanSelect.options[kelurahanSelect.selectedIndex];
+
+    // --- VALIDASI INPUT ---
+    const namaUsaha = document.getElementById('namaUsaha').value.trim();
+    const namaPemilik = document.getElementById('namaPemilik').value.trim();
+    const nikKtp = document.getElementById('nikKtp').value.trim();
+    const alamat = document.getElementById('alamat').value.trim();
+    const telephone = document.getElementById('telephone').value.trim();
+    const kelurahan = kelurahanSelect.value;
+    const kecamatan = kecamatanSelect.value;
+    const npwpd = document.getElementById('npwpd').value.trim();
+    const jenisWp = document.getElementById('jenisWp').value;
+
+    if (!namaUsaha || !namaPemilik || !nikKtp || !alamat || !telephone || !kelurahan || !kecamatan) {
+        showStatus('Semua field wajib diisi!', false);
+        submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+        return;
+    }
+    if (!/^\d{16}$/.test(nikKtp)) {
+        showStatus('NIK harus 16 digit angka!', false);
+        submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+        return;
+    }
+    if (!/^\d{8,}$/.test(telephone)) {
+        showStatus('Nomor telepon harus minimal 8 digit angka!', false);
+        submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+        return;
+    }
+    if (generateMode) {
+        if (!selectedKelurahanOption || !selectedKelurahanOption.dataset.kodekel || !selectedKelurahanOption.dataset.kodekec) {
+            showStatus('Pilih kelurahan dan kecamatan yang valid!', false);
+            submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+            return;
+        }
+        if (!jenisWp) {
+            showStatus('Jenis WP wajib dipilih!', false);
+            submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+            return;
+        }
+    } else {
+        if (!npwpd) {
+            showStatus('NPWPD wajib diisi untuk mode manual!', false);
+            submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+            return;
+        }
+    }
+    // --- END VALIDASI ---
 
     try {
         const [fotoPemilik, fotoTempatUsaha, fotoKtp] = await Promise.all([
@@ -216,22 +263,15 @@ async function handleWpFormSubmit(event) {
         let dataToSend = {
             action: 'createWp',
             generate_mode: generateMode,
-            namaUsaha: document.getElementById('namaUsaha').value,
-            namaPemilik: document.getElementById('namaPemilik').value,
-            nikKtp: document.getElementById('nikKtp').value,
-            alamat: document.getElementById('alamat').value,
-            telephone: document.getElementById('telephone').value,
-            kelurahan: kelurahanSelect.value,
-            kecamatan: document.getElementById('kecamatan').value,
-            fotoPemilik, fotoTempatUsaha, fotoKtp
+            namaUsaha, namaPemilik, nikKtp, alamat, telephone, kelurahan, kecamatan, fotoPemilik, fotoTempatUsaha, fotoKtp
         };
 
         if (generateMode) {
-            dataToSend.jenisWp = document.getElementById('jenisWp').value;
+            dataToSend.jenisWp = jenisWp;
             dataToSend.kodeKelurahan = selectedKelurahanOption.dataset.kodekel;
             dataToSend.kodeKecamatan = selectedKelurahanOption.dataset.kodekec;
         } else {
-            dataToSend.npwpd = document.getElementById('npwpd').value;
+            dataToSend.npwpd = npwpd;
             dataToSend.jenisWp = "Lama";
         }
         
