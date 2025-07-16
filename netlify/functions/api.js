@@ -94,14 +94,23 @@ exports.handler = async (event) => {
 // =================================================================
 
 async function handleGet() {
+    // Query datawp dan Wilayah tetap seperti biasa
     const [
         { data: wajibPajak, error: wpError },
-        { data: wilayah, error: wilayahError },
-        // Tambahkan pengambilan data lain jika perlu
+        { data: wilayah, error: wilayahError }
     ] = await Promise.all([
         supabase.from('datawp').select('*'),
         supabase.from('Wilayah').select('*'),
     ]);
+
+    // Query masterPajak (MasterPajakRetribusi) dengan error handling terpisah
+    let masterPajak = [];
+    try {
+        const { data, error } = await supabase.from('MasterPajakRetribusi').select('*');
+        if (!error) masterPajak = data || [];
+    } catch (e) {
+        masterPajak = [];
+    }
 
     if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
     if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
@@ -109,7 +118,7 @@ async function handleGet() {
     return {
         wajibPajak: wajibPajak || [],
         wilayah: wilayah || [],
-        masterPajak: [], // Kosongkan jika belum ada tabelnya
+        masterPajak: masterPajak,
         ketetapan: [],
         pembayaran: [],
     };
