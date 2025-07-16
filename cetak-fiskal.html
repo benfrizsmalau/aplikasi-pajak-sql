@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Dokumen Fiskal</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none !important; }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header img {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            margin: 5px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .header h2 {
+            margin: 5px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .header h3 {
+            margin: 5px 0;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .document-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-decoration: underline;
+        }
+        .info-section {
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            margin: 8px 0;
+        }
+        .info-label {
+            width: 150px;
+            font-weight: bold;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .requirements {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #000;
+            background-color: #f9f9f9;
+        }
+        .requirements h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .requirements ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .requirements li {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: right;
+        }
+        .signature-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-top: 50px;
+            padding-top: 5px;
+            font-size: 12px;
+        }
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .print-button:hover {
+            background: #0056b3;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code canvas {
+            border: 1px solid #ccc;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Print</button>
+    
+    <div class="header">
+        <img src="images/logo.png" alt="Logo">
+        <h1>BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH</h1>
+        <h2>KABUPATEN MAMBERAMO RAYA</h2>
+        <h3>BIDANG PENDAPATAN DAERAH</h3>
+    </div>
+
+    <div class="document-title">
+        DOKUMEN FISKAL
+    </div>
+
+    <div class="info-section">
+        <div class="info-row">
+            <div class="info-label">Nomor Fiskal:</div>
+            <div class="info-value" id="nomorFiskal">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Tanggal Cetak:</div>
+            <div class="info-value" id="tanggalCetak">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">NPWPD:</div>
+            <div class="info-value" id="npwpd">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Nama Usaha:</div>
+            <div class="info-value" id="namaUsaha">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Nama Pemilik:</div>
+            <div class="info-value" id="namaPemilik">-</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Alamat:</div>
+            <div class="info-value" id="alamat">-</div>
+        </div>
+    </div>
+
+    <div class="requirements">
+        <h4>SYARAT PENERBITAN DOKUMEN FISKAL:</h4>
+        <ul>
+            <li>Wajib Pajak telah melunasi Pajak Reklame</li>
+            <li>Wajib Pajak telah melunasi Retribusi Persampahan</li>
+            <li>Data Wajib Pajak lengkap dan valid</li>
+            <li>Tidak ada tunggakan pajak lainnya</li>
+        </ul>
+    </div>
+
+    <div class="qr-code">
+        <div id="qrcode"></div>
+        <p style="font-size: 12px; margin-top: 10px;">Scan QR Code untuk verifikasi</p>
+    </div>
+
+    <div class="footer">
+        <p><strong>Dokumen ini berlaku sampai:</strong> <span id="tanggalBerlaku">-</span></p>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-line">Kepala Bidang Pendapatan Daerah</div>
+        </div>
+        <div class="signature-box">
+            <div class="signature-line">Operator</div>
+        </div>
+    </div>
+
+    <script>
+        // Ambil parameter dari URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const npwpd = urlParams.get('npwpd');
+        
+        if (!npwpd) {
+            document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: NPWPD tidak ditemukan</h1>';
+        } else {
+            loadFiskalData(npwpd);
+        }
+
+        async function loadFiskalData(npwpd) {
+            try {
+                const response = await fetch('/.netlify/functions/api');
+                const data = await response.json();
+                
+                const wajibPajak = data.wajibPajak || [];
+                const wp = wajibPajak.find(w => w.NPWPD === npwpd);
+                
+                if (!wp) {
+                    document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: Data Wajib Pajak tidak ditemukan</h1>';
+                    return;
+                }
+
+                // Isi data ke form
+                document.getElementById('npwpd').textContent = npwpd;
+                document.getElementById('namaUsaha').textContent = wp['Nama Usaha'] || '-';
+                document.getElementById('namaPemilik').textContent = wp['Nama Pemilik'] || '-';
+                document.getElementById('alamat').textContent = wp['Alamat'] || '-';
+
+                // Generate nomor fiskal
+                const now = new Date();
+                const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+                const tahun = now.getFullYear();
+                const nomorUrut = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+                const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                document.getElementById('nomorFiskal').textContent = nomorFiskal;
+
+                // Tanggal cetak dan berlaku
+                document.getElementById('tanggalCetak').textContent = now.toLocaleDateString('id-ID');
+                const tanggalBerlaku = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+                document.getElementById('tanggalBerlaku').textContent = tanggalBerlaku.toLocaleDateString('id-ID');
+
+                // Generate QR Code
+                const qrData = `NPWPD: ${npwpd}\nNomor: ${nomorFiskal}\nTanggal: ${now.toLocaleDateString('id-ID')}`;
+                new QRCode(document.getElementById('qrcode'), {
+                    text: qrData,
+                    width: 128,
+                    height: 128
+                });
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: Gagal memuat data</h1>';
+            }
+        }
+    </script>
+</body>
+</html> 
