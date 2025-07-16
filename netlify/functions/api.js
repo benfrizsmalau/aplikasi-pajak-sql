@@ -226,15 +226,54 @@ async function handleDeleteWp(data) {
 // =================================================================
 
 async function handleCreateKetetapan(data) {
-    // Generate ID_Ketetapan (pakai timestamp + random)
-    const ID_Ketetapan = 'KT' + Date.now() + Math.floor(Math.random()*1000);
+    // Ambil nomor urut terakhir dari tabel KetetapanPajak
+    const { count, error: countError } = await supabase
+        .from('KetetapanPajak')
+        .select('*', { count: 'exact', head: true });
+    if (countError) throw new Error('Gagal mengambil nomor urut ketetapan.');
+    const nomorUrut = ((count || 0) + 1).toString().padStart(7, '0');
+
+    // Ambil data master pajak untuk tipe dan nama layanan
+    let tipeLayanan = '';
+    let namaLayanan = '';
+    try {
+        const { data: master } = await supabase
+            .from('MasterPajakRetribusi')
+            .select('Tipe,NamaLayanan')
+            .eq('KodeLayanan', data.kodeLayanan)
+            .single();
+        tipeLayanan = master ? master.Tipe : '';
+        namaLayanan = master ? master.NamaLayanan : '';
+    } catch (e) {
+        tipeLayanan = '';
+        namaLayanan = '';
+    }
+
+    // Tentukan SKPD/SKRD
+    let kodeSurat = '';
+    if (tipeLayanan === 'Pajak') {
+        kodeSurat = 'SKPD';
+    } else if (tipeLayanan === 'Retribusi') {
+        kodeSurat = 'SKRD';
+    } else if (namaLayanan) {
+        kodeSurat = `SKRD-${namaLayanan.replace(/\s+/g, '-')}`;
+    } else {
+        kodeSurat = 'SKRD';
+    }
+
+    // Bulan romawi dan tahun
     const now = new Date();
+    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+    const tahun = now.getFullYear();
+
+    // Gabungkan ID_Ketetapan
+    const ID_Ketetapan = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+
+    // Logika tanggal dan denda
     let tanggalKetetapan = now;
     let denda = 0;
-    // Jika tanggal tunggakan diisi, hitung denda
     if (data.tglTunggakan) {
         tanggalKetetapan = new Date(data.tglTunggakan);
-        // Hitung jumlah bulan keterlambatan
         const today = new Date();
         let bulanTunggakan = (today.getFullYear() - tanggalKetetapan.getFullYear()) * 12 + (today.getMonth() - tanggalKetetapan.getMonth());
         if (today.getDate() > tanggalKetetapan.getDate()) bulanTunggakan += 1;
