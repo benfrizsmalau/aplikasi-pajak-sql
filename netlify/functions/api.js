@@ -115,6 +115,15 @@ async function handleGet() {
         masterPajak = [];
     }
 
+    // Query ketetapan pajak
+    let ketetapan = [];
+    try {
+        const { data, error } = await supabase.from('KetetapanPajak').select('*');
+        if (!error) ketetapan = data || [];
+    } catch (e) {
+        ketetapan = [];
+    }
+
     if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
     if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
 
@@ -122,7 +131,7 @@ async function handleGet() {
         wajibPajak: wajibPajak || [],
         wilayah: wilayah || [],
         masterPajak: masterPajak,
-        ketetapan: [],
+        ketetapan: ketetapan,
         pembayaran: [],
     };
 }
