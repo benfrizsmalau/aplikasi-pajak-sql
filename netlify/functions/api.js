@@ -82,6 +82,9 @@ exports.handler = async (event) => {
                 case 'createPembayaran':
                     responseData = await handleCreatePembayaran(body);
                     break;
+                case 'deletePembayaran':
+                    responseData = await handleDeletePembayaran(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -411,4 +414,14 @@ async function handleCreatePembayaran(data) {
         }]);
     if (error) throw new Error('Gagal mencatat pembayaran: ' + error.message);
     return { message: 'Pembayaran berhasil dicatat!' };
+}
+
+// Handler hapus pembayaran
+async function handleDeletePembayaran(data) {
+    const { error } = await supabase
+        .from('RiwayatPembayaran')
+        .delete()
+        .eq('ID_Pembayaran', data.id_pembayaran);
+    if (error) throw new Error('Gagal hapus pembayaran: ' + error.message);
+    return { message: 'Pembayaran berhasil dihapus!' };
 }
