@@ -99,9 +99,10 @@
         </main>
     </div>
     
-    <script>
+    <script type="module">
+    import { fetchData, createData } from './dataService.js';
     // Konfigurasi API URL Netlify
-    const apiUrl = '/.netlify/functions/api';
+    // const apiUrl = '/.netlify/functions/api'; // Tidak perlu lagi
 
     let dataWajibPajak = [];
     let dataKetetapan = [];
@@ -117,8 +118,7 @@
         const statusSetoran = document.getElementById('statusSetoran');
 
         try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+            const data = await fetchData();
             dataWajibPajak = data.wajibPajak || [];
             dataKetetapan = data.ketetapan || [];
             // Isi NPWPD
@@ -191,22 +191,16 @@
                 return;
             }
             try {
-                const result = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'createPembayaran',
-                        id_ketetapan: idKetetapan,
-                        npwpd: npwpd,
-                        tanggalBayar: tanggalBayar,
-                        jumlahBayar: jumlahBayar,
-                        metodeBayar: metodeBayar,
-                        waktuInput: waktuInput,
-                        operator: operator,
-                        statusPembayaran: statusPembayaran
-                    })
+                const resJson = await createData('createPembayaran', {
+                    id_ketetapan: idKetetapan,
+                    npwpd: npwpd,
+                    tanggalBayar: tanggalBayar,
+                    jumlahBayar: jumlahBayar,
+                    metodeBayar: metodeBayar,
+                    waktuInput: waktuInput,
+                    operator: operator,
+                    statusPembayaran: statusPembayaran
                 });
-                const resJson = await result.json();
                 if (resJson.status === 'sukses') {
                     statusSetoran.textContent = 'Pembayaran berhasil dicatat!';
                     statusSetoran.style.color = 'green';
@@ -215,7 +209,7 @@
                     namaUsahaInput.value = '';
                     masaPajakInput.value = '';
                     jumlahTagihanInput.value = '';
-                    window.location.reload(); // Tambahkan ini agar data ketetapan di-refresh
+                    window.location.reload();
                 } else {
                     statusSetoran.textContent = resJson.message || 'Gagal mencatat pembayaran!';
                     statusSetoran.style.color = 'red';
