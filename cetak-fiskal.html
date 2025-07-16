@@ -264,9 +264,9 @@
                         document.getElementById('nomorFiskal').textContent = nomorData.nomor_fiskal;
                     } else {
                         // Fallback jika gagal, gunakan random
-                        const now = new Date();
-                        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
-                        const tahun = now.getFullYear();
+                        const fallbackNow = new Date();
+                        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][fallbackNow.getMonth()];
+                        const tahun = fallbackNow.getFullYear();
                         const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
                         const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
                         document.getElementById('nomorFiskal').textContent = nomorFiskal;
@@ -274,9 +274,9 @@
                 } catch (error) {
                     console.error('Error getting fiskal number:', error);
                     // Fallback jika gagal
-                    const now = new Date();
-                    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
-                    const tahun = now.getFullYear();
+                    const fallbackNow = new Date();
+                    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][fallbackNow.getMonth()];
+                    const tahun = fallbackNow.getFullYear();
                     const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
                     const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
                     document.getElementById('nomorFiskal').textContent = nomorFiskal;
