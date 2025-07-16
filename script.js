@@ -759,22 +759,29 @@ function createStandardTable(tableId, data, config) {
     tableBody.innerHTML = '';
     
     if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="${config.columns.length + 2}" style="text-align: center; padding: 40px; color: #666;">${config.emptyMessage || 'Tidak ada data ditemukan.'}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="${config.columns.length + (config.showCheckbox ? 1 : 0) + (config.actions ? 1 : 0)}" style="text-align: center; padding: 40px; color: #666;">${config.emptyMessage || 'Tidak ada data ditemukan.'}</td></tr>`;
         return;
     }
     
     // Buat header
     const headerRow = document.createElement('tr');
-    // Kolom checkbox di awal
-    const thCheck = document.createElement('th');
-    thCheck.innerHTML = '<input type="checkbox" id="checkAllKetetapan">';
-    headerRow.appendChild(thCheck);
+    // Kolom checkbox jika diaktifkan
+    if (config.showCheckbox) {
+        const thCheck = document.createElement('th');
+        thCheck.innerHTML = '<input type="checkbox" id="checkAllKetetapan">';
+        headerRow.appendChild(thCheck);
+    }
     config.columns.forEach(column => {
         const th = document.createElement('th');
         th.textContent = column.label;
         headerRow.appendChild(th);
     });
-    // Tidak perlu kolom aksi
+    // Kolom aksi jika ada
+    if (config.actions) {
+        const actionTh = document.createElement('th');
+        actionTh.textContent = 'Aksi';
+        headerRow.appendChild(actionTh);
+    }
     tableHead.appendChild(headerRow);
     
     // Buat baris data
@@ -785,10 +792,12 @@ function createStandardTable(tableId, data, config) {
             const rowClass = config.rowClass(rowData);
             if (rowClass) row.classList.add(rowClass);
         }
-        // Kolom checkbox di awal
-        const tdCheck = document.createElement('td');
-        tdCheck.innerHTML = `<input type="checkbox" class="rowCheckKetetapan" value="${rowData.ID_Ketetapan}">`;
-        row.appendChild(tdCheck);
+        // Kolom checkbox jika diaktifkan
+        if (config.showCheckbox) {
+            const tdCheck = document.createElement('td');
+            tdCheck.innerHTML = `<input type="checkbox" class="rowCheckKetetapan" value="${rowData.ID_Ketetapan}">`;
+            row.appendChild(tdCheck);
+        }
         config.columns.forEach(column => {
             const cell = document.createElement('td');
             let cellData = rowData[column.key];
@@ -814,7 +823,27 @@ function createStandardTable(tableId, data, config) {
             }
             row.appendChild(cell);
         });
-        // Tidak perlu kolom aksi
+        // Kolom aksi jika ada
+        if (config.actions) {
+            const actionCell = document.createElement('td');
+            let actionButtons = '';
+            config.actions.forEach(action => {
+                const buttonClass = action.class || 'btn-aksi';
+                const buttonStyle = action.style || '';
+                const icon = action.icon || '';
+                if (action.type === 'print') {
+                    actionButtons += `<button onclick="${action.onClick}('${rowData[action.key]}')" class="${buttonClass}" style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 4px;">${icon} Print</button>`;
+                } else if (action.type === 'edit') {
+                    actionButtons += `<button onclick="${action.onClick}('${rowData[action.key]}')" class="${buttonClass} btn-edit" style="margin-right: 4px;">${icon} Edit</button>`;
+                } else if (action.type === 'delete') {
+                    actionButtons += `<button onclick="${action.onClick}('${rowData[action.key]}')" class="${buttonClass} btn-hapus">${icon} Hapus</button>`;
+                } else if (action.type === 'custom') {
+                    actionButtons += `<button onclick="${action.onClick}('${rowData[action.key]}')" class="${buttonClass}" style="${buttonStyle}">${icon} ${action.label}</button>`;
+                }
+            });
+            actionCell.innerHTML = actionButtons;
+            row.appendChild(actionCell);
+        }
         tableBody.appendChild(row);
     });
 }
