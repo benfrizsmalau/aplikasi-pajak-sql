@@ -984,6 +984,13 @@ th {
   backdrop-filter: blur(2px);
   padding: 8px;
 }
+/* Samarkan background putih logo dengan biru transparan */
+.instansi-logo {
+  background: rgba(37, 99, 235, 0.85); /* biru senada header, transparan */
+  box-shadow: 0 4px 24px rgba(30,64,175,0.13);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(2px);
+}
 @media (max-width: 900px) {
   .instansi-logo {
     height: 64px;
