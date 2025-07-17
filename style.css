@@ -1188,10 +1188,6 @@ th {
 }
 
 /* Supaya header institusi tidak tertutup sidebar */
-.instansi-header {
-  position: relative;
-  z-index: 1100;
-}
 
 /* Dashboard Statistik Card Modern */
 .dashboard-grid {
