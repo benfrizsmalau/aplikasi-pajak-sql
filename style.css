@@ -951,8 +951,8 @@ th {
   background: #1976d2;
   color: white;
   padding: 0 32px;
-  height: 80px;
-  min-height: 80px;
+  height: 90px;
+  min-height: 90px;
   box-sizing: border-box;
   z-index: 1100;
   position: relative;
@@ -961,8 +961,10 @@ th {
   width: 52px;
   height: 52px;
   object-fit: contain;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 8px;
   margin-right: 18px;
-  margin-top: 2px;
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(60,60,120,0.10);
