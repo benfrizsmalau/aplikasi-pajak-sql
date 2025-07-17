@@ -954,7 +954,10 @@ th {
   min-height: 110px;
   box-sizing: border-box;
   z-index: 1100;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   box-shadow: 0 4px 24px rgba(30,64,175,0.10);
   overflow: hidden;
 }
