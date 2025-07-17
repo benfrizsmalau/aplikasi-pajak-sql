@@ -966,19 +966,33 @@ th {
   background: linear-gradient(90deg, transparent 0%, #fff 50%, transparent 100%);
   opacity: 0.35;
 }
+/* Perbesar logo agar proporsional dengan judul */
 .instansi-logo {
-  width: 70px;
-  height: 88px;
+  width: 100px;
+  height: 120px;
+  max-width: 120px;
+  max-height: 140px;
   object-fit: contain;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 28px 0 0;
-  border-radius: 18px;
+  margin: 0 36px 0 0;
+  border-radius: 22px;
   background: rgba(255,255,255,0.10);
   box-shadow: 0 4px 24px rgba(30,64,175,0.13);
   border: 1.5px solid rgba(255,255,255,0.18);
   backdrop-filter: blur(2px);
+  padding: 8px;
+}
+@media (max-width: 900px) {
+  .instansi-logo {
+    height: 64px;
+    width: 64px;
+    max-width: 80px;
+    max-height: 80px;
+    margin: 0 0 8px 0;
+    padding: 4px;
+  }
 }
 .instansi-text {
   display: flex;
