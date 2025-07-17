@@ -1155,7 +1155,7 @@ th {
   padding: 0 32px 32px 32px;
   min-height: 100vh;
   margin-top: 0;
-  padding-top: 24px;
+  padding-top: 120px; /* beri ruang untuk header fixed */
 }
 
 @media (max-width: 900px) {
