@@ -944,30 +944,41 @@ th {
   }
 }
 
-/* Header Instansi di atas menu utama */
+/* --- HEADER MODERN (Figma Style) --- */
 .instansi-header {
   display: flex;
   align-items: center;
-  background: #1976d2;
+  background: linear-gradient(90deg, #2563eb 0%, #1e40af 60%, #6366f1 100%);
   color: white;
-  padding: 0 32px;
-  height: 90px;
-  min-height: 90px;
+  padding: 0 40px;
+  min-height: 110px;
   box-sizing: border-box;
   z-index: 1100;
   position: relative;
+  box-shadow: 0 4px 24px rgba(30,64,175,0.10);
+  overflow: hidden;
+}
+.instansi-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #fff 50%, transparent 100%);
+  opacity: 0.35;
 }
 .instansi-logo {
-  width: 52px;
-  height: 52px;
+  width: 70px;
+  height: 88px;
   object-fit: contain;
-  display: block;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  margin-right: 18px;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(60,60,120,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 28px 0 0;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.10);
+  box-shadow: 0 4px 24px rgba(30,64,175,0.13);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(2px);
 }
 .instansi-text {
   display: flex;
@@ -975,19 +986,26 @@ th {
   justify-content: center;
 }
 .instansi-title {
-  font-size: 1.35rem;
+  font-size: 2.1rem;
   font-weight: bold;
   letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  background: linear-gradient(90deg, #fff 60%, #dbeafe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
 }
 .instansi-sub {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c7d2fe;
   opacity: 0.95;
   margin-bottom: 0;
 }
 .instansi-sub2 {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
+  color: #dbeafe;
   opacity: 0.85;
   line-height: 1.2;
 }
@@ -997,16 +1015,18 @@ th {
     align-items: flex-start;
     padding: 14px 12px 8px 12px;
     gap: 10px;
+    min-height: 80px;
   }
   .instansi-logo {
-    height: 48px;
-    width: 48px;
+    height: 54px;
+    width: 54px;
+    margin: 0 0 8px 0;
   }
   .instansi-title {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
   .instansi-sub, .instansi-sub2 {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 }
 
