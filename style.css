@@ -1080,15 +1080,18 @@ th {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  overflow-y: auto; /* AGAR BISA DISCROLL */
   padding-top: 0;
   margin-top: 0;
 }
+
 .sidebar-menu nav {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 0 0 0 0;
+  margin-top: 24px; /* AGAR MENU PALING ATAS TIDAK TERLALU MEPET HEADER */
 }
 .sidebar-menu nav a {
   color: #e5e7eb;
