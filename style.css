@@ -77,7 +77,7 @@ body {
 /* Welcome Section */
 .welcome-section {
     background: white;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     margin-bottom: 2rem;
@@ -85,62 +85,61 @@ body {
 
 .welcome-section h2 {
     color: #1f2937;
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: 600;
     margin: 0 0 1rem 0;
 }
 
 .welcome-section p {
     color: #6b7280;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0 0 10px;
 }
 
-/* Date and Time Section */
-.datetime-section {
+/* Date and Time Section dalam Welcome */
+.welcome-section .datetime-section {
     display: flex;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-top: 1rem;
     flex-wrap: wrap;
 }
 
-.datetime-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+.welcome-section .datetime-card {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    gap: 1rem;
-    min-width: 200px;
+    gap: 0.75rem;
+    min-width: 180px;
     flex: 1;
 }
 
-.datetime-icon {
-    font-size: 1.05rem;
-    width: 40px;
-    height: 40px;
+.welcome-section .datetime-icon {
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f3f4f6;
-    border-radius: 8px;
+    background: #e5e7eb;
+    border-radius: 6px;
 }
 
-.datetime-content {
+.welcome-section .datetime-content {
     flex: 1;
 }
 
-.datetime-label {
-    font-size: 0.875rem;
+.welcome-section .datetime-label {
+    font-size: 0.75rem;
     color: #6b7280;
     font-weight: 500;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
 }
 
-.datetime-value {
-    font-size: 1.125rem;
+.welcome-section .datetime-value {
+    font-size: 0.875rem;
     color: #1f2937;
     font-weight: 600;
 }
@@ -934,21 +933,24 @@ th {
   display: flex;
   align-items: center;
   gap: 24px;
-  background: #1000;
+  background: #1976d2;
   color: white;
   padding: 1rem 2;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  box-shadow: 0 2px 10 rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1100;
 }
 .instansi-logo {
-  height: 64px;
-  width: 64px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(60,60,120,0.10);
+  flex-shrink: 0;
 }
 .logo-container {
   flex-shrink: 0;
@@ -1038,6 +1040,7 @@ th {
   flex-direction: column;
   align-items: flex-start;
   padding-top: 120px;
+  margin-top: 80px;
 }
 .sidebar-menu nav {
   width: 100%;
@@ -1082,7 +1085,7 @@ th {
   margin-left: 280px;
   padding: 0 32px 32px 32px;
   min-height: 100vh;
-  margin-top: 0;
+  margin-top: 80px;
   padding-top: 24px;
 }
 
