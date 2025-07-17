@@ -1158,7 +1158,7 @@ th {
   padding: 0 32px 32px 32px;
   min-height: 100vh;
   margin-top: 0;
-  padding-top: 110px; /* pas dengan tinggi header */
+  padding-top: 130px; /* pastikan judul tidak tertutup header */
 }
 
 @media (max-width: 900px) {
