@@ -2376,3 +2376,47 @@ th {
   align-items: center;
   gap: 0.7rem;
 }
+
+/* Layout dashboard atas: 2 kolom */
+.dashboard-top-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+.dashboard-status-col {
+  flex: 0 0 340px;
+  min-width: 280px;
+}
+.dashboard-stats-col {
+  flex: 1 1 0;
+  display: flex;
+  align-items: stretch;
+}
+.dashboard-grid-top {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+.dashboard-grid-top .stat-card {
+  min-width: 0;
+  padding: 18px 10px 14px 10px;
+  font-size: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(30,64,175,0.08);
+}
+.dashboard-grid-top .stat-icon {
+  font-size: 2.1rem;
+  margin-bottom: 8px;
+}
+.dashboard-grid-top .stat-label {
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.dashboard-grid-top .stat-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
