@@ -1136,6 +1136,16 @@ th {
   }
 }
 
+/* Turunkan menu sidebar agar sejajar dengan konten utama */
+.sidebar-menu nav {
+  margin-top: 48px;
+}
+@media (max-width: 900px) {
+  .sidebar-menu nav {
+    margin-top: 0;
+  }
+}
+
 /* --- MAIN CONTENT --- */
 .main-content {
   margin-left: 260px;
