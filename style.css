@@ -1120,6 +1120,16 @@ th {
   color: #f3f4f6;
 }
 
+/* Sidebar: menu langsung terlihat tanpa scroll */
+.sidebar-menu {
+  padding-top: 24px;
+}
+@media (max-width: 900px) {
+  .sidebar-menu {
+    padding-top: 0;
+  }
+}
+
 /* --- MAIN CONTENT --- */
 .main-content {
   margin-left: 260px;
