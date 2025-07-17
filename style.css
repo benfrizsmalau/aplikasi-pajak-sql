@@ -1044,21 +1044,20 @@ th {
   font-family: 'Inter', Arial, sans-serif;
 }
 
-/* Sidebar Menu Modern */
+/* --- SIDEBAR --- */
 .sidebar-menu {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 280px;
-  background: #1e38;
-  box-shadow: 2px 10 rgba(0,0,0,0.1);
-  z-index:1000;
-  margin-top: 0;
-  padding-top: 80px;
+  width: 260px;
+  background: #1e3a8a;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  padding-top: 80px;
 }
 .sidebar-menu nav {
   width: 100%;
@@ -1074,16 +1073,12 @@ th {
   margin-bottom: 0.5rem;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.2;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  position: relative;
+  transition: all 0.2s;
+  display: block;
 }
 .sidebar-menu nav a.active {
   background: #3b82f6;
-  color: white;
-  box-shadow:2x 8 rgba(59, 130, 246, 0.3);
+  color: #fff;
 }
 .sidebar-menu nav a.active::after {
   content: '';
@@ -1099,8 +1094,9 @@ th {
   color: #f3f4f6;
 }
 
+/* --- MAIN CONTENT --- */
 .main-content {
-  margin-left: 280px;
+  margin-left: 260px;
   padding: 0 32px 32px 32px;
   min-height: 100vh;
   margin-top: 0;
