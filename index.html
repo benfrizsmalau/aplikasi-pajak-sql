@@ -33,10 +33,53 @@
     </div>
 
     <div class="main-content">
-        <h2>Selamat Datang di Dasbor</h2>
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h2>Selamat Datang di Dasbor</h2>
+            <p>Gunakan menu di samping untuk mengelola data wajib pajak dan fitur lainnya. Sistem ini membantu Anda mengelola administrasi pajak daerah dengan lebih efisien.</p>
+        </div>
+
+        <!-- Date and Time Display -->
+        <div class="datetime-section">
+            <div class="datetime-card">
+                <div class="datetime-icon">📅</div>
+                <div class="datetime-content">
+                    <div class="datetime-label">Hari ini</div>
+                    <div class="datetime-value" id="currentDate">Loading...</div>
+                </div>
+            </div>
+            <div class="datetime-card">
+                <div class="datetime-icon">🕐</div>
+                <div class="datetime-content">
+                    <div class="datetime-label">Waktu</div>
+                    <div class="datetime-value" id="currentTime">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="system-status">
+            <h3>Status sistem hari ini</h3>
+            <div class="status-list">
+                <div class="status-item">
+                    <span class="status-dot status-green"></span>
+                    <span>Sistem berjalan normal</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot status-blue"></span>
+                    <span>Database terhubung</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot status-purple"></span>
+                    <span>Backup otomatis aktif</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics Cards -->
         <div class="dashboard-grid">
             <div class="stat-card stat-blue">
-                <div class="stat-icon">👤</div>
+                <div class="stat-icon">👥</div>
                 <div class="stat-label">Jumlah WP</div>
                 <div class="stat-value" id="totalWp">Loading...</div>
             </div>
@@ -55,6 +98,10 @@
                 <div class="stat-label">SKPD/SKRD Terbit</div>
                 <div class="stat-value" id="totalSkpdSkrd">Loading...</div>
             </div>
+        </div>
+
+        <!-- Additional Statistics -->
+        <div class="dashboard-grid-secondary">
             <div class="stat-card stat-pink">
                 <div class="stat-icon">🧾</div>
                 <div class="stat-label">SSPD/SSRD Terbit</div>
@@ -76,11 +123,13 @@
                 <div class="stat-value" id="totalNilaiSetoran">Loading...</div>
             </div>
         </div>
+
+        <!-- Chart Section -->
         <div class="dashboard-chart-section">
-            <h3 style="margin-top:40px;margin-bottom:18px;">Grafik Per Bulan</h3>
+            <h3>Grafik Per Bulan</h3>
+            <p class="chart-subtitle">Perbandingan nilai ketetapan dan pembayaran</p>
             <canvas id="dashboardChart" height="120"></canvas>
         </div>
-        <p style="margin-top: 32px;">Gunakan menu di samping untuk mengelola data wajib pajak dan fitur lainnya.</p>
     </div>
     
     <script src="script.js"></script>
@@ -202,33 +251,32 @@
                 labels: months,
                 datasets: [
                     {
-                        label: 'Nilai Ketetapan (Rp)',
+                        label: 'Nilai Ketetapan',
                         data: nilaiKetetapanPerBulan,
-                        borderColor: '#4CAF50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        tension: 0.4
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4,
+                        fill: false
                     },
                     {
-                        label: 'Nilai Pembayaran (Rp)',
+                        label: 'Nilai Pembayaran',
                         data: nilaiPembayaranPerBulan,
-                        borderColor: '#2196F3',
-                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                        tension: 0.4
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
                     }
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed.y;
-                                return context.dataset.label + ': Rp ' + value.toLocaleString('id-ID');
-                            }
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
                         }
                     }
                 },
@@ -237,7 +285,7 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return 'Rp ' + value.toLocaleString('id-ID');
+                                return 'Rp ' + (value / 10000).toFixed(1) + 'M';
                             }
                         }
                     }
@@ -245,9 +293,32 @@
             }
         });
     }
-    
-    // Load dashboard data when page loads
-    document.addEventListener('DOMContentLoaded', loadDashboardData);
+
+    // Update date and time
+    function updateDateTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        const timeOptions = { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            timeZone: 'Asia/Makassar'
+        };
+        
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID', timeOptions) + ' WITA';
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardData();
+        updateDateTime();
+        setInterval(updateDateTime, 1000); // Update time every second
+    });
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
