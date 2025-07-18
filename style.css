@@ -2411,7 +2411,7 @@ th {
 @media print {
   .instansi-sub2 {
     font-size: 0.62rem !important; /* lebih kecil lagi khusus print */
-    max-width: 220px !important;   /* lebih sempit supaya tidak menabrak logo */
+    max-width: 180px !important;   /* lebih sempit supaya tidak menabrak logo */
     white-space: normal !important;
     word-break: break-word !important;
     line-height: 1.1 !important;
