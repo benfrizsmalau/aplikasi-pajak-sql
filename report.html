@@ -462,11 +462,22 @@
         
         function filterDataByDateRange(data, dateRange) {
             const { startDate, endDate } = dateRange;
-            
-            // Untuk sementara, kita skip filter tanggal agar semua data muncul
-            // Ini akan membantu debugging masalah data
-            const filteredKetetapan = data.ketetapan || [];
-            const filteredPembayaran = data.pembayaran || [];
+
+            // Set time to beginning and end of day for accurate comparison
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+
+            const filteredKetetapan = (data.ketetapan || []).filter(k => {
+                if (!k.TanggalKetetapan) return false;
+                const ketetapanDate = new Date(k.TanggalKetetapan);
+                return ketetapanDate >= startDate && ketetapanDate <= endDate;
+            });
+
+            const filteredPembayaran = (data.pembayaran || []).filter(p => {
+                if (!p.TanggalBayar) return false;
+                const pembayaranDate = new Date(p.TanggalBayar);
+                return pembayaranDate >= startDate && pembayaranDate <= endDate;
+            });
             
             // Debug: log data counts dan sample data
             console.log('Original data counts:', {
@@ -485,7 +496,7 @@
             });
             
             return {
-                ...data,
+                ...data, // Return all original data like wajibPajak and masterPajak
                 ketetapan: filteredKetetapan,
                 pembayaran: filteredPembayaran
             };
