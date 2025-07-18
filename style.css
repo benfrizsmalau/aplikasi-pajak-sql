@@ -1827,7 +1827,18 @@ th {
 
 /* Report Page Styles */
 #page-report .main-content {
-    padding: 24px;
+    padding-top: 200px; /* pastikan tidak tertutup header */
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: 24px;
+}
+
+/* Daftar Fiskal Page Styles */
+#page-daftar-fiskal .main-content {
+    padding-top: 130px; /* pastikan tidak tertutup header */
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: 24px;
 }
 
 .filter-section {
