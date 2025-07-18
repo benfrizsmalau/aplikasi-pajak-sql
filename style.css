@@ -1009,17 +1009,6 @@ th {
   flex-direction: column;
   justify-content: center;
 }
-.instansi-title {
-  font-size: 2.1rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-  background: linear-gradient(90deg, #fff 60%, #dbeafe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-fill-color: transparent;
-}
 .instansi-sub {
   font-size: 1.1rem;
   font-weight: 600;
@@ -1034,21 +1023,6 @@ th {
   line-height: 1.2;
 }
 @media (max-width: 900px) {
-  .instansi-header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 14px 12px 8px 12px;
-    gap: 10px;
-    min-height: 80px;
-  }
-  .instansi-logo {
-    height: 54px;
-    width: 54px;
-    margin: 0 0 8px 0;
-  }
-  .instansi-title {
-    font-size: 1.2rem;
-  }
   .instansi-sub, .instansi-sub2 {
     font-size: 1rem;
   }
@@ -2432,4 +2406,17 @@ th {
 .dashboard-grid-top .stat-value {
   font-size: 1.4rem;
   font-weight: bold;
+}
+
+@media print {
+  .instansi-sub2 {
+    font-size: 0.75rem !important; /* kecilkan font alamat khusus print */
+    max-width: 350px !important;   /* batasi lebar supaya tidak menabrak logo */
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.1 !important;
+  }
+  .instansi-text {
+    margin-left: 8px !important; /* tambah jarak dari logo jika perlu */
+  }
 }
