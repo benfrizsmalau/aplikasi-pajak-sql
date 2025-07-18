@@ -971,179 +971,192 @@
         }
 
         async function exportSummaryPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // --- 1. GATHER AND CALCULATE DATA ---
-            const dateRange = getDateRange();
-            const filteredData = filterDataByDateRange(reportData, dateRange);
-
-            const potensi = (filteredData.ketetapan || []).reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-            const realisasi = (filteredData.pembayaran || []).reduce((sum, p) => p.StatusPembayaran === 'Sukses' ? sum + (parseFloat(p.JumlahBayar) || 0) : sum, 0);
-            const collectionRate = potensi > 0 ? ((realisasi / potensi) * 100).toFixed(1) : 0;
-            const piutang = potensi - realisasi;
-            
-            const wpDenganTagihan = new Set((filteredData.ketetapan || []).map(k => k.NPWPD));
-            const wpYangBayar = new Set((filteredData.pembayaran || []).filter(p => p.StatusPembayaran === 'Sukses').map(p => p.NPWPD));
-            const tingkatKepatuhan = wpDenganTagihan.size > 0 ? ((wpYangBayar.size / wpDenganTagihan.size) * 100).toFixed(1) : 0;
-
-            let rincianPendapatan = {};
-            (filteredData.pembayaran || []).forEach(p => {
-                if (p.StatusPembayaran !== 'Sukses') return;
-                const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
-                if (!ketetapan) return;
-                const master = (reportData.masterPajak || []).find(m => m.KodeLayanan === ketetapan.KodeLayanan);
-                const jenisPajak = master ? master.NamaLayanan : 'Lainnya';
-                if (!rincianPendapatan[jenisPajak]) {
-                    rincianPendapatan[jenisPajak] = 0;
+            try {
+                // Check if required libraries are loaded
+                if (typeof jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+                    alert('Error: PDF generation library not loaded. Please check your internet connection.');
+                    return;
                 }
-                rincianPendapatan[jenisPajak] += parseFloat(p.JumlahBayar) || 0;
-            });
 
-            // Use dummy data if real data is empty
-            if (Object.keys(rincianPendapatan).length === 0) {
-                rincianPendapatan = {
-                    'Pajak Restoran': 12500000,
-                    'Pajak Hotel': 8750000,
-                    'Pajak Reklame': 4200000,
-                    'Retribusi Sampah': 1500000,
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // --- 1. GATHER AND CALCULATE DATA ---
+                const dateRange = getDateRange();
+                const filteredData = filterDataByDateRange(reportData, dateRange);
+
+                const potensi = (filteredData.ketetapan || []).reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
+                const realisasi = (filteredData.pembayaran || []).reduce((sum, p) => p.StatusPembayaran === 'Sukses' ? sum + (parseFloat(p.JumlahBayar) || 0) : sum, 0);
+                const collectionRate = potensi > 0 ? ((realisasi / potensi) * 100).toFixed(1) : 0;
+                const piutang = potensi - realisasi;
+                
+                const wpDenganTagihan = new Set((filteredData.ketetapan || []).map(k => k.NPWPD));
+                const wpYangBayar = new Set((filteredData.pembayaran || []).filter(p => p.StatusPembayaran === 'Sukses').map(p => p.NPWPD));
+                const tingkatKepatuhan = wpDenganTagihan.size > 0 ? ((wpYangBayar.size / wpDenganTagihan.size) * 100).toFixed(1) : 0;
+
+                let rincianPendapatan = {};
+                (filteredData.pembayaran || []).forEach(p => {
+                    if (p.StatusPembayaran !== 'Sukses') return;
+                    const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+                    if (!ketetapan) return;
+                    const master = (reportData.masterPajak || []).find(m => m.KodeLayanan === ketetapan.KodeLayanan);
+                    const jenisPajak = master ? master.NamaLayanan : 'Lainnya';
+                    if (!rincianPendapatan[jenisPajak]) {
+                        rincianPendapatan[jenisPajak] = 0;
+                    }
+                    rincianPendapatan[jenisPajak] += parseFloat(p.JumlahBayar) || 0;
+                });
+
+                // Use dummy data if real data is empty
+                if (Object.keys(rincianPendapatan).length === 0) {
+                    console.log("No revenue data for the selected period. Using dummy data for PDF chart.");
+                    rincianPendapatan = {
+                        'Pajak Restoran': 12500000,
+                        'Pajak Hotel': 8750000,
+                        'Pajak Reklame': 4200000,
+                        'Retribusi Sampah': 1500000,
+                    };
+                }
+
+                // --- 2. PDF STYLING AND LAYOUT ---
+                const formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka)}`;
+                const logoImg = window.logoBase64 || null;
+                const periodText = document.getElementById('dateRange').options[document.getElementById('dateRange').selectedIndex].text;
+                let yPos = 10;
+
+                // Helper function to add text
+                const addText = (text, x, y, size, style = 'normal') => {
+                    doc.setFontSize(size);
+                    doc.setFont('helvetica', style);
+                    doc.text(text, x, y);
                 };
-            }
 
-            // --- 2. PDF STYLING AND LAYOUT ---
-            const formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka)}`;
-            const logoImg = window.logoBase64 || null;
-            const periodText = document.getElementById('dateRange').options[document.getElementById('dateRange').selectedIndex].text;
-            let yPos = 10;
+                // Header
+                if (logoImg) doc.addImage(logoImg, 'PNG', 15, yPos, 20, 25);
+                addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 105, yPos + 7, 13, 'bold');
+                addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, yPos + 14, 11, 'bold');
+                addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 105, yPos + 20, 8);
+                doc.setLineWidth(1.2);
+                doc.line(15, yPos + 28, 195, yPos + 28);
+                yPos += 38;
 
-            // Helper function to add text
-            const addText = (text, x, y, size, style = 'normal') => {
-                doc.setFontSize(size);
-                doc.setFont('helvetica', style);
-                doc.text(text, x, y);
-            };
-
-            // Header
-            if (logoImg) doc.addImage(logoImg, 'PNG', 15, yPos, 20, 25);
-            addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 105, yPos + 7, 13, 'bold');
-            addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, yPos + 14, 11, 'bold');
-            addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 105, yPos + 20, 8);
-            doc.setLineWidth(1.2);
-            doc.line(15, yPos + 28, 195, yPos + 28);
-            yPos += 38;
-
-            // Judul Laporan
-            addText('LAPORAN RINGKASAN UMUM PENDAPATAN DAERAH', 105, yPos, 12, 'bold');
-            yPos += 7;
-            addText(`Periode: ${periodText}`, 105, yPos, 10);
-            yPos += 12;
-
-            // Bagian 1: Ringkasan Kinerja
-            addText('1. Ringkasan Kinerja Utama', 15, yPos, 11, 'bold');
-            yPos += 8;
-            const kinerjaData = [
-                ['Total Potensi Pendapatan (Nilai Ketetapan)', formatRupiah(potensi)],
-                ['Total Realisasi Pendapatan (Nilai Pembayaran)', formatRupiah(realisasi)],
-                ['Jumlah Tunggakan Pajak (Piutang)', formatRupiah(piutang)],
-                ['Tingkat Realisasi (Collection Rate)', `${collectionRate} %`],
-                ['Tingkat Kepatuhan Wajib Pajak', `${tingkatKepatuhan} %`],
-            ];
-            kinerjaData.forEach(item => {
-                addText(item[0], 20, yPos, 10);
-                addText(':', 100, yPos, 10);
-                addText(item[1], 105, yPos, 10, 'bold');
+                // Judul Laporan
+                addText('LAPORAN RINGKASAN UMUM PENDAPATAN DAERAH', 105, yPos, 12, 'bold');
                 yPos += 7;
-            });
-            yPos += 5;
+                addText(`Periode: ${periodText}`, 105, yPos, 10);
+                yPos += 12;
 
-            // Bagian 2 & 3: Rincian dan Grafik
-            addText('2. Rincian Pendapatan per Jenis Pajak', 15, yPos, 11, 'bold');
-            yPos += 8;
-            
-            // --- 3. GENERATE CHART IMAGE ---
-            const chartCanvas = document.createElement('canvas');
-            chartCanvas.id = 'tempPdfChart';
-            chartCanvas.width = 400;
-            chartCanvas.height = 400;
-            chartCanvas.style.display = 'none';
-            document.body.appendChild(chartCanvas);
+                // Bagian 1: Ringkasan Kinerja
+                addText('1. Ringkasan Kinerja Utama', 15, yPos, 11, 'bold');
+                yPos += 8;
+                const kinerjaData = [
+                    ['Total Potensi Pendapatan (Nilai Ketetapan)', formatRupiah(potensi)],
+                    ['Total Realisasi Pendapatan (Nilai Pembayaran)', formatRupiah(realisasi)],
+                    ['Jumlah Tunggakan Pajak (Piutang)', formatRupiah(piutang)],
+                    ['Tingkat Realisasi (Collection Rate)', `${collectionRate} %`],
+                    ['Tingkat Kepatuhan Wajib Pajak', `${tingkatKepatuhan} %`],
+                ];
+                kinerjaData.forEach(item => {
+                    addText(item[0], 20, yPos, 10);
+                    addText(':', 100, yPos, 10);
+                    addText(item[1], 105, yPos, 10, 'bold');
+                    yPos += 7;
+                });
+                yPos += 5;
 
-            const chartData = {
-                labels: Object.keys(rincianPendapatan),
-                datasets: [{
-                    data: Object.values(rincianPendapatan),
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
-                }]
-            };
+                // Bagian 2 & 3: Rincian dan Grafik
+                addText('2. Rincian Pendapatan per Jenis Pajak', 15, yPos, 11, 'bold');
+                yPos += 8;
+                
+                // --- 3. GENERATE CHART IMAGE ---
+                const chartCanvas = document.createElement('canvas');
+                chartCanvas.id = 'tempPdfChart';
+                chartCanvas.width = 400;
+                chartCanvas.height = 400;
+                chartCanvas.style.display = 'none';
+                document.body.appendChild(chartCanvas);
 
-            new Chart(chartCanvas, {
-                type: 'pie',
-                data: chartData,
-                options: {
-                    responsive: false,
-                    animation: { duration: 0 },
-                    plugins: { legend: { position: 'right' } }
-                }
-            });
+                const chartData = {
+                    labels: Object.keys(rincianPendapatan),
+                    datasets: [{
+                        data: Object.values(rincianPendapatan),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                    }]
+                };
 
-            // Wait a bit for chart to render before converting
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const canvasImage = await html2canvas(chartCanvas);
-            const imageData = canvasImage.toDataURL('image/png');
-            document.body.removeChild(chartCanvas);
+                new Chart(chartCanvas, {
+                    type: 'pie',
+                    data: chartData,
+                    options: {
+                        responsive: false,
+                        animation: { duration: 0 },
+                        plugins: { legend: { position: 'right' } }
+                    }
+                });
 
-            // --- 4. DRAW TABLE AND ADD CHART TO PDF ---
-            const tableX = 20;
-            const tableY = yPos;
-            const cellPadding = 3;
-            const colWidths = [10, 70, 45, 30];
-            let rowY = tableY + 7;
+                // Wait a bit for chart to render before converting
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const canvasImage = await html2canvas(chartCanvas);
+                const imageData = canvasImage.toDataURL('image/png');
+                document.body.removeChild(chartCanvas);
 
-            // Table Header
-            doc.setFont('helvetica', 'bold');
-            doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), 8);
-            addText('No.', tableX + cellPadding, rowY, 10);
-            addText('Jenis Pajak/Retribusi', tableX + colWidths[0] + cellPadding, rowY, 10);
-            addText('Jumlah Setoran (Rp)', tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
-            addText('Persentase', tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
-            rowY += 1;
-            doc.line(tableX, rowY, tableX + colWidths.reduce((a, b) => a + b), rowY);
-            rowY += 7;
+                // --- 4. DRAW TABLE AND ADD CHART TO PDF ---
+                const tableX = 20;
+                const tableY = yPos;
+                const cellPadding = 3;
+                const colWidths = [10, 70, 45, 30];
+                let rowY = tableY + 7;
 
-            // Table Body
-            doc.setFont('helvetica', 'normal');
-            let i = 0;
-            const totalRincian = Object.values(rincianPendapatan).reduce((sum, val) => sum + val, 0);
-            for (const [jenis, jumlah] of Object.entries(rincianPendapatan)) {
-                i++;
-                const percentage = totalRincian > 0 ? ((jumlah / totalRincian) * 100).toFixed(1) + '%' : '0%';
-                addText(String(i), tableX + cellPadding, rowY, 10);
-                addText(jenis, tableX + colWidths[0] + cellPadding, rowY, 10);
-                addText(new Intl.NumberFormat('id-ID').format(jumlah), tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
-                addText(percentage, tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
+                // Table Header
+                doc.setFont('helvetica', 'bold');
+                doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), 8);
+                addText('No.', tableX + cellPadding, rowY, 10);
+                addText('Jenis Pajak/Retribusi', tableX + colWidths[0] + cellPadding, rowY, 10);
+                addText('Jumlah Setoran (Rp)', tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
+                addText('Persentase', tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
+                rowY += 1;
+                doc.line(tableX, rowY, tableX + colWidths.reduce((a, b) => a + b), rowY);
                 rowY += 7;
-            }
-            doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), rowY - tableY); // Outer box
-            
-            // Add chart
-            yPos = rowY + 5;
-            addText('3. Grafik Komposisi Pendapatan', 15, yPos, 11, 'bold');
-            yPos += 5;
-            doc.addImage(imageData, 'PNG', 50, yPos, 100, 100);
-            yPos += 110;
 
-            // --- 5. FOOTER AND SAVE ---
-            yPos = 250; // Set fixed position for signature
-            addText(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 15, yPos, 9);
-            addText('Mamberamo Raya, ....................', 130, yPos, 10);
-            yPos += 8;
-            addText('Kepala Bidang Pendapatan Daerah', 130, yPos, 10);
-            yPos += 22;
-            addText('(Nama Kepala Bidang)', 130, yPos, 10);
-            
-            const fileName = `Laporan_Ringkasan_Umum_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(fileName);
+                // Table Body
+                doc.setFont('helvetica', 'normal');
+                let i = 0;
+                const totalRincian = Object.values(rincianPendapatan).reduce((sum, val) => sum + val, 0);
+                for (const [jenis, jumlah] of Object.entries(rincianPendapatan)) {
+                    i++;
+                    const percentage = totalRincian > 0 ? ((jumlah / totalRincian) * 100).toFixed(1) + '%' : '0%';
+                    addText(String(i), tableX + cellPadding, rowY, 10);
+                    addText(jenis, tableX + colWidths[0] + cellPadding, rowY, 10);
+                    addText(new Intl.NumberFormat('id-ID').format(jumlah), tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
+                    addText(percentage, tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
+                    rowY += 7;
+                }
+                doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), rowY - tableY); // Outer box
+                
+                // Add chart
+                yPos = rowY + 5;
+                addText('3. Grafik Komposisi Pendapatan', 15, yPos, 11, 'bold');
+                yPos += 5;
+                doc.addImage(imageData, 'PNG', 50, yPos, 100, 100);
+                yPos += 110;
+
+                // --- 5. FOOTER AND SAVE ---
+                yPos = 250; // Set fixed position for signature
+                addText(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 15, yPos, 9);
+                addText('Mamberamo Raya, ....................', 130, yPos, 10);
+                yPos += 8;
+                addText('Kepala Bidang Pendapatan Daerah', 130, yPos, 10);
+                yPos += 22;
+                addText('(Nama Kepala Bidang)', 130, yPos, 10);
+                
+                const fileName = `Laporan_Ringkasan_Umum_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+
+            } catch (error) {
+                console.error("PDF Export failed:", error);
+                alert("Gagal membuat laporan PDF. Silakan periksa console browser untuk detail error (klik kanan -> Inspect -> Console).");
+            }
         }
         
         function exportExcel() {
