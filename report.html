@@ -1032,7 +1032,11 @@
                 };
 
                 // Header
-                if (logoImg) doc.addImage(logoImg, 'PNG', 15, yPos, 20, 25);
+                if (logoImg) {
+                    // Remove the data URL prefix for jsPDF, which can sometimes cause parsing issues
+                    const rawImage = logoImg.substring(logoImg.indexOf(',') + 1);
+                    doc.addImage(rawImage, 'PNG', 15, yPos, 20, 25);
+                }
                 addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 105, yPos + 7, 13, 'bold');
                 addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, yPos + 14, 11, 'bold');
                 addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 105, yPos + 20, 8);
