@@ -1041,48 +1041,52 @@
         }
         
         function addContentToPDF(doc, content) {
-            // Set font
-            doc.setFont('helvetica');
-            
-            // Header
-            doc.setFontSize(16);
+            // Logo (asumsi logo.png ada di images/ dan sudah base64)
+            // Catatan: jsPDF hanya bisa insert image base64, jadi perlu konversi logo.png ke base64
+            // Untuk demo, jika belum ada base64, bisa tambahkan manual nanti
+            const logoImg = window.logoBase64 || null; // window.logoBase64 harus diisi di awal jika ingin logo tampil
+
+            // Header Kop Dinas
             doc.setFont('helvetica', 'bold');
-            doc.text('APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH', 105, 20, { align: 'center' });
-            
+            doc.setFontSize(13);
+            if (logoImg) {
+                doc.addImage(logoImg, 'PNG', 18, 12, 22, 28); // kiri atas
+            }
+            doc.text('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 105, 20, { align: 'center' });
+            doc.setFontSize(11);
+            doc.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, 27, { align: 'center' });
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Perkantoran Otonom Pemda Kabupaten Mamberamo Raya', 105, 33, { align: 'center' });
+            doc.text('Jl Lingkar Burmeso, Distrik Mamberamo Tengah Kabupaten Mamberamo Raya, Provinsi Papua', 105, 39, { align: 'center' });
+            // Garis horizontal
+            doc.setLineWidth(1.2);
+            doc.line(18, 44, 192, 44);
+
+            // Judul & Periode
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
+            doc.text(content.title, 105, 54, { align: 'center' });
             doc.setFont('helvetica', 'normal');
-            doc.text('BIDANG PENDAPATAN DAERAH', 105, 30, { align: 'center' });
-            doc.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, 40, { align: 'center' });
-            doc.text('KABUPATEN MAMBERAMO RAYA', 105, 50, { align: 'center' });
-            
-            // Title
-            doc.setFontSize(14);
+            doc.setFontSize(11);
+            doc.text(`BULAN ${content.period.toUpperCase()}`, 105, 62, { align: 'center' });
+
+            // Statistik
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(content.title, 105, 70, { align: 'center' });
-            
-            // Period and Date
-            doc.setFontSize(10);
+            doc.text('STATISTIK UTAMA:', 20, 75);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Periode: ${content.period}`, 20, 85);
-            doc.text(`Tanggal Cetak: ${content.date}`, 20, 95);
-            
-            // Statistics
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('STATISTIK UTAMA:', 20, 115);
-            
+            doc.text(`Total Pendapatan: ${content.statistics.totalRevenue}`, 20, 85);
+            doc.text(`Wajib Pajak Aktif: ${content.statistics.activeWp}`, 20, 93);
+            doc.text(`Ketetapan Terbit: ${content.statistics.totalKetetapan}`, 20, 101);
+            doc.text(`Pembayaran Sukses: ${content.statistics.successPayment}`, 20, 109);
+
+            // Footer tanda tangan
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Total Pendapatan: ${content.statistics.totalRevenue}`, 20, 130);
-            doc.text(`Wajib Pajak Aktif: ${content.statistics.activeWp}`, 20, 140);
-            doc.text(`Ketetapan Terbit: ${content.statistics.totalKetetapan}`, 20, 150);
-            doc.text(`Pembayaran Sukses: ${content.statistics.successPayment}`, 20, 160);
-            
-            // Footer
-            doc.setFontSize(10);
-            doc.text('Dikeluarkan di: Kabupaten Mamberamo Raya', 20, 250);
-            doc.text('Pada Tanggal: ' + content.date, 20, 260);
-            doc.text('An. Kepala Badan Bidang Pendapatan Daerah', 20, 270);
+            doc.text('Mamberamo Raya, ....................', 140, 230);
+            doc.text('Kepala Bidang Pendapatan Daerah', 140, 238);
+            doc.text('(Nama Kepala Bidang)', 140, 260);
+            doc.setFontSize(9);
             doc.text('Catatan: Laporan ini dibuat secara otomatis oleh sistem', 20, 280);
         }
         
@@ -1092,5 +1096,4 @@
         }
     </script>
 </body>
-</html> 
 </html> 
