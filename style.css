@@ -948,8 +948,8 @@ th {
 .instansi-header {
   display: flex;
   align-items: center;
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 85%, #2563eb 100%);
-  color: #1e3a8a;
+  background: linear-gradient(90deg, #2563eb 0%, #1e40af 60%, #6366f1 100%);
+  color: white;
   padding: 0 40px;
   min-height: 110px;
   box-sizing: border-box;
@@ -958,7 +958,7 @@ th {
   top: 0;
   left: 0;
   width: 100%;
-  box-shadow: 0 2px 12px rgba(30,64,175,0.08);
+  box-shadow: 0 4px 24px rgba(30,64,175,0.10);
   overflow: hidden;
 }
 .instansi-header::after {
