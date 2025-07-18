@@ -1827,7 +1827,7 @@ th {
 
 /* Report Page Styles */
 #page-report .main-content {
-    padding-top: 200px; /* pastikan tidak tertutup header */
+    padding-top: 180px; /* pastikan tidak tertutup header */
     padding-left: 24px;
     padding-right: 24px;
     padding-bottom: 24px;
