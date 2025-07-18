@@ -948,7 +948,125 @@
         
         function exportReport() {
             // Implementation for PDF export
-            alert('Fitur export PDF akan segera tersedia');
+            const reportType = document.getElementById('reportType').value;
+            const dateRange = document.getElementById('dateRange').value;
+            
+            if (reportType === 'summary') {
+                exportSummaryPDF();
+            } else {
+                alert('Export PDF untuk laporan ini akan segera tersedia');
+            }
+        }
+        
+        function exportSummaryPDF() {
+            try {
+                // Create PDF content
+                const pdfContent = createSummaryPDFContent();
+                
+                // Generate PDF using jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Add content to PDF
+                addContentToPDF(doc, pdfContent);
+                
+                // Save PDF
+                const fileName = `Laporan_Ringkasan_Umum_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Gagal membuat PDF: ' + error.message);
+            }
+        }
+        
+        function createSummaryPDFContent() {
+            const currentDate = new Date().toLocaleDateString('id-ID');
+            const period = document.getElementById('dateRange').value;
+            const periodText = getPeriodText(period);
+            
+            return {
+                title: 'LAPORAN RINGKASAN UMUM',
+                subtitle: 'APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH',
+                period: periodText,
+                date: currentDate,
+                statistics: {
+                    totalRevenue: document.getElementById('totalRevenue').textContent,
+                    activeWp: document.getElementById('activeWp').textContent,
+                    totalKetetapan: document.getElementById('totalKetetapan').textContent,
+                    successPayment: document.getElementById('successPayment').textContent
+                },
+                chartData: getChartData()
+            };
+        }
+        
+        function getPeriodText(period) {
+            const periodMap = {
+                'today': 'Hari Ini',
+                'week': 'Minggu Ini',
+                'month': 'Bulan Ini',
+                'quarter': 'Triwulan',
+                'year': 'Tahun Ini',
+                'custom': 'Periode Kustom'
+            };
+            return periodMap[period] || 'Bulan Ini';
+        }
+        
+        function getChartData() {
+            // Get chart data from existing chart instance
+            if (window.summaryChartInstance) {
+                return {
+                    labels: window.summaryChartInstance.data.labels,
+                    datasets: window.summaryChartInstance.data.datasets
+                };
+            }
+            return null;
+        }
+        
+        function addContentToPDF(doc, content) {
+            // Set font
+            doc.setFont('helvetica');
+            
+            // Header
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('BIDANG PENDAPATAN DAERAH', 105, 30, { align: 'center' });
+            doc.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, 40, { align: 'center' });
+            doc.text('KABUPATEN MAMBERAMO RAYA', 105, 50, { align: 'center' });
+            
+            // Title
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(content.title, 105, 70, { align: 'center' });
+            
+            // Period and Date
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Periode: ${content.period}`, 20, 85);
+            doc.text(`Tanggal Cetak: ${content.date}`, 20, 95);
+            
+            // Statistics
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('STATISTIK UTAMA:', 20, 115);
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Total Pendapatan: ${content.statistics.totalRevenue}`, 20, 130);
+            doc.text(`Wajib Pajak Aktif: ${content.statistics.activeWp}`, 20, 140);
+            doc.text(`Ketetapan Terbit: ${content.statistics.totalKetetapan}`, 20, 150);
+            doc.text(`Pembayaran Sukses: ${content.statistics.successPayment}`, 20, 160);
+            
+            // Footer
+            doc.setFontSize(10);
+            doc.text('Dikeluarkan di: Kabupaten Mamberamo Raya', 20, 250);
+            doc.text('Pada Tanggal: ' + content.date, 20, 260);
+            doc.text('An. Kepala Badan Bidang Pendapatan Daerah', 20, 270);
+            doc.text('Catatan: Laporan ini dibuat secara otomatis oleh sistem', 20, 280);
         }
         
         function exportExcel() {
