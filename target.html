@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Target Pajak & Retribusi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>🎯 Input Target Pajak & Retribusi</h2>
+    <form id="formTarget" style="margin-bottom: 32px;">
+        <label>Kode Layanan:
+            <select id="kodeLayanan" required>
+                <option value="">Pilih Kode Layanan</option>
+                <!-- Opsi diisi via JS dari MasterPajakRetribusi -->
+            </select>
+        </label>
+        <label>Tahun:
+            <input type="number" id="tahun" required min="2000" max="2100" value="2024">
+        </label>
+        <label>Target (Rp):
+            <input type="number" id="target" required min="0">
+        </label>
+        <button type="submit">Simpan</button>
+    </form>
+
+    <h3>Daftar Target Pajak & Retribusi</h3>
+    <table id="tabelTarget" border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>Kode Layanan</th>
+                <th>Nama Layanan</th>
+                <th>Tahun</th>
+                <th>Target</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data diisi via JS -->
+        </tbody>
+    </table>
+
+    <script src="target.js"></script>
+</body>
+</html> 
