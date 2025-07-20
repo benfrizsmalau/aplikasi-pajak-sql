@@ -2420,3 +2420,19 @@ th {
     margin-left: 10px !important;
   }
 }
+
+/* --- Perbaikan tampilan grafik dashboard --- */
+.chart-container {
+  position: relative;
+  height: 400px !important;
+  width: 100% !important;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible !important;
+  background: #fff;
+  padding: 16px 0;
+}
+
+.dashboard-chart-section {
+  overflow: visible !important;
+}
