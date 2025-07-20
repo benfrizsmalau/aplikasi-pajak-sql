@@ -1019,12 +1019,44 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
     const currentYear = new Date().getFullYear();
     
+    // Debug: cek data yang diterima
+    console.log('Data ketetapan:', ketetapan);
+    console.log('Data pembayaran:', pembayaran);
+    console.log('Tahun berjalan:', currentYear);
+    
+    // Cari tahun yang tersedia di data
+    const tahunKetetapan = new Set();
+    const tahunPembayaran = new Set();
+    
+    ketetapan.forEach(k => {
+        if (k.TanggalKetetapan) {
+            const date = new Date(k.TanggalKetetapan);
+            tahunKetetapan.add(date.getFullYear());
+        }
+    });
+    
+    pembayaran.forEach(p => {
+        if (p.TanggalBayar) {
+            const date = new Date(p.TanggalBayar);
+            tahunPembayaran.add(date.getFullYear());
+        }
+    });
+    
+    // Gabungkan semua tahun yang tersedia
+    const semuaTahun = [...new Set([...tahunKetetapan, ...tahunPembayaran, currentYear])].sort();
+    console.log('Tahun yang tersedia di data:', semuaTahun);
+    
+    // Gunakan tahun terakhir yang ada data, atau tahun berjalan jika tidak ada data
+    const tahunUntukGrafik = semuaTahun.length > 0 ? Math.max(...semuaTahun) : currentYear;
+    console.log('Tahun yang digunakan untuk grafik:', tahunUntukGrafik);
+    
     // Data nilai ketetapan per bulan (dalam rupiah)
     const nilaiKetetapanPerBulan = new Array(12).fill(0);
     ketetapan.forEach(k => {
         if (k.TanggalKetetapan) {
             const date = new Date(k.TanggalKetetapan);
-            if (date.getFullYear() === currentYear) {
+            console.log('Ketetapan tanggal:', k.TanggalKetetapan, 'parsed:', date, 'tahun:', date.getFullYear(), 'bulan:', date.getMonth());
+            if (date.getFullYear() === tahunUntukGrafik) {
                 nilaiKetetapanPerBulan[date.getMonth()] += parseFloat(k.TotalTagihan) || 0;
             }
         }
@@ -1035,13 +1067,17 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
     pembayaran.forEach(p => {
         if (p.TanggalBayar && p.StatusPembayaran === 'Sukses') {
             const date = new Date(p.TanggalBayar);
-            if (date.getFullYear() === currentYear) {
+            console.log('Pembayaran tanggal:', p.TanggalBayar, 'parsed:', date, 'tahun:', date.getFullYear(), 'bulan:', date.getMonth());
+            if (date.getFullYear() === tahunUntukGrafik) {
                 nilaiPembayaranPerBulan[date.getMonth()] += parseFloat(p.JumlahBayar) || 0;
             }
         }
     });
     
-    // Data target bulanan (bagi rata)
+    console.log('Nilai ketetapan per bulan:', nilaiKetetapanPerBulan);
+    console.log('Nilai pembayaran per bulan:', nilaiPembayaranPerBulan);
+    
+    // Data target bulanan (bagi rata) - gunakan target dari tahun yang sama
     const targetBulanan = new Array(12).fill(totalTargetTahun / 12);
     
     const ctx = document.getElementById('dashboardChart').getContext('2d');
@@ -1057,7 +1093,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
             labels: months,
             datasets: [
                 {
-                    label: 'Nilai Ketetapan',
+                    label: `Nilai Ketetapan (${tahunUntukGrafik})`,
                     data: nilaiKetetapanPerBulan,
                     borderColor: '#10B981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -1065,7 +1101,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     fill: false
                 },
                 {
-                    label: 'Nilai Pembayaran',
+                    label: `Nilai Pembayaran (${tahunUntukGrafik})`,
                     data: nilaiPembayaranPerBulan,
                     borderColor: '#3B82F6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1073,7 +1109,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     fill: true
                 },
                 {
-                    label: 'Target Bulanan',
+                    label: `Target Bulanan (${tahunUntukGrafik})`,
                     data: targetBulanan,
                     borderColor: '#F59E42',
                     backgroundColor: 'rgba(245, 158, 66, 0.1)',
@@ -1093,6 +1129,13 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     labels: {
                         usePointStyle: true,
                         padding: 20
+                    }
+                },
+                title: {
+                    display: true,
+                    text: `Grafik Pendapatan Daerah Tahun ${tahunUntukGrafik}`,
+                    font: {
+                        size: 16
                     }
                 }
             },
