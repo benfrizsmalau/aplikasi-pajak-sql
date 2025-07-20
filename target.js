@@ -126,26 +126,48 @@ function renderDropdownTahun() {
     });
 }
 
-dropdownTahun.addEventListener('change', () => {
-    tahunAktif = parseInt(dropdownTahun.value);
-    renderTargetTable();
-});
-
 // Render tabel target lengkap (semua jenis pajak)
 function renderTargetTable() {
     tabelTarget.innerHTML = '';
+    let totalTarget = 0;
     masterPajak.forEach(row => {
         const target = targetList.find(t => t.KodeLayanan === row.KodeLayanan && t.Tahun == tahunAktif);
         const nilaiTarget = target ? target.Target : 0;
+        totalTarget += Number(nilaiTarget) || 0;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="checkbox" class="rowCheck"></td>
             <td>${row.KodeLayanan}</td>
             <td>${row.NamaLayanan}</td>
-            <td><input type="number" class="inputTarget" value="${nilaiTarget}" min="0" data-kodelayanan="${row.KodeLayanan}"></td>
+            <td><input type="number" class="inputTarget" value="${nilaiTarget}" min="0" data-kodelayanan="${row.KodeLayanan}" style="text-align:right;"> <span class="target-format">Rp ${Number(nilaiTarget).toLocaleString('id-ID')}</span></td>
         `;
         tabelTarget.appendChild(tr);
     });
+    // Tambahkan baris total di bawah tabel
+    let tfoot = tabelTarget.parentNode.querySelector('tfoot');
+    if (!tfoot) {
+        tfoot = document.createElement('tfoot');
+        tabelTarget.parentNode.appendChild(tfoot);
+    }
+    tfoot.innerHTML = `<tr><td colspan="3" style="text-align:right;font-weight:bold;">Jumlah Target Keseluruhan</td><td style="text-align:right;font-weight:bold;">Rp ${totalTarget.toLocaleString('id-ID')}</td></tr>`;
+}
+
+// Update tampilan format rupiah saat input berubah
+function updateFormatRupiah() {
+    document.querySelectorAll('.inputTarget').forEach(input => {
+        input.addEventListener('input', function() {
+            const span = this.parentNode.querySelector('.target-format');
+            span.textContent = 'Rp ' + Number(this.value).toLocaleString('id-ID');
+            // Update total
+            renderTargetTable();
+        });
+    });
+}
+
+// Panggil updateFormatRupiah setelah render tabel
+function renderTargetTableWithFormat() {
+    renderTargetTable();
+    updateFormatRupiah();
 }
 
 // Salin target tahun sebelumnya
@@ -171,7 +193,7 @@ btnSalinTahun.addEventListener('click', () => {
             }
         }
     });
-    renderTargetTable();
+    renderTargetTableWithFormat();
 });
 
 // Checkbox all
@@ -201,7 +223,7 @@ async function simpanPerubahan() {
         }
     }
     await loadAllData();
-    renderTargetTable();
+    renderTargetTableWithFormat();
     alert('Perubahan target berhasil disimpan!');
 }
 
@@ -217,5 +239,5 @@ dropdownTahun.parentNode.appendChild(btnSimpan);
 window.addEventListener('DOMContentLoaded', async () => {
     await loadAllData();
     renderDropdownTahun();
-    renderTargetTable();
+    renderTargetTableWithFormat();
 }); 
