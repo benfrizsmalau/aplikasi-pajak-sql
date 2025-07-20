@@ -1023,6 +1023,14 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
     console.log('Data ketetapan:', ketetapan);
     console.log('Data pembayaran:', pembayaran);
     console.log('Tahun berjalan:', currentYear);
+    console.log('Jumlah ketetapan:', ketetapan.length);
+    console.log('Jumlah pembayaran:', pembayaran.length);
+    
+    // Cek apakah ada data dengan tanggal
+    const ketetapanDenganTanggal = ketetapan.filter(k => k.TanggalKetetapan);
+    const pembayaranDenganTanggal = pembayaran.filter(p => p.TanggalBayar);
+    console.log('Ketetapan dengan tanggal:', ketetapanDenganTanggal.length);
+    console.log('Pembayaran dengan tanggal:', pembayaranDenganTanggal.length);
     
     // Cari tahun yang tersedia di data
     const tahunKetetapan = new Set();
@@ -1098,7 +1106,10 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     borderColor: '#10B981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     tension: 0.4,
-                    fill: false
+                    fill: false,
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 },
                 {
                     label: `Nilai Pembayaran (${tahunUntukGrafik})`,
@@ -1106,7 +1117,10 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     borderColor: '#3B82F6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 },
                 {
                     label: `Target Bulanan (${tahunUntukGrafik})`,
@@ -1116,7 +1130,10 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     borderDash: [8, 4],
                     pointStyle: 'rectRot',
                     tension: 0.1,
-                    fill: false
+                    fill: false,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }
             ]
         },
@@ -1128,25 +1145,87 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     position: 'top',
                     labels: {
                         usePointStyle: true,
-                        padding: 20
+                        padding: 20,
+                        font: {
+                            size: 14
+                        }
                     }
                 },
                 title: {
                     display: true,
                     text: `Grafik Pendapatan Daerah Tahun ${tahunUntukGrafik}`,
                     font: {
-                        size: 16
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 20
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return context.dataset.label + ': Rp ' + value.toLocaleString('id-ID');
+                        }
                     }
                 }
             },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            },
             scales: {
-                y: {
-                    beginAtZero: true,
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Bulan',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
                     ticks: {
-                        callback: function(value) {
-                            return 'Rp ' + (value / 10000).toFixed(1) + 'M';
+                        font: {
+                            size: 12
                         }
                     }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Nilai (Rupiah)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        },
+                        callback: function(value) {
+                            if (value >= 1000000000) {
+                                return 'Rp ' + (value / 1000000000).toFixed(1) + 'M';
+                            } else if (value >= 1000000) {
+                                return 'Rp ' + (value / 1000000).toFixed(1) + 'Jt';
+                            } else if (value >= 1000) {
+                                return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                            }
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8
                 }
             }
         }
