@@ -1272,8 +1272,9 @@ th {
   margin-bottom: 8px;
 }
 #dashboardChart {
-  height: 60px!important;
-  max-height: 80px;
+  /* Hapus pembatasan tinggi yang menyebabkan grafik terpotong */
+  /* height: 60px!important; */
+  /* max-height: 80px; */
 }
 @media (min-width: 1200px) {
   .dashboard-grid {
@@ -1324,8 +1325,9 @@ th {
   margin-bottom: 8px;
 }
 #dashboardChart {
-  height: 60px!important;
-  max-height: 80px;
+  /* Hapus pembatasan tinggi yang menyebabkan grafik terpotong */
+  /* height: 60px!important; */
+  /* max-height: 80px; */
 }
 @media (min-width: 1200px) {
   .dashboard-grid {
