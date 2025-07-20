@@ -28,6 +28,7 @@
             <a href="daftar-pembayaran.html" class="active">Daftar Pembayaran</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
         </nav>
     </div>
 
@@ -54,24 +55,24 @@
                 </div>
                 <div class="table-content">
                     <table id="pembayaranTable" class="standard-table">
-                        <thead>
-                            <tr>
+                    <thead>
+                        <tr>
                                 <th><input type="checkbox" id="checkAllPembayaran"></th>
-                                <th>No</th>
-                                <th>ID Pembayaran</th>
-                                <th>ID Ketetapan</th>
-                                <th>NPWPD</th>
-                                <th>Tanggal Bayar</th>
-                                <th>Jumlah Bayar</th>
-                                <th>Metode</th>
-                                <th>Operator</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                            <th>No</th>
+                            <th>ID Pembayaran</th>
+                            <th>ID Ketetapan</th>
+                            <th>NPWPD</th>
+                            <th>Tanggal Bayar</th>
+                            <th>Jumlah Bayar</th>
+                            <th>Metode</th>
+                            <th>Operator</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                             <tr><td colspan="11" class="table-loading">Memuat data...</td></tr>
-                        </tbody>
-                    </table>
+                    </tbody>
+                </table>
                 </div>
             </div>
             <div id="pagination" class="pagination-container"></div>
@@ -151,7 +152,7 @@
                 html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage-1})">&laquo;</button>`;
                 for (let i = 1; i <= totalPages; i++) {
                     html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
-                }
+        }
                 html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage+1})">&raquo;</button>`;
             }
             paginationContainer.innerHTML = html;

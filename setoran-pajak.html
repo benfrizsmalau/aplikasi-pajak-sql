@@ -28,6 +28,7 @@
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
         </nav>
     </div>
 
@@ -193,14 +194,14 @@
             }
             try {
                 const resJson = await createData('createPembayaran', {
-                    id_ketetapan: idKetetapan,
-                    npwpd: npwpd,
-                    tanggalBayar: tanggalBayar,
-                    jumlahBayar: jumlahBayar,
-                    metodeBayar: metodeBayar,
-                    waktuInput: waktuInput,
-                    operator: operator,
-                    statusPembayaran: statusPembayaran
+                        id_ketetapan: idKetetapan,
+                        npwpd: npwpd,
+                        tanggalBayar: tanggalBayar,
+                        jumlahBayar: jumlahBayar,
+                        metodeBayar: metodeBayar,
+                        waktuInput: waktuInput,
+                        operator: operator,
+                        statusPembayaran: statusPembayaran
                 });
                 if (resJson.status === 'sukses') {
                     statusSetoran.textContent = 'Pembayaran berhasil dicatat!';

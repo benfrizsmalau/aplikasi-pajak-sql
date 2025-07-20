@@ -29,6 +29,7 @@
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
             <a href="daftar-fiskal.html" class="active">Daftar Fiskal</a>
             <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
         </nav>
     </div>
 
@@ -49,20 +50,20 @@
                 </div>
                 <div class="table-content">
                     <table id="fiskalTable" class="standard-table">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>NPWPD</th>
-                                <th>Nama Usaha</th>
-                                <th>Pajak Reklame</th>
-                                <th>Retribusi Persampahan</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>NPWPD</th>
+                            <th>Nama Usaha</th>
+                            <th>Pajak Reklame</th>
+                            <th>Retribusi Persampahan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                             <tr><td colspan="6" class="table-loading">Memuat data...</td></tr>
-                        </tbody>
-                    </table>
+                    </tbody>
+                </table>
                 </div>
             </div>
             <div id="pagination" class="pagination-container"></div>
@@ -207,7 +208,7 @@
             for (const fiskalItem of fiskalDataGlobal) {
                 try {
                     const response = await fetch('/.netlify/functions/api', {
-                        method: 'POST',
+                method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -218,9 +219,9 @@
                     });
                     
                     const result = await response.json();
-                    if (result.status === 'sukses') {
+            if (result.status === 'sukses') {
                         syncedCount++;
-                    } else {
+            } else {
                         errorCount++;
                         console.log(`Error for ${fiskalItem.npwpd}:`, result.message);
                     }
