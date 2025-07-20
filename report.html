@@ -1054,7 +1054,7 @@
                             // Check if the image data is valid
                             const base64Data = logoImg.substring(logoImg.indexOf(',') + 1);
                             if (base64Data.length > 1000) { // Ensure minimum size for valid image
-                                doc.addImage(base64Data, 'PNG', 15, yPos, 20, 25);
+                                doc.addImage(base64Data, 'PNG', 15, yPos, 25, 30);
                             } else {
                                 console.warn("Logo image data too small, skipping logo");
                             }
@@ -1065,17 +1065,17 @@
                         console.warn("Could not add logo to PDF, it might be corrupted. Continuing without it.", e);
                     }
                 }
-                addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 105, yPos + 7, 13, 'bold');
-                addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 105, yPos + 14, 11, 'bold');
-                addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 105, yPos + 20, 8);
+                addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 50, yPos + 7, 13, 'bold');
+                addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 50, yPos + 14, 11, 'bold');
+                addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 50, yPos + 20, 8);
                 doc.setLineWidth(1.2);
                 doc.line(15, yPos + 28, 195, yPos + 28);
                 yPos += 38;
 
                 // Judul Laporan
-                addText('LAPORAN RINGKASAN UMUM PENDAPATAN DAERAH', 105, yPos, 12, 'bold');
+                addText('LAPORAN RINGKASAN UMUM PENDAPATAN DAERAH', 50, yPos, 12, 'bold');
                 yPos += 7;
-                addText(`Periode: ${periodText}`, 105, yPos, 10);
+                addText(`Periode: ${periodText}`, 50, yPos, 10);
                 yPos += 12;
 
                 // Bagian 1: Ringkasan Kinerja
@@ -1202,18 +1202,18 @@
                             try {
                                 // Remove data URL prefix for jsPDF
                                 const rawImage = imageData.substring(imageData.indexOf(',') + 1);
-                                doc.addImage(rawImage, 'PNG', 50, yPos, 100, 100);
+                                doc.addImage(rawImage, 'PNG', 40, yPos, 120, 120);
                             } catch (imageError) {
                                 console.warn("Failed to add chart image to PDF:", imageError);
-                                addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                                addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
                             }
                         } else {
                             console.warn("Generated chart image is invalid, skipping chart");
-                            addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                            addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
                         }
                     } catch (chartError) {
                         console.warn("Failed to generate chart image:", chartError);
-                        addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                        addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
                     } finally {
                         // Clean up canvas
                         if (chartCanvas && chartCanvas.parentNode) {
@@ -1221,18 +1221,18 @@
                         }
                     }
                 } else {
-                    addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                    addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
                 }
                 yPos += 110;
 
                 // --- 5. FOOTER AND SAVE ---
                 yPos = 250; // Set fixed position for signature
                 addText(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 15, yPos, 9);
-                addText('Mamberamo Raya, ....................', 130, yPos, 10);
+                addText('Mamberamo Raya, ....................', 120, yPos, 10);
                 yPos += 8;
-                addText('Kepala Bidang Pendapatan Daerah', 130, yPos, 10);
+                addText('Kepala Bidang Pendapatan Daerah', 120, yPos, 10);
                 yPos += 22;
-                addText('(Nama Kepala Bidang)', 130, yPos, 10);
+                addText('(Nama Kepala Bidang)', 120, yPos, 10);
                 
                 const fileName = `Laporan_Ringkasan_Umum_${new Date().toISOString().split('T')[0]}.pdf`;
                 doc.save(fileName);
