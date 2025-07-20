@@ -973,8 +973,23 @@
         async function exportSummaryPDF() {
             try {
                 // Check if required libraries are loaded
-                if (typeof jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-                    alert('Error: PDF generation library not loaded. Please check your internet connection.');
+                if (typeof window.jspdf === 'undefined') {
+                    alert('Error: jsPDF library not loaded. Please check your internet connection.');
+                    return;
+                }
+                
+                if (typeof html2canvas === 'undefined') {
+                    alert('Error: html2canvas library not loaded. Please check your internet connection.');
+                    return;
+                }
+                
+                if (typeof Chart === 'undefined') {
+                    alert('Error: Chart.js library not loaded. Please check your internet connection.');
+                    return;
+                }
+                
+                if (typeof Chart === 'undefined') {
+                    alert('Error: Chart.js library not loaded. Please check your internet connection.');
                     return;
                 }
 
@@ -1032,11 +1047,20 @@
                 };
 
                 // Header
-                if (logoImg) {
+                if (logoImg && logoImg.length > 100) {
                     try {
-                        // Remove the data URL prefix for jsPDF, which can sometimes cause parsing issues
-                        const rawImage = logoImg.substring(logoImg.indexOf(',') + 1);
-                        doc.addImage(rawImage, 'PNG', 15, yPos, 20, 25);
+                        // Validate logo image data
+                        if (logoImg.startsWith('data:image/')) {
+                            // Check if the image data is valid
+                            const base64Data = logoImg.substring(logoImg.indexOf(',') + 1);
+                            if (base64Data.length > 1000) { // Ensure minimum size for valid image
+                                doc.addImage(base64Data, 'PNG', 15, yPos, 20, 25);
+                            } else {
+                                console.warn("Logo image data too small, skipping logo");
+                            }
+                        } else {
+                            console.warn("Invalid logo format, skipping logo");
+                        }
                     } catch (e) {
                         console.warn("Could not add logo to PDF, it might be corrupted. Continuing without it.", e);
                     }
@@ -1077,39 +1101,49 @@
                 yPos += 8;
                 
                 // --- 3. GENERATE CHART IMAGE ---
-                const chartCanvas = document.createElement('canvas');
-                chartCanvas.id = 'tempPdfChart';
-                chartCanvas.width = 400;
-                chartCanvas.height = 400;
-                chartCanvas.style.display = 'none';
-                document.body.appendChild(chartCanvas);
-
-                const chartData = {
-                    labels: Object.keys(rincianPendapatan),
-                    datasets: [{
-                        data: Object.values(rincianPendapatan),
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
-                    }]
-                };
-
-                new Chart(chartCanvas, {
-                    type: 'pie',
-                    data: chartData,
-                    options: {
-                        responsive: false,
-                        animation: { duration: 0 },
-                        plugins: { legend: { position: 'right' } }
-                    }
-                });
-
-                // Wait a bit for chart to render before converting
-                await new Promise(resolve => setTimeout(resolve, 500));
+                let chartCanvas = null;
+                let chartInstance = null;
                 
-                const canvasImage = await html2canvas(chartCanvas);
-                const imageData = canvasImage.toDataURL('image/png');
-                document.body.removeChild(chartCanvas);
+                try {
+                    chartCanvas = document.createElement('canvas');
+                    chartCanvas.id = 'tempPdfChart';
+                    chartCanvas.width = 400;
+                    chartCanvas.height = 400;
+                    chartCanvas.style.display = 'none';
+                    document.body.appendChild(chartCanvas);
 
-                // --- 4. DRAW TABLE AND ADD CHART TO PDF ---
+                    // Validate chart data
+                    const labels = Object.keys(rincianPendapatan);
+                    const values = Object.values(rincianPendapatan);
+                    
+                    if (labels.length === 0 || values.length === 0) {
+                        console.warn("No chart data available, skipping chart generation");
+                        chartCanvas = null;
+                    } else {
+                        const chartData = {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                            }]
+                        };
+
+                        chartInstance = new Chart(chartCanvas, {
+                            type: 'pie',
+                            data: chartData,
+                            options: {
+                                responsive: false,
+                                animation: { duration: 0 },
+                                plugins: { legend: { position: 'right' } }
+                            }
+                        });
+                    }
+                } catch (chartInitError) {
+                    console.warn("Failed to initialize chart:", chartInitError);
+                    chartCanvas = null;
+                }
+
+                // --- 4. DRAW TABLE FIRST ---
                 const tableX = 20;
                 const tableY = yPos;
                 const cellPadding = 3;
@@ -1142,11 +1176,53 @@
                 }
                 doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), rowY - tableY); // Outer box
                 
-                // Add chart
+                // --- 5. GENERATE CHART IMAGE WITH ERROR HANDLING ---
                 yPos = rowY + 5;
                 addText('3. Grafik Komposisi Pendapatan', 15, yPos, 11, 'bold');
                 yPos += 5;
-                doc.addImage(imageData, 'PNG', 50, yPos, 100, 100);
+                
+                if (chartCanvas) {
+                    try {
+                        // Wait longer for chart to render properly
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        const canvasImage = await html2canvas(chartCanvas, {
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: '#ffffff',
+                            scale: 2, // Higher quality
+                            logging: false
+                        });
+                        
+                        // Convert to base64 with proper error handling
+                        const imageData = canvasImage.toDataURL('image/png', 0.9);
+                        
+                        // Validate the image data
+                        if (imageData && imageData.length > 1000) {
+                            try {
+                                // Remove data URL prefix for jsPDF
+                                const rawImage = imageData.substring(imageData.indexOf(',') + 1);
+                                doc.addImage(rawImage, 'PNG', 50, yPos, 100, 100);
+                            } catch (imageError) {
+                                console.warn("Failed to add chart image to PDF:", imageError);
+                                addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                            }
+                        } else {
+                            console.warn("Generated chart image is invalid, skipping chart");
+                            addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                        }
+                    } catch (chartError) {
+                        console.warn("Failed to generate chart image:", chartError);
+                        addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                    } finally {
+                        // Clean up canvas
+                        if (chartCanvas && chartCanvas.parentNode) {
+                            document.body.removeChild(chartCanvas);
+                        }
+                    }
+                } else {
+                    addText('(Grafik tidak dapat ditampilkan)', 50, yPos + 50, 10);
+                }
                 yPos += 110;
 
                 // --- 5. FOOTER AND SAVE ---
