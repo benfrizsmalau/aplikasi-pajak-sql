@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initDashboardPage() {
     try {
-        const data = await fetchAllData();
-        document.getElementById('totalWp').textContent = data.wajibPajak.length;
+        // Gunakan loadDashboardData() yang lengkap dengan fitur target
+        await loadDashboardData();
     } catch (error) {
         document.getElementById('totalWp').textContent = 'Error';
         console.error("Error di Dasbor:", error);
