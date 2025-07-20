@@ -696,7 +696,7 @@ async function handleAutoCreateFiskal(data) {
 
 async function handleCreateTarget(data) {
     const { KodeLayanan, Tahun, Target, NamaLayanan } = data;
-    if (!KodeLayanan || !Tahun || !Target) throw new Error('Data tidak lengkap!');
+    if (!KodeLayanan || !Tahun || Target === undefined || Target === null) throw new Error('Data tidak lengkap!');
     const { error } = await supabase
         .from('TargetPajakRetribusi')
         .upsert([{ KodeLayanan, Tahun, Target, NamaLayanan }]);
