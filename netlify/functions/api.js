@@ -97,6 +97,12 @@ exports.handler = async (event) => {
                 case 'autoCreateFiskal':
                     responseData = await handleAutoCreateFiskal(body);
                     break;
+                case 'createTarget':
+                    responseData = await handleCreateTarget(body);
+                    break;
+                case 'deleteTarget':
+                    responseData = await handleDeleteTarget(body);
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -167,6 +173,14 @@ async function handleGet() {
         fiskal = [];
     }
 
+    let targetPajakRetribusi = [];
+    try {
+        const { data, error } = await supabase.from('TargetPajakRetribusi').select('*');
+        if (!error) targetPajakRetribusi = data || [];
+    } catch (e) {
+        targetPajakRetribusi = [];
+    }
+
     if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
     if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
 
@@ -177,6 +191,7 @@ async function handleGet() {
         ketetapan: ketetapan,
         pembayaran: pembayaran,
         fiskal: fiskal,
+        targetPajakRetribusi: targetPajakRetribusi, // <-- tambahkan ini
     };
 }
 
@@ -677,4 +692,26 @@ async function handleAutoCreateFiskal(data) {
     } catch (error) {
         throw new Error('Gagal auto-create fiskal: ' + error.message);
     }
+}
+
+async function handleCreateTarget(data) {
+    const { KodeLayanan, Tahun, Target, NamaLayanan } = data;
+    if (!KodeLayanan || !Tahun || !Target) throw new Error('Data tidak lengkap!');
+    const { error } = await supabase
+        .from('TargetPajakRetribusi')
+        .upsert([{ KodeLayanan, Tahun, Target, NamaLayanan }]);
+    if (error) throw new Error('Gagal menyimpan target: ' + error.message);
+    return { message: 'Target berhasil disimpan!' };
+}
+
+async function handleDeleteTarget(data) {
+    const { KodeLayanan, Tahun } = data;
+    if (!KodeLayanan || !Tahun) throw new Error('Data tidak lengkap!');
+    const { error } = await supabase
+        .from('TargetPajakRetribusi')
+        .delete()
+        .eq('KodeLayanan', KodeLayanan)
+        .eq('Tahun', Tahun);
+    if (error) throw new Error('Gagal menghapus target: ' + error.message);
+    return { message: 'Target berhasil dihapus!' };
 }
