@@ -482,11 +482,49 @@ async function handleCreatePembayaran(data) {
 
 // Handler hapus pembayaran
 async function handleDeletePembayaran(data) {
+    // Ambil ID_Ketetapan dari pembayaran yang akan dihapus
+    const { data: pembayaran, error: getError } = await supabase
+        .from('RiwayatPembayaran')
+        .select('ID_Ketetapan')
+        .eq('ID_Pembayaran', data.id_pembayaran)
+        .single();
+    if (getError || !pembayaran) throw new Error('Gagal mengambil data pembayaran: ' + (getError ? getError.message : 'Data tidak ditemukan'));
+    const id_ketetapan = pembayaran.ID_Ketetapan;
+
+    // Hapus pembayaran
     const { error } = await supabase
         .from('RiwayatPembayaran')
         .delete()
         .eq('ID_Pembayaran', data.id_pembayaran);
     if (error) throw new Error('Gagal hapus pembayaran: ' + error.message);
+
+    // Hitung ulang total pembayaran untuk ketetapan ini
+    const { data: pembayaranList, error: pembayaranError } = await supabase
+        .from('RiwayatPembayaran')
+        .select('JumlahBayar')
+        .eq('ID_Ketetapan', id_ketetapan);
+    if (pembayaranError) throw new Error('Gagal mengambil riwayat pembayaran: ' + pembayaranError.message);
+    const totalBayar = (pembayaranList || []).reduce((sum, p) => sum + Number(p.JumlahBayar), 0);
+
+    // Ambil total tagihan dari KetetapanPajak
+    const { data: ketetapan, error: ketetapanError } = await supabase
+        .from('KetetapanPajak')
+        .select('TotalTagihan')
+        .eq('ID_Ketetapan', id_ketetapan)
+        .single();
+    if (ketetapanError) throw new Error('Gagal mengambil data ketetapan: ' + ketetapanError.message);
+
+    // Update status ketetapan sesuai total pembayaran
+    let statusBaru = 'Belum Lunas';
+    if (totalBayar >= Number(ketetapan.TotalTagihan)) {
+        statusBaru = 'Lunas';
+    }
+    const { error: updateError } = await supabase
+        .from('KetetapanPajak')
+        .update({ Status: statusBaru })
+        .eq('ID_Ketetapan', id_ketetapan);
+    if (updateError) throw new Error('Gagal update status ketetapan: ' + updateError.message);
+
     return { message: 'Pembayaran berhasil dihapus!' };
 }
 
