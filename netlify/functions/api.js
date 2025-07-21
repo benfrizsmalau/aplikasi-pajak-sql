@@ -103,6 +103,9 @@ exports.handler = async (event) => {
                 case 'deleteTarget':
                     responseData = await handleDeleteTarget(body);
                     break;
+                case 'sync_ketetapan_status':
+                    responseData = await syncKetetapanStatus();
+                    break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
@@ -764,4 +767,33 @@ async function handleDeleteTarget(data) {
         .eq('Tahun', Tahun);
     if (error) throw new Error('Gagal menghapus target: ' + error.message);
     return { message: 'Target berhasil dihapus!' };
+}
+
+// Fungsi sinkronisasi massal status ketetapan
+async function syncKetetapanStatus() {
+    // Ambil semua ketetapan
+    const { data: ketetapanList, error: ketetapanError } = await supabase
+        .from('KetetapanPajak')
+        .select('ID_Ketetapan, TotalTagihan');
+    if (ketetapanError) throw new Error('Gagal mengambil data ketetapan: ' + ketetapanError.message);
+    let updated = 0;
+    for (const ket of ketetapanList) {
+        // Hitung total pembayaran untuk ketetapan ini
+        const { data: pembayaranList, error: pembayaranError } = await supabase
+            .from('RiwayatPembayaran')
+            .select('JumlahBayar')
+            .eq('ID_Ketetapan', ket.ID_Ketetapan);
+        if (pembayaranError) continue;
+        const totalBayar = (pembayaranList || []).reduce((sum, p) => sum + Number(p.JumlahBayar), 0);
+        let statusBaru = 'Belum Lunas';
+        if (totalBayar >= Number(ket.TotalTagihan)) {
+            statusBaru = 'Lunas';
+        }
+        const { error: updateError } = await supabase
+            .from('KetetapanPajak')
+            .update({ Status: statusBaru })
+            .eq('ID_Ketetapan', ket.ID_Ketetapan);
+        if (!updateError) updated++;
+    }
+    return { message: `Sinkronisasi selesai. Status diperbarui untuk ${updated} ketetapan.` };
 }
