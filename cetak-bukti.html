@@ -23,8 +23,17 @@
       return params.get('id') || '';
     }
     async function fetchAllData() {
-      const res = await fetch('/.netlify/functions/api');
-      return await res.json();
+      try {
+        const res = await fetch('/.netlify/functions/api');
+        if (!res.ok) {
+          alert('Gagal fetch API: ' + res.status + ' ' + res.statusText); // DEBUG
+          return {};
+        }
+        return await res.json();
+      } catch (e) {
+        alert('Error fetch API: ' + e.message); // DEBUG
+        return {};
+      }
     }
     function terbilang(nilai) {
       const satuan = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
