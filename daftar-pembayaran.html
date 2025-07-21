@@ -291,29 +291,34 @@
       const checkAll = document.getElementById('checkAllPembayaran');
       const table = document.getElementById('pembayaranTable');
       function updateProsesBtn() {
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+        const checked = table.querySelectorAll('.rowCheck:checked'); // Changed class
         prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
       }
       aksiSelect.addEventListener('change', updateProsesBtn);
       table.addEventListener('change', function(e) {
-        if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
+        if (e.target.classList.contains('rowCheck')) updateProsesBtn(); // Changed class
         if (e.target.id === 'checkAllPembayaran') {
-          const all = table.querySelectorAll('.rowCheckKetetapan');
+          const all = table.querySelectorAll('.rowCheck'); // Changed class
           all.forEach(cb => cb.checked = e.target.checked);
           updateProsesBtn();
         }
       });
       prosesBtn.addEventListener('click', function() {
         const aksi = aksiSelect.value;
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
-        const ids = Array.from(checked).map(cb => cb.closest('tr').querySelector('td:nth-child(3)').textContent.trim());
+        const checked = table.querySelectorAll('.rowCheck:checked'); // Changed class
+        const ids = Array.from(checked).map(cb => cb.value); // Directly get value from checkbox
         if (!aksi || ids.length === 0) return;
         if (aksi === 'delete') {
           if (confirm('Yakin hapus data terpilih?')) {
-            ids.forEach(async id => {
-              await handleDeletePembayaranClick(id);
-            });
-            setTimeout(() => loadPembayaranData(), 500);
+            // Use Promise.all to wait for all deletions to complete
+            Promise.all(ids.map(id => handleDeletePembayaranClick(id)))
+              .then(() => {
+                alert('Pembayaran terpilih berhasil dihapus.');
+                loadPembayaranData(); // Reload data after all deletions are done
+              })
+              .catch(err => {
+                alert('Gagal menghapus beberapa pembayaran: ' + err.message);
+              });
           }
         } else if (aksi === 'print') {
           if (ids.length === 1) {

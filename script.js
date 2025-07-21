@@ -898,7 +898,8 @@ function createStandardTable(tableId, data, config) {
         // Kolom checkbox jika diaktifkan
         if (config.showCheckbox) {
             const tdCheck = document.createElement('td');
-            tdCheck.innerHTML = `<input type="checkbox" class="rowCheckKetetapan" value="${rowData.ID_Ketetapan}">`;
+            const checkboxValue = rowData[config.idKey || 'ID_Ketetapan']; // Gunakan idKey jika ada, default ke ID_Ketetapan
+            tdCheck.innerHTML = `<input type="checkbox" class="rowCheck" value="${checkboxValue}">`; // Ubah class menjadi rowCheck
             row.appendChild(tdCheck);
         }
         config.columns.forEach(column => {
