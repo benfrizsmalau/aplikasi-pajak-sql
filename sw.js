@@ -40,14 +40,15 @@ self.addEventListener('fetch', event => {
                 // If not in cache, try to fetch from network
                 return fetch(event.request)
                     .then(networkResponse => {
-                        // If network fetch successful, cache it and return
-                        // Only cache successful responses (status 200) and non-opaque responses
+                        // IMPORTANT: Clone the response BEFORE consuming it for caching
+                        let responseToCache = networkResponse.clone();
+
                         if (networkResponse.ok && networkResponse.type === 'basic') {
                             caches.open(CACHE_NAME).then(cache => {
-                                cache.put(event.request, networkResponse.clone());
+                                cache.put(event.request, responseToCache); // Use the cloned response for caching
                             });
                         }
-                        return networkResponse;
+                        return networkResponse; // Return the original response to the browser
                     })
                     .catch(() => {
                         // If network fetch fails (e.g., offline), and not in cache,
