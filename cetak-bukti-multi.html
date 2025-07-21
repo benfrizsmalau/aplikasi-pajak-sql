@@ -124,8 +124,8 @@
         const ketetapanList = data.ketetapan || [];
         const masterList = data.masterPajak || [];
         const dokumens = ids.map((id, idx) => {
-          const pembayaran = pembayaranList.find(p => String(p.ID_Pembayaran) === String(id));
-          if (!pembayaran) return `<div class='bukti-container'><b>Data pembayaran ${id} tidak ditemukan.</b></div>`;
+          const pembayaran = pembayaranList.find(p => String(p.ID_Pembayaran).trim().toLowerCase() === String(id).trim().toLowerCase());
+          if (!pembayaran) return `<div class='bukti-container'><b>Data pembayaran ${id} tidak ditemukan.<br>Daftar ID di data: ${(pembayaranList || []).map(p => p.ID_Pembayaran).join(', ')}</b></div>`;
           const wp = wpList.find(w => w.NPWPD === pembayaran.NPWPD) || {};
           const ketetapan = ketetapanList.find(k => k.ID_Ketetapan === pembayaran.ID_Ketetapan) || {};
           const master = masterList.find(m => m.KodeLayanan === ketetapan.KodeLayanan) || {};

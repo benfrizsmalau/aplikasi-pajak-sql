@@ -63,9 +63,9 @@
       try {
         const data = await fetchAllData();
         alert('Jumlah data pembayaran dari API: ' + (data.pembayaran || []).length); // DEBUG
-        const pembayaran = (data.pembayaran || []).find(p => p.ID_Pembayaran === id);
+        const pembayaran = (data.pembayaran || []).find(p => (String(p.ID_Pembayaran).trim().toLowerCase() === String(id).trim().toLowerCase()));
         if (!pembayaran) {
-          alert('ID tidak ditemukan di data pembayaran!'); // DEBUG
+          alert('ID tidak ditemukan di data pembayaran!\nID dari URL: ' + id + '\nDaftar ID di data: ' + (data.pembayaran || []).map(p => p.ID_Pembayaran).join(', ')); // DEBUG
           document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">Data pembayaran tidak ditemukan.</p>';
           return;
         } else {
