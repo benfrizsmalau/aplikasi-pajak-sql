@@ -10,6 +10,68 @@ let dataMasterPajakGlobal = [];
 let dataKetetapanGlobal = [];
 let kelurahanChoices = null;
 
+// Inisialisasi Database IndexedDB dengan Dexie.js
+const db = new Dexie('AplikasiPajakDaerahDB');
+db.version(1).stores({
+    wajibPajak: 'NPWPD', // Primary key
+    wilayah: '++id, Kelurahan, Kecamatan', // Auto-increment primary key, plus indexes
+    masterPajak: 'KodeLayanan',
+    ketetapan: 'ID_Ketetapan',
+    pembayaran: 'ID_Pembayaran',
+    fiskal: 'nomor_fiskal',
+    targetPajakRetribusi: '[KodeLayanan+Tahun]' // Compound primary key
+});
+
+// Fungsi untuk menyimpan data ke IndexedDB
+async function saveDataToIndexedDB(data) {
+    try {
+        await db.transaction('rw', db.wajibPajak, db.wilayah, db.masterPajak, db.ketetapan, db.pembayaran, db.fiskal, db.targetPajakRetribusi, async () => {
+            // Clear existing data
+            await Promise.all([
+                db.wajibPajak.clear(),
+                db.wilayah.clear(),
+                db.masterPajak.clear(),
+                db.ketetapan.clear(),
+                db.pembayaran.clear(),
+                db.fiskal.clear(),
+                db.targetPajakRetribusi.clear()
+            ]);
+
+            // Add new data
+            if (data.wajibPajak && data.wajibPajak.length > 0) await db.wajibPajak.bulkAdd(data.wajibPajak);
+            if (data.wilayah && data.wilayah.length > 0) await db.wilayah.bulkAdd(data.wilayah);
+            if (data.masterPajak && data.masterPajak.length > 0) await db.masterPajak.bulkAdd(data.masterPajak);
+            if (data.ketetapan && data.ketetapan.length > 0) await db.ketetapan.bulkAdd(data.ketetapan);
+            if (data.pembayaran && data.pembayaran.length > 0) await db.pembayaran.bulkAdd(data.pembayaran);
+            if (data.fiskal && data.fiskal.length > 0) await db.fiskal.bulkAdd(data.fiskal);
+            if (data.targetPajakRetribusi && data.targetPajakRetribusi.length > 0) await db.targetPajakRetribusi.bulkAdd(data.targetPajakRetribusi);
+        });
+        console.log('Data berhasil disimpan ke IndexedDB.');
+    } catch (error) {
+        console.error('Gagal menyimpan data ke IndexedDB:', error);
+    }
+}
+
+// Fungsi untuk mengambil data dari IndexedDB
+async function getDataFromIndexedDB() {
+    try {
+        const [wajibPajak, wilayah, masterPajak, ketetapan, pembayaran, fiskal, targetPajakRetribusi] = await Promise.all([
+            db.wajibPajak.toArray(),
+            db.wilayah.toArray(),
+            db.masterPajak.toArray(),
+            db.ketetapan.toArray(),
+            db.pembayaran.toArray(),
+            db.fiskal.toArray(),
+            db.targetPajakRetribusi.toArray()
+        ]);
+        console.log('Data berhasil diambil dari IndexedDB.');
+        return { wajibPajak, wilayah, masterPajak, ketetapan, pembayaran, fiskal, targetPajakRetribusi };
+    } catch (error) {
+        console.error('Gagal mengambil data dari IndexedDB:', error);
+        return null;
+    }
+}
+
 // Router utama yang berjalan setelah halaman HTML selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
     const pageId = document.body.id;
@@ -472,14 +534,29 @@ function setupKetetapanEditModal() {
 }
 
 async function fetchAllData() {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
+        }
+        const result = await response.json();
+        if (result.status === 'gagal') throw new Error(result.message);
+
+        // Jika berhasil fetch dari network, simpan ke IndexedDB
+        await saveDataToIndexedDB(result);
+        return result;
+
+    } catch (networkError) {
+        console.warn('Gagal mengambil data dari network, mencoba dari IndexedDB:', networkError);
+        const cachedData = await getDataFromIndexedDB();
+        if (cachedData) {
+            console.log('Menggunakan data dari IndexedDB (offline mode).');
+            return cachedData;
+        } else {
+            throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
+        }
     }
-    const result = await response.json();
-    if (result.status === 'gagal') throw new Error(result.message);
-    return result;
 }
 
 function populateWpDataTable(wajibPajakData) {
@@ -594,8 +671,7 @@ function displayKetetapanHistory(riwayatData) {
             const aksiCell = document.createElement('td');
             aksiCell.innerHTML = `
                 <a href="cetak-skpd.html?id=${idKetetapan}" target="_blank" class="btn-aksi" style="background-color: #0d6efd; text-decoration: none; display: inline-block; margin-right: 5px;">Cetak</a>
-                <button class="btn-aksi btn-edit" onclick="handleEditKetetapanClick('${idKetetapan}')">Edit</button>
-                <button class="btn-aksi btn-hapus" onclick="handleDeleteKetetapanClick('${idKetetapan}')">Hapus</button>
+                <button class="btn-aksi btn-edit" onclick="handleEditKetetapanClick('${idKetetapan}')">Edit</button> <button class="btn-aksi btn-hapus" onclick="handleDeleteKetetapanClick('${idKetetapan}')">Hapus</button>
             `;
             row.appendChild(aksiCell);
             tableBody.appendChild(row);
