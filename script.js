@@ -485,7 +485,7 @@ function setupKetetapanEditModal() {
 
 async function fetchAllData() {
     try {
-        const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl);
 
         // Periksa apakah respons adalah fallback HTML dari Service Worker
         const contentType = response.headers.get('content-type');
@@ -495,14 +495,14 @@ async function fetchAllData() {
         }
 
         // Jika bukan fallback HTML, lanjutkan seperti biasa (mengharapkan JSON)
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
-        }
-        const result = await response.json();
-        if (result.status === 'gagal') throw new Error(result.message);
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
+    }
+    const result = await response.json();
+    if (result.status === 'gagal') throw new Error(result.message);
 
-        return result;
+    return result;
 
     } catch (error) {
         console.warn('Error mengambil data dari network, mencoba dari IndexedDB:', error);
@@ -823,7 +823,7 @@ function createStandardTable(tableId, data, config) {
         if (config.showCheckbox) {
             const tdCheck = document.createElement('td');
             const checkboxValue = rowData[config.idKey || 'ID_Ketetapan']; // Gunakan idKey jika ada, default ke ID_Ketetapan
-            tdCheck.innerHTML = `<input type="checkbox" class="rowCheck" value="${checkboxValue}">`; // Ubah class menjadi rowCheck
+            tdCheck.innerHTML = `<input type="checkbox" class="rowCheckKetetapan" value="${checkboxValue}">`;
             row.appendChild(tdCheck);
         }
         config.columns.forEach(column => {
