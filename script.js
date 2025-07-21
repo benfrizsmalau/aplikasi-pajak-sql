@@ -1107,3 +1107,133 @@ function updateRevenueReport(data) {
         breakdownContainer.appendChild(item);
     });
 }
+
+function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    const currentYear = new Date().getFullYear();
+    // Data nilai ketetapan per bulan
+    const nilaiKetetapanPerBulan = new Array(12).fill(0);
+    ketetapan.forEach(k => {
+        if (k.TanggalKetetapan) {
+            const date = new Date(k.TanggalKetetapan);
+            if (date.getFullYear() === currentYear) {
+                nilaiKetetapanPerBulan[date.getMonth()] += parseFloat(k.TotalTagihan) || 0;
+            }
+        }
+    });
+    // Data nilai pembayaran per bulan
+    const nilaiPembayaranPerBulan = new Array(12).fill(0);
+    pembayaran.forEach(p => {
+        if (p.TanggalBayar && p.StatusPembayaran === 'Sukses') {
+            const date = new Date(p.TanggalBayar);
+            if (date.getFullYear() === currentYear) {
+                nilaiPembayaranPerBulan[date.getMonth()] += parseFloat(p.JumlahBayar) || 0;
+            }
+        }
+    });
+    // Data target bulanan (bagi rata)
+    const targetBulanan = new Array(12).fill(totalTargetTahun / 12);
+    const ctx = document.getElementById('dashboardChart').getContext('2d');
+    if (window.dashboardChartInstance) {
+        window.dashboardChartInstance.destroy();
+    }
+    window.dashboardChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: `Nilai Ketetapan (${currentYear})`,
+                    data: nilaiKetetapanPerBulan,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: false,
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: `Nilai Pembayaran (${currentYear})`,
+                    data: nilaiPembayaranPerBulan,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                },
+                {
+                    label: `Target Bulanan (${currentYear})`,
+                    data: targetBulanan,
+                    borderColor: '#F59E42',
+                    backgroundColor: 'rgba(245, 158, 66, 0.1)',
+                    borderDash: [8, 4],
+                    pointStyle: 'rectRot',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { size: 14 }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: `Grafik Pendapatan Daerah Tahun ${currentYear}`,
+                    font: { size: 18, weight: 'bold' },
+                    padding: { top: 10, bottom: 20 }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            return context.dataset.label + ': Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            scales: {
+                x: {
+                    display: true,
+                    title: { display: true, text: 'Bulan', font: { size: 14, weight: 'bold' } },
+                    ticks: { font: { size: 12 } }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Nilai (Rupiah)', font: { size: 14, weight: 'bold' } },
+                    ticks: {
+                        font: { size: 12 },
+                        callback: function(value) {
+                            if (value >= 1000000000) {
+                                return 'Rp ' + (value / 1000000000).toFixed(1) + 'M';
+                            } else if (value >= 1000000) {
+                                return 'Rp ' + (value / 1000000).toFixed(1) + 'Jt';
+                            } else if (value >= 1000) {
+                                return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                            }
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            elements: { point: { hoverRadius: 8 } }
+        }
+    });
+}
