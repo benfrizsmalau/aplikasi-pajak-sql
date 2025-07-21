@@ -37,7 +37,27 @@ self.addEventListener('fetch', event => {
                 if (response) {
                     return response;
                 }
-                return fetch(event.request);
+                // If not in cache, try to fetch from network
+                return fetch(event.request)
+                    .then(networkResponse => {
+                        // If network fetch successful, cache it and return
+                        // Only cache successful responses (status 200) and non-opaque responses
+                        if (networkResponse.ok && networkResponse.type === 'basic') {
+                            caches.open(CACHE_NAME).then(cache => {
+                                cache.put(event.request, networkResponse.clone());
+                            });
+                        }
+                        return networkResponse;
+                    })
+                    .catch(() => {
+                        // If network fetch fails (e.g., offline), and not in cache,
+                        // return a generic offline response.
+                        console.warn('Fetch failed for:', event.request.url, 'Returning generic offline response.');
+                        // Return a generic offline response for any failed fetch
+                        return new Response('<h1>Offline</h1><p>Anda sedang offline. Data yang ditampilkan mungkin tidak terbaru.</p>', {
+                            headers: { 'Content-Type': 'text/html' }
+                        });
+                    });
             })
     );
 });
