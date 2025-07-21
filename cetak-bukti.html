@@ -45,6 +45,7 @@
     }
     async function main() {
       const id = getIdFromUrl();
+      alert('ID dari URL: ' + id); // DEBUG
       if (!id) {
         document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">ID pembayaran tidak ditemukan.</p>';
         return;
@@ -52,10 +53,14 @@
       document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#888;">Mengambil data...</p>';
       try {
         const data = await fetchAllData();
+        alert('Jumlah data pembayaran dari API: ' + (data.pembayaran || []).length); // DEBUG
         const pembayaran = (data.pembayaran || []).find(p => p.ID_Pembayaran === id);
         if (!pembayaran) {
+          alert('ID tidak ditemukan di data pembayaran!'); // DEBUG
           document.getElementById('bukti-print').innerHTML = '<p style="text-align:center; color:#c00;">Data pembayaran tidak ditemukan.</p>';
           return;
+        } else {
+          alert('ID ditemukan: ' + pembayaran.ID_Pembayaran); // DEBUG
         }
         const wajibPajak = (data.wajibPajak || []).find(wp => wp.NPWPD === pembayaran.NPWPD) || {};
         const ketetapan = (data.ketetapan || []).find(k => k.ID_Ketetapan === pembayaran.ID_Ketetapan) || {};
