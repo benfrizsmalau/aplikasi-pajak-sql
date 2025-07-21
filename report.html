@@ -606,15 +606,7 @@
                 masterPajakCount: data.masterPajak?.length || 0
             });
             
-            // Update revenue breakdown
-            const revenueTypes = ['Hotel', 'Restoran', 'Hiburan', 'Reklame', 'Sampah'];
-            revenueTypes.forEach(type => {
-                const revenue = revenueByType[type] || 0;
-                const percentage = totalRevenue > 0 ? (revenue / totalRevenue * 100).toFixed(1) : 0;
-                
-                document.getElementById(`revenue${type}`).textContent = `Rp ${revenue.toLocaleString('id-ID')}`;
-                document.getElementById(`percentage${type}`).textContent = `${percentage}%`;
-            });
+        
             
             // Update revenue chart
             updateRevenueChart(revenueByType);
