@@ -150,41 +150,37 @@
 
     <script src="script.js"></script>
     <script>
-    // Script khusus untuk halaman daftar ketetapan
-    let ketetapanDataGlobal = [];
-    let wajibPajakDataGlobal = [];
-    let masterPajakDataGlobal = [];
-    let pembayaranDataGlobal = [];
+(function() {
+// Script khusus untuk halaman daftar ketetapan
+let ketetapanDataGlobal = [];
+let wajibPajakDataGlobal = [];
+let masterPajakDataGlobal = [];
+let pembayaranDataGlobal = [];
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadKetetapanData();
-        setupEventListeners();
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadKetetapanData();
+    setupEventListeners();
+});
 
-    async function loadKetetapanData() {
-        try {
-            const response = await fetch('/.netlify/functions/api');
-            const data = await response.json();
-            
-            ketetapanDataGlobal = data.ketetapan || [];
-            wajibPajakDataGlobal = data.wajibPajak || [];
-            masterPajakDataGlobal = data.masterPajak || [];
-            pembayaranDataGlobal = data.pembayaran || [];
-            
-            // Isi filter jenis pajak
-            populateJenisPajakFilter();
-            
-            // Tampilkan data
-            displayKetetapanData(ketetapanDataGlobal);
-            
-        } catch (error) {
-            console.error('Error loading data:', error);
-            document.querySelector('#ketetapanTable tbody').innerHTML = 
-                '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
-        }
+async function loadKetetapanData() {
+    try {
+        const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
+        if (!response.ok) { alert('Gagal fetch API: ' + response.status + ' ' + response.statusText); return; }
+        const data = await response.json();
+        ketetapanDataGlobal = data.ketetapan || [];
+        wajibPajakDataGlobal = data.wajibPajak || [];
+        masterPajakDataGlobal = data.masterPajak || [];
+        pembayaranDataGlobal = data.pembayaran || [];
+        populateJenisPajakFilter();
+        displayKetetapanData(ketetapanDataGlobal);
+    } catch (error) {
+        alert('Gagal fetch API: ' + error.message);
+        document.querySelector('#ketetapanTable tbody').innerHTML = 
+            '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
     }
+}
 
-    function populateJenisPajakFilter() {
+function populateJenisPajakFilter() {
         const filterSelect = document.getElementById('filterJenisPajak');
         const uniqueJenisPajak = [...new Set(ketetapanDataGlobal.map(k => {
             const master = masterPajakDataGlobal.find(m => m.KodeLayanan === k.KodeLayanan);
@@ -557,6 +553,7 @@
         }
       });
     });
+})();
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>

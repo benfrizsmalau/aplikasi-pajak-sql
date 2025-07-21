@@ -82,77 +82,80 @@
     <div id="printArea" style="display:none;"></div>
     <script src="script.js"></script>
     <script>
-    // Script khusus untuk halaman daftar pembayaran
-    let pembayaranDataGlobal = [];
-    let wajibPajakDataGlobal = [];
-    let masterPajakDataGlobal = [];
-    let ketetapanDataGlobal = [];
+(function() {
+// Script khusus untuk halaman daftar pembayaran
+let pembayaranDataGlobal = [];
+let wajibPajakDataGlobal = [];
+let masterPajakDataGlobal = [];
+let ketetapanDataGlobal = [];
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadPembayaranData();
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadPembayaranData();
+});
 
-    async function loadPembayaranData() {
-        try {
-            const response = await fetch('/.netlify/functions/api');
-            const data = await response.json();
-            pembayaranDataGlobal = data.pembayaran || [];
-            wajibPajakDataGlobal = data.wajibPajak || [];
-            masterPajakDataGlobal = data.masterPajak || [];
-            ketetapanDataGlobal = data.ketetapan || [];
-            displayPembayaranData(pembayaranDataGlobal);
-        } catch (error) {
-            document.querySelector('#pembayaranTable tbody').innerHTML = 
-                '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data pembayaran.</td></tr>';
-        }
+async function loadPembayaranData() {
+    try {
+        const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
+        if (!response.ok) { alert('Gagal fetch API: ' + response.status + ' ' + response.statusText); return; }
+        const data = await response.json();
+        pembayaranDataGlobal = data.pembayaran || [];
+        wajibPajakDataGlobal = data.wajibPajak || [];
+        masterPajakDataGlobal = data.masterPajak || [];
+        ketetapanDataGlobal = data.ketetapan || [];
+        displayPembayaranData(pembayaranDataGlobal);
+    } catch (error) {
+        alert('Gagal fetch API: ' + error.message);
+        document.querySelector('#pembayaranTable tbody').innerHTML = 
+            '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data pembayaran.</td></tr>';
     }
+}
 
-    function displayPembayaranData(data) {
-        const totalRecords = document.getElementById('totalRecords');
-        totalRecords.textContent = `Total: ${data.length} pembayaran`;
-        // PAGINATION
-        const rowsPerPage = 10;
-        let currentPage = 1;
-        const paginationContainer = document.getElementById('pagination');
-        function renderPage(page) {
-            currentPage = page;
-            const start = (page - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageData = data.slice(start, end);
-            renderTable(pageData);
-            renderPagination();
-        }
-        function renderTable(pageData) {
-            const tableConfig = {
-                showCheckbox: true,
-                idKey: 'ID_Pembayaran',
-                columns: [
-                    { key: 'index', label: 'No', type: 'text' },
-                    { key: 'ID_Pembayaran', label: 'ID Pembayaran', type: 'text' },
-                    { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
-                    { key: 'NPWPD', label: 'NPWPD', type: 'text' },
-                    { key: 'TanggalBayar', label: 'Tanggal Bayar', type: 'date' },
-                    { key: 'JumlahBayar', label: 'Jumlah Bayar', type: 'rupiah' },
-                    { key: 'MetodeBayar', label: 'Metode', type: 'text' },
-                    { key: 'Operator', label: 'Operator', type: 'text' },
-                    { key: 'StatusPembayaran', label: 'Status', type: 'status', statusColors: { 'Sukses': 'green', 'Gagal': 'red' } }
-                ],
-                emptyMessage: 'Tidak ada data pembayaran.'
-            };
-            // Proses data untuk tabel
-            const processedData = pageData.map((item, index) => ({
-                ...item,
-                index: (currentPage - 1) * rowsPerPage + index + 1
-            }));
-            createStandardTable('pembayaranTable', processedData, tableConfig);
-        }
-        function renderPagination() {
-            const totalPages = Math.ceil(data.length / rowsPerPage);
-            let html = '';
-            if (totalPages > 1) {
-                html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage-1})">&laquo;</button>`;
-                for (let i = 1; i <= totalPages; i++) {
-                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+function displayPembayaranData(data) {
+    const totalRecords = document.getElementById('totalRecords');
+    totalRecords.textContent = `Total: ${data.length} pembayaran`;
+    // PAGINATION
+    const rowsPerPage = 10;
+    let currentPage = 1;
+    const paginationContainer = document.getElementById('pagination');
+    function renderPage(page) {
+        currentPage = page;
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = data.slice(start, end);
+        renderTable(pageData);
+        renderPagination();
+    }
+    function renderTable(pageData) {
+        const tableConfig = {
+            showCheckbox: true,
+            idKey: 'ID_Pembayaran',
+            columns: [
+                { key: 'index', label: 'No', type: 'text' },
+                { key: 'ID_Pembayaran', label: 'ID Pembayaran', type: 'text' },
+                { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
+                { key: 'NPWPD', label: 'NPWPD', type: 'text' },
+                { key: 'TanggalBayar', label: 'Tanggal Bayar', type: 'date' },
+                { key: 'JumlahBayar', label: 'Jumlah Bayar', type: 'rupiah' },
+                { key: 'MetodeBayar', label: 'Metode', type: 'text' },
+                { key: 'Operator', label: 'Operator', type: 'text' },
+                { key: 'StatusPembayaran', label: 'Status', type: 'status', statusColors: { 'Sukses': 'green', 'Gagal': 'red' } }
+            ],
+            emptyMessage: 'Tidak ada data pembayaran.'
+        };
+        // Proses data untuk tabel
+        const processedData = pageData.map((item, index) => ({
+            ...item,
+            index: (currentPage - 1) * rowsPerPage + index + 1
+        }));
+        createStandardTable('pembayaranTable', processedData, tableConfig);
+    }
+    function renderPagination() {
+        const totalPages = Math.ceil(data.length / rowsPerPage);
+        let html = '';
+        if (totalPages > 1) {
+            html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage-1})">&laquo;</button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
         }
                 html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage+1})">&raquo;</button>`;
             }
@@ -330,6 +333,7 @@
         }
       });
     });
+})();
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
