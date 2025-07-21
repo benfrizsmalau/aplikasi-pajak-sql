@@ -310,17 +310,33 @@
         // Report specific JavaScript
         let reportData = {};
         let currentReportType = 'summary';
-        
+
         // Initialize report page
         document.addEventListener('DOMContentLoaded', function() {
+            initRevenueReportFilters();
             loadReportData();
             setupDateRangeFilter();
         });
-        
+
+        function initRevenueReportFilters() {
+            const tahunSelect = document.getElementById('dateRangeTahun');
+            if (!tahunSelect) return;
+            const tahunSekarang = new Date().getFullYear();
+            for (let i = 0; i < 5; i++) {
+                const tahun = tahunSekarang - i;
+                const option = document.createElement('option');
+                option.value = tahun;
+                option.textContent = tahun;
+                tahunSelect.appendChild(option);
+            }
+            tahunSelect.value = tahunSekarang;
+            tahunSelect.addEventListener('change', loadReportData);
+        }
+
         function setupDateRangeFilter() {
             const dateRange = document.getElementById('dateRange');
             const customDateGroup = document.getElementById('customDateGroup');
-            
+
             dateRange.addEventListener('change', function() {
                 if (this.value === 'custom') {
                     customDateGroup.style.display = 'flex';
@@ -335,38 +351,51 @@
                 loadReportData();
             });
         }
-        
+
         function changeReportType() {
             const reportType = document.getElementById('reportType').value;
             currentReportType = reportType;
-            
+
             // Hide all report sections
             const sections = document.querySelectorAll('.report-section');
             sections.forEach(section => section.style.display = 'none');
-            
+
             // Show selected report section
             const selectedSection = document.getElementById(reportType + 'Report');
             if (selectedSection) {
                 selectedSection.style.display = 'block';
             }
-            
+
+            // Show/hide filters based on report type
+            const revenueYearFilter = document.getElementById('revenueYearFilter');
+            const dateRangeFilter = document.getElementById('dateRangeFilter');
+            const customDateGroup = document.getElementById('customDateGroup');
+
+            if (reportType === 'revenue') {
+                revenueYearFilter.style.display = 'flex';
+                dateRangeFilter.style.display = 'none';
+                customDateGroup.style.display = 'none';
+            } else {
+                revenueYearFilter.style.display = 'none';
+                dateRangeFilter.style.display = 'flex';
+                if (document.getElementById('dateRange').value === 'custom') {
+                    customDateGroup.style.display = 'flex';
+                }
+            }
+
             loadReportData();
         }
-        
+
         async function loadReportData() {
             try {
                 const response = await fetch('/.netlify/functions/api');
                 const data = await response.json();
                 reportData = data;
-                
-                // Get date range
+
                 const dateRange = getDateRange();
-                
-                // Filter data based on date range
                 const filteredData = filterDataByDateRange(data, dateRange);
-                
-                // Update report based on current type
-                switch(currentReportType) {
+
+                switch (currentReportType) {
                     case 'summary':
                         updateSummaryReport(filteredData);
                         break;
@@ -389,56 +418,67 @@
                         updatePerformanceReport(filteredData);
                         break;
                 }
-                
+
             } catch (error) {
                 console.error('Error loading report data:', error);
                 alert('Gagal memuat data laporan');
             }
         }
-        
+
         function getDateRange() {
-            const dateRange = document.getElementById('dateRange').value;
+            const reportType = document.getElementById('reportType').value;
             const today = new Date();
             let startDate, endDate;
-            
-            switch(dateRange) {
-                case 'today':
-                    startDate = new Date(today);
-                    endDate = new Date(today);
-                    break;
-                case 'week':
-                    startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    endDate = new Date(today);
-                    break;
-                case 'month':
-                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                    endDate = new Date(today);
-                    break;
-                case 'quarter':
-                    const quarter = Math.floor(today.getMonth() / 3);
-                    startDate = new Date(today.getFullYear(), quarter * 3, 1);
-                    endDate = new Date(today);
-                    break;
-                case 'year':
-                    startDate = new Date(today.getFullYear(), 0, 1);
-                    endDate = new Date(today);
-                    break;
-                case 'custom':
-                    startDate = new Date(document.getElementById('startDate').value);
-                    endDate = new Date(document.getElementById('endDate').value);
-                    break;
-                default:
-                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                    endDate = new Date(today);
-            }
-            
-            return { startDate, endDate };
-        }
-        
-        function filterDataByDateRange(data, dateRange) {
-            const { startDate, endDate } = dateRange;
 
-            // Set time to beginning and end of day for accurate comparison
+            if (reportType === 'revenue') {
+                const year = document.getElementById('dateRangeTahun').value;
+                startDate = new Date(year, 0, 1);
+                endDate = new Date(year, 11, 31, 23, 59, 59);
+            } else {
+                const dateRange = document.getElementById('dateRange').value;
+                switch (dateRange) {
+                    case 'today':
+                        startDate = new Date(today);
+                        endDate = new Date(today);
+                        break;
+                    case 'week':
+                        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        endDate = new Date(today);
+                        break;
+                    case 'month':
+                        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                        endDate = new Date(today);
+                        break;
+                    case 'quarter':
+                        const quarter = Math.floor(today.getMonth() / 3);
+                        startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                        endDate = new Date(today);
+                        break;
+                    case 'year':
+                        startDate = new Date(today.getFullYear(), 0, 1);
+                        endDate = new Date(today);
+                        break;
+                    case 'custom':
+                        startDate = new Date(document.getElementById('startDate').value);
+                        endDate = new Date(document.getElementById('endDate').value);
+                        break;
+                    default:
+                        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                        endDate = new Date(today);
+                }
+            }
+            return {
+                startDate,
+                endDate
+            };
+        }
+
+        function filterDataByDateRange(data, dateRange) {
+            const {
+                startDate,
+                endDate
+            } = dateRange;
+
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(23, 59, 59, 999);
 
@@ -453,79 +493,38 @@
                 const pembayaranDate = new Date(p.TanggalBayar);
                 return pembayaranDate >= startDate && pembayaranDate <= endDate;
             });
-            
-            // Debug: log data counts dan sample data
-            console.log('Original data counts:', {
-                ketetapan: data.ketetapan?.length || 0,
-                pembayaran: data.pembayaran?.length || 0,
-                wajibPajak: data.wajibPajak?.length || 0,
-                masterPajak: data.masterPajak?.length || 0
-            });
-            
-            console.log('Sample pembayaran data:', data.pembayaran?.slice(0, 3));
-            console.log('Sample ketetapan data:', data.ketetapan?.slice(0, 3));
-            
-            console.log('Filtered data counts:', {
-                ketetapan: filteredKetetapan.length,
-                pembayaran: filteredPembayaran.length
-            });
-            
+
             return {
-                ...data, // Return all original data like wajibPajak and masterPajak
+                ...data,
                 ketetapan: filteredKetetapan,
                 pembayaran: filteredPembayaran
             };
         }
-        
+
         function updateSummaryReport(data) {
-            // Calculate summary statistics
-            const totalRevenue = data.pembayaran.reduce((sum, p) => {
-                const amount = parseFloat(p.JumlahBayar) || 0;
-                console.log(`Pembayaran ${p.ID_Pembayaran}: ${amount}`);
-                return sum + amount;
-            }, 0);
-            
-            // Count active WP from all data, not just pembayaran
+            const totalRevenue = data.pembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
             const activeWp = data.wajibPajak?.length || 0;
             const totalKetetapan = data.ketetapan.length;
             const successPayment = data.pembayaran.filter(p => p.StatusPembayaran === 'Sukses').length;
-            
-            // Debug: log calculations
-            console.log('Summary calculations:', {
-                totalRevenue,
-                activeWp,
-                totalKetetapan,
-                successPayment,
-                pembayaranCount: data.pembayaran.length,
-                ketetapanCount: data.ketetapan.length,
-                samplePembayaran: data.pembayaran.slice(0, 2)
-            });
-            
-            // Update summary values
+
             document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
             document.getElementById('activeWp').textContent = activeWp;
             document.getElementById('totalKetetapan').textContent = totalKetetapan;
             document.getElementById('successPayment').textContent = successPayment;
-            
-            // Update chart
+
             updateSummaryChart(data);
         }
-        
+
         function updateSummaryChart(data) {
             const ctx = document.getElementById('summaryChart').getContext('2d');
-            
-            // Destroy existing chart
             if (window.summaryChartInstance) {
                 window.summaryChartInstance.destroy();
             }
-            
-            // Prepare data for chart
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
             const currentYear = new Date().getFullYear();
-            
             const revenueData = new Array(12).fill(0);
             const ketetapanData = new Array(12).fill(0);
-            
+
             data.pembayaran.forEach(p => {
                 if (p.TanggalBayar) {
                     const date = new Date(p.TanggalBayar);
@@ -534,7 +533,6 @@
                     }
                 }
             });
-            
             data.ketetapan.forEach(k => {
                 if (k.TanggalKetetapan) {
                     const date = new Date(k.TanggalKetetapan);
@@ -543,27 +541,24 @@
                     }
                 }
             });
-            
+
             window.summaryChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
-                    datasets: [
-                        {
-                            label: 'Pendapatan (Juta Rupiah)',
-                            data: revenueData.map(v => v / 1000000),
-                            borderColor: '#4CAF50',
-                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Jumlah Ketetapan',
-                            data: ketetapanData,
-                            borderColor: '#2196F3',
-                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                            tension: 0.4
-                        }
-                    ]
+                    datasets: [{
+                        label: 'Pendapatan (Juta Rupiah)',
+                        data: revenueData.map(v => v / 1000000),
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Jumlah Ketetapan',
+                        data: ketetapanData,
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.4
+                    }]
                 },
                 options: {
                     responsive: true,
@@ -581,48 +576,81 @@
                 }
             });
         }
-        
+
         function updateRevenueReport(data) {
-            // Group revenue by jenis pajak
-            const revenueByType = {};
-            const totalRevenue = data.pembayaran.reduce((sum, p) => {
+            const masterList = reportData.masterPajak || [];
+            const targetList = reportData.targetPajakRetribusi || [];
+            const pembayaranList = data.pembayaran || [];
+            const tahunDipilih = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
+
+            const breakdownContainer = document.getElementById('revenueBreakdown');
+            breakdownContainer.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'revenue-header';
+            header.style.cssText = 'display: flex; font-weight: bold; gap: 16px; margin-bottom: 8px; padding: 8px; background-color: #f4f6f8; border-radius: 4px;';
+            header.innerHTML = `
+                <span style="flex: 3;">Jenis Pajak/Retribusi</span>
+                <span style="flex: 2; text-align: right;">Realisasi</span>
+                <span style="flex: 2; text-align: right;">Target ${tahunDipilih}</span>
+                <span style="flex: 1; text-align: center;">Kontribusi</span>
+                <span style="flex: 1; text-align: center;">Capaian</span>
+            `;
+            breakdownContainer.appendChild(header);
+
+            let totalRealisasi = 0;
+            const realisasiByKode = {};
+            pembayaranList.forEach(p => {
+                if (p.StatusPembayaran !== 'Sukses') return;
+                const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+                if (!ketetapan) return;
+                const kode = ketetapan.KodeLayanan;
+                if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
                 const amount = parseFloat(p.JumlahBayar) || 0;
-                const ketetapan = data.ketetapan.find(k => k.ID_Ketetapan === p.ID_Ketetapan);
-                if (ketetapan) {
-                    const masterPajak = data.masterPajak?.find(m => m.KodeLayanan === ketetapan.KodeLayanan);
-                    const jenisPajak = masterPajak?.NamaLayanan || 'Lainnya';
-                    if (!revenueByType[jenisPajak]) revenueByType[jenisPajak] = 0;
-                    revenueByType[jenisPajak] += amount;
-                }
-                return sum + amount;
-            }, 0);
-            
-            // Debug: log revenue data
-            console.log('Revenue data:', {
-                totalRevenue,
-                revenueByType,
-                pembayaranCount: data.pembayaran.length,
-                ketetapanCount: data.ketetapan.length,
-                masterPajakCount: data.masterPajak?.length || 0
+                realisasiByKode[kode] += amount;
+                totalRealisasi += amount;
             });
-            
-        
-            
-            // Update revenue chart
-            updateRevenueChart(revenueByType);
+
+            const revenueForChart = {};
+            masterList.forEach(row => {
+                const kode = row.KodeLayanan;
+                const nama = row.NamaLayanan;
+                const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
+                const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
+                const realisasi = realisasiByKode[kode] || 0;
+                const kontribusi = totalRealisasi > 0 ? (realisasi / totalRealisasi * 100).toFixed(1) : 0;
+                const capaian = target > 0 ? (realisasi / target * 100).toFixed(1) : 0;
+
+                if (realisasi > 0) {
+                    revenueForChart[nama] = realisasi;
+                }
+
+                const item = document.createElement('div');
+                item.className = 'revenue-item';
+                item.style.cssText = 'display: flex; gap: 16px; padding: 8px; border-bottom: 1px solid #e0e0e0; align-items: center;';
+                item.innerHTML = `
+                    <span style="flex: 3;">${nama}</span>
+                    <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(realisasi)}</span>
+                    <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(target)}</span>
+                    <span style="flex: 1; text-align: center;">${kontribusi}%</span>
+                    <span style="flex: 1; text-align: center; font-weight: bold; color: ${capaian >= 100 ? '#28a745' : (capaian >= 50 ? '#fd7e14' : '#dc3545')};">${capaian}%</span>
+                `;
+                breakdownContainer.appendChild(item);
+            });
+
+            updateRevenueChart(revenueForChart);
         }
-        
+
+
         function updateRevenueChart(revenueByType) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
-            
             if (window.revenueChartInstance) {
                 window.revenueChartInstance.destroy();
             }
-            
             const labels = Object.keys(revenueByType);
             const data = Object.values(revenueByType);
-            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
-            
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#839E9A'];
+
             window.revenueChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -639,78 +667,58 @@
                         title: {
                             display: true,
                             text: 'Distribusi Pendapatan per Jenis Pajak'
+                        },
+                        legend: {
+                            position: 'right',
                         }
                     }
                 }
             });
         }
-        
+
         function updateWpReport(data) {
-            // Calculate WP statistics
-            const wpMap = {};
-            data.pembayaran.forEach(p => {
-                if (!wpMap[p.NPWPD]) {
-                    wpMap[p.NPWPD] = {
-                        npwpd: p.NPWPD,
-                        totalPayment: 0,
-                        paymentCount: 0,
-                        lastPayment: null
-                    };
-                }
-                wpMap[p.NPWPD].totalPayment += parseFloat(p.JumlahBayar) || 0;
-                wpMap[p.NPWPD].paymentCount++;
-                if (!wpMap[p.NPWPD].lastPayment || new Date(p.TanggalBayar) > new Date(wpMap[p.NPWPD].lastPayment)) {
-                    wpMap[p.NPWPD].lastPayment = p.TanggalBayar;
-                }
-            });
-            
-            const wpList = Object.values(wpMap);
-            const activeWp = wpList.filter(wp => wp.paymentCount > 0).length;
             const totalWp = data.wajibPajak?.length || 0;
-            
-            // Update statistics
+            const activeWp = new Set(data.pembayaran.map(p => p.NPWPD)).size;
+
             document.getElementById('totalWpRegistered').textContent = totalWp;
             document.getElementById('activeWpCount').textContent = activeWp;
             document.getElementById('inactiveWpCount').textContent = totalWp - activeWp;
-            
-            // Update table
+
             const tbody = document.getElementById('wpTableBody');
             tbody.innerHTML = '';
-            
-            wpList.forEach(wp => {
-                const wpData = data.wajibPajak?.find(w => w.NPWPD === wp.npwpd);
+            (data.wajibPajak || []).forEach(wpData => {
+                const totalPayment = data.pembayaran
+                    .filter(p => p.NPWPD === wpData.NPWPD)
+                    .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+                const isActive = totalPayment > 0;
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${wp.npwpd}</td>
-                    <td>${wpData?.['Nama Usaha'] || '-'}</td>
-                    <td>${wpData?.['Nama Pemilik'] || '-'}</td>
-                    <td>${wpData?.JenisWP || '-'}</td>
-                    <td><span class="status-badge ${wp.paymentCount > 0 ? 'active' : 'inactive'}">${wp.paymentCount > 0 ? 'Aktif' : 'Non-Aktif'}</span></td>
-                    <td>Rp ${wp.totalPayment.toLocaleString('id-ID')}</td>
+                    <td>${wpData.NPWPD}</td>
+                    <td>${wpData['Nama Usaha'] || '-'}</td>
+                    <td>${wpData['Nama Pemilik'] || '-'}</td>
+                    <td>${wpData.JenisWP || '-'}</td>
+                    <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'Aktif' : 'Non-Aktif'}</span></td>
+                    <td>Rp ${totalPayment.toLocaleString('id-ID')}</td>
                 `;
                 tbody.appendChild(row);
             });
         }
-        
+
         function updateKetetapanReport(data) {
             const totalKetetapan = data.ketetapan.length;
             const lunasCount = data.ketetapan.filter(k => k.Status === 'Lunas').length;
             const belumLunasCount = totalKetetapan - lunasCount;
             const totalNilai = data.ketetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-            
-            // Update statistics
+
             document.getElementById('totalKetetapanCount').textContent = totalKetetapan;
             document.getElementById('lunasCount').textContent = lunasCount;
             document.getElementById('belumLunasCount').textContent = belumLunasCount;
             document.getElementById('totalNilaiKetetapan').textContent = `Rp ${totalNilai.toLocaleString('id-ID')}`;
-            
-            // Update table
+
             const tbody = document.getElementById('ketetapanTableBody');
             tbody.innerHTML = '';
-            
             data.ketetapan.forEach(k => {
-                const wpData = data.wajibPajak?.find(w => w.NPWPD === k.NPWPD);
-                const masterPajak = data.masterPajak?.find(m => m.KodeLayanan === k.KodeLayanan);
+                const masterPajak = reportData.masterPajak?.find(m => m.KodeLayanan === k.KodeLayanan);
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${k.ID_Ketetapan}</td>
@@ -724,40 +732,26 @@
                 tbody.appendChild(row);
             });
         }
-        
+
         function updatePembayaranReport(data) {
             const totalPembayaran = data.pembayaran.length;
             const successCount = data.pembayaran.filter(p => p.StatusPembayaran === 'Sukses').length;
             const failedCount = totalPembayaran - successCount;
             const totalNilai = data.pembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
-            
-            // Debug: log pembayaran data
-            console.log('Pembayaran report data:', {
-                totalPembayaran,
-                successCount,
-                failedCount,
-                totalNilai,
-                samplePembayaran: data.pembayaran.slice(0, 3)
-            });
-            
-            // Update statistics
+
             document.getElementById('totalPembayaranCount').textContent = totalPembayaran;
             document.getElementById('successCount').textContent = successCount;
             document.getElementById('failedCount').textContent = failedCount;
             document.getElementById('totalNilaiPembayaran').textContent = `Rp ${totalNilai.toLocaleString('id-ID')}`;
-            
-            // Update chart
+
             updatePembayaranChart(data);
         }
-        
+
         function updatePembayaranChart(data) {
             const ctx = document.getElementById('pembayaranChart').getContext('2d');
-            
             if (window.pembayaranChartInstance) {
                 window.pembayaranChartInstance.destroy();
             }
-            
-            // Group by month
             const monthlyData = {};
             data.pembayaran.forEach(p => {
                 if (p.TanggalBayar) {
@@ -767,10 +761,9 @@
                     monthlyData[monthKey] += parseFloat(p.JumlahBayar) || 0;
                 }
             });
-            
             const labels = Object.keys(monthlyData).sort();
             const values = labels.map(key => monthlyData[key]);
-            
+
             window.pembayaranChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -799,116 +792,90 @@
                 }
             });
         }
-        
+
         function updateFiskalReport(data) {
-            // Use actual fiskal data from database
-            const totalFiskal = data.fiskal?.length || 0;
-            const activeFiskal = totalFiskal; // All fiskal are considered active for now
-            const expiredFiskal = 0; // Placeholder for future implementation
-            
-            // Debug: log fiskal data
-            console.log('Fiskal data:', {
-                totalFiskal,
-                fiskalData: data.fiskal || []
-            });
-            
-            // Update statistics
+            const fiskalData = reportData.fiskal || [];
+            const totalFiskal = fiskalData.length;
+            const activeFiskal = fiskalData.filter(f => new Date(f.tanggal_berlaku) > new Date()).length;
+            const expiredFiskal = totalFiskal - activeFiskal;
+
             document.getElementById('totalFiskalCount').textContent = totalFiskal;
             document.getElementById('activeFiskalCount').textContent = activeFiskal;
             document.getElementById('expiredFiskalCount').textContent = expiredFiskal;
-            
-            // Update table
+
             const tbody = document.getElementById('fiskalTableBody');
             tbody.innerHTML = '';
-            
-            if (data.fiskal && data.fiskal.length > 0) {
-                data.fiskal.forEach(f => {
-                    const wpData = data.wajibPajak?.find(w => w.NPWPD === f.NPWPD);
+            if (fiskalData.length > 0) {
+                fiskalData.forEach(f => {
+                    const wpData = reportData.wajibPajak?.find(w => w.NPWPD === f.NPWPD);
                     const row = document.createElement('tr');
+                    const isExpired = new Date(f.tanggal_berlaku) < new Date();
                     row.innerHTML = `
                         <td>${f.nomor_fiskal || '-'}</td>
                         <td>${f.NPWPD}</td>
                         <td>${wpData?.['Nama Usaha'] || f['Nama Usaha'] || '-'}</td>
                         <td>${f.tanggal_cetak ? new Date(f.tanggal_cetak).toLocaleDateString('id-ID') : '-'}</td>
                         <td>${f.tanggal_berlaku ? new Date(f.tanggal_berlaku).toLocaleDateString('id-ID') : '-'}</td>
-                        <td><span class="status-badge active">Aktif</span></td>
+                        <td><span class="status-badge ${isExpired ? 'inactive' : 'active'}">${isExpired ? 'Kadaluarsa' : 'Aktif'}</span></td>
                     `;
                     tbody.appendChild(row);
                 });
             } else {
-                // Show message if no fiskal data
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td colspan="6" style="text-align: center; color: #666; font-style: italic;">
-                        Belum ada data fiskal yang tersedia. Klik tombol "Sync Fiskal" di halaman Daftar Fiskal untuk membuat data fiskal otomatis.
-                    </td>
-                `;
-                tbody.appendChild(row);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #666; font-style: italic;">Belum ada data fiskal.</td></tr>`;
             }
         }
-        
+
         function updatePerformanceReport(data) {
-            // Calculate performance metrics
             const totalKetetapan = data.ketetapan.length;
             const lunasKetetapan = data.ketetapan.filter(k => k.Status === 'Lunas').length;
             const complianceRate = totalKetetapan > 0 ? (lunasKetetapan / totalKetetapan * 100).toFixed(1) : 0;
-            
-            // Update metrics
+
             document.getElementById('targetRealisasi').textContent = '85%';
             document.getElementById('avgProcessTime').textContent = '2.5 hari';
             document.getElementById('wpCompliance').textContent = `${complianceRate}%`;
-            
-            // Update performance chart
+            document.querySelector('#wpCompliance + .metric-bar .metric-fill').style.width = `${complianceRate}%`;
+
             updatePerformanceChart(data);
         }
-        
+
         function updatePerformanceChart(data) {
             const ctx = document.getElementById('performanceChart').getContext('2d');
-            
             if (window.performanceChartInstance) {
                 window.performanceChartInstance.destroy();
             }
-            
-            // Prepare performance data
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
             const currentYear = new Date().getFullYear();
-            
             const complianceData = new Array(12).fill(0);
-            const targetData = new Array(12).fill(85); // Target 85%
-            
-            // Calculate monthly compliance rates
+            const targetData = new Array(12).fill(85);
+
             for (let month = 0; month < 12; month++) {
                 const monthKetetapan = data.ketetapan.filter(k => {
                     if (!k.TanggalKetetapan) return false;
                     const date = new Date(k.TanggalKetetapan);
                     return date.getFullYear() === currentYear && date.getMonth() === month;
                 });
-                
                 const monthLunas = monthKetetapan.filter(k => k.Status === 'Lunas').length;
                 complianceData[month] = monthKetetapan.length > 0 ? (monthLunas / monthKetetapan.length * 100) : 0;
             }
-            
+
             window.performanceChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
-                    datasets: [
-                        {
-                            label: 'Target Kepatuhan',
-                            data: targetData,
-                            borderColor: '#FF6384',
-                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                            borderDash: [5, 5],
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Realisasi Kepatuhan',
-                            data: complianceData,
-                            borderColor: '#36A2EB',
-                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                            tension: 0.4
-                        }
-                    ]
+                    datasets: [{
+                        label: 'Target Kepatuhan',
+                        data: targetData,
+                        borderColor: '#FF6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }, {
+                        label: 'Realisasi Kepatuhan',
+                        data: complianceData,
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.4
+                    }]
                 },
                 options: {
                     responsive: true,
@@ -927,291 +894,12 @@
                 }
             });
         }
-        
+
         function exportReport() {
-            const reportType = document.getElementById('reportType').value;
-            if (reportType === 'summary') {
-                exportSummaryPDF();
-            } else {
-                alert('Export PDF untuk laporan ini akan segera tersedia');
-            }
+            alert('Fitur export akan segera tersedia.');
         }
 
-        async function exportSummaryPDF() {
-            try {
-                // Check if required libraries are loaded
-                if (typeof window.jspdf === 'undefined') {
-                    alert('Error: jsPDF library not loaded. Please check your internet connection.');
-                    return;
-                }
-                
-                if (typeof html2canvas === 'undefined') {
-                    alert('Error: html2canvas library not loaded. Please check your internet connection.');
-                    return;
-                }
-                
-                if (typeof Chart === 'undefined') {
-                    alert('Error: Chart.js library not loaded. Please check your internet connection.');
-                    return;
-                }
-                
-                if (typeof Chart === 'undefined') {
-                    alert('Error: Chart.js library not loaded. Please check your internet connection.');
-                    return;
-                }
-
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // --- 1. GATHER AND CALCULATE DATA ---
-                const dateRange = getDateRange();
-                const filteredData = filterDataByDateRange(reportData, dateRange);
-
-                const potensi = (filteredData.ketetapan || []).reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-                const realisasi = (filteredData.pembayaran || []).reduce((sum, p) => p.StatusPembayaran === 'Sukses' ? sum + (parseFloat(p.JumlahBayar) || 0) : sum, 0);
-                const collectionRate = potensi > 0 ? ((realisasi / potensi) * 100).toFixed(1) : 0;
-                const piutang = potensi - realisasi;
-                
-                const wpDenganTagihan = new Set((filteredData.ketetapan || []).map(k => k.NPWPD));
-                const wpYangBayar = new Set((filteredData.pembayaran || []).filter(p => p.StatusPembayaran === 'Sukses').map(p => p.NPWPD));
-                const tingkatKepatuhan = wpDenganTagihan.size > 0 ? ((wpYangBayar.size / wpDenganTagihan.size) * 100).toFixed(1) : 0;
-
-                let rincianPendapatan = {};
-                (filteredData.pembayaran || []).forEach(p => {
-                    if (p.StatusPembayaran !== 'Sukses') return;
-                    const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
-                    if (!ketetapan) return;
-                    const master = (reportData.masterPajak || []).find(m => m.KodeLayanan === ketetapan.KodeLayanan);
-                    const jenisPajak = master ? master.NamaLayanan : 'Lainnya';
-                    if (!rincianPendapatan[jenisPajak]) {
-                        rincianPendapatan[jenisPajak] = 0;
-                    }
-                    rincianPendapatan[jenisPajak] += parseFloat(p.JumlahBayar) || 0;
-                });
-
-                // Use dummy data if real data is empty
-                if (Object.keys(rincianPendapatan).length === 0) {
-                    console.log("No revenue data for the selected period. Using dummy data for PDF chart.");
-                    rincianPendapatan = {
-                        'Pajak Restoran': 12500000,
-                        'Pajak Hotel': 8750000,
-                        'Pajak Reklame': 4200000,
-                        'Retribusi Sampah': 1500000,
-                    };
-                }
-
-                // --- 2. PDF STYLING AND LAYOUT ---
-                const formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka)}`;
-                const logoImg = window.logoBase64 || null;
-                const periodText = document.getElementById('dateRange').options[document.getElementById('dateRange').selectedIndex].text;
-                let yPos = 10;
-
-                // Helper function to add text
-                const addText = (text, x, y, size, style = 'normal') => {
-                    doc.setFontSize(size);
-                    doc.setFont('helvetica', style);
-                    doc.text(text, x, y);
-                };
-
-                // Header
-                if (logoImg && logoImg.length > 100) {
-                    try {
-                        // Validate logo image data
-                        if (logoImg.startsWith('data:image/')) {
-                            // Check if the image data is valid
-                            const base64Data = logoImg.substring(logoImg.indexOf(',') + 1);
-                            if (base64Data.length > 1000) { // Ensure minimum size for valid image
-                                doc.addImage(base64Data, 'PNG', 15, yPos, 25, 30);
-                            } else {
-                                console.warn("Logo image data too small, skipping logo");
-                            }
-                        } else {
-                            console.warn("Invalid logo format, skipping logo");
-                        }
-                    } catch (e) {
-                        console.warn("Could not add logo to PDF, it might be corrupted. Continuing without it.", e);
-                    }
-                }
-                addText('PEMERINTAH KABUPATEN MAMBERAMO RAYA', 50, yPos + 7, 13, 'bold');
-                addText('BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH', 50, yPos + 14, 11, 'bold');
-                addText('Jl Lingkar Burmeso, Distrik Mamberamo Tengah', 50, yPos + 20, 8);
-                doc.setLineWidth(1.2);
-                doc.line(15, yPos + 28, 195, yPos + 28);
-                yPos += 38;
-
-                // Judul Laporan
-                addText('LAPORAN RINGKASAN UMUM PENDAPATAN DAERAH', 50, yPos, 12, 'bold');
-                yPos += 7;
-                addText(`Periode: ${periodText}`, 50, yPos, 10);
-                yPos += 12;
-
-                // Bagian 1: Ringkasan Kinerja
-                addText('1. Ringkasan Kinerja Utama', 15, yPos, 11, 'bold');
-                yPos += 8;
-                const kinerjaData = [
-                    ['Total Potensi Pendapatan (Nilai Ketetapan)', formatRupiah(potensi)],
-                    ['Total Realisasi Pendapatan (Nilai Pembayaran)', formatRupiah(realisasi)],
-                    ['Jumlah Tunggakan Pajak (Piutang)', formatRupiah(piutang)],
-                    ['Tingkat Realisasi (Collection Rate)', `${collectionRate} %`],
-                    ['Tingkat Kepatuhan Wajib Pajak', `${tingkatKepatuhan} %`],
-                ];
-                kinerjaData.forEach(item => {
-                    addText(item[0], 20, yPos, 10);
-                    addText(':', 100, yPos, 10);
-                    addText(item[1], 105, yPos, 10, 'bold');
-                    yPos += 7;
-                });
-                yPos += 5;
-
-                // Bagian 2 & 3: Rincian dan Grafik
-                addText('2. Rincian Pendapatan per Jenis Pajak', 15, yPos, 11, 'bold');
-                yPos += 8;
-                
-                // --- 3. GENERATE CHART IMAGE ---
-                let chartCanvas = null;
-                let chartInstance = null;
-                
-                try {
-                    chartCanvas = document.createElement('canvas');
-                    chartCanvas.id = 'tempPdfChart';
-                    chartCanvas.width = 400;
-                    chartCanvas.height = 400;
-                    chartCanvas.style.display = 'none';
-                    document.body.appendChild(chartCanvas);
-
-                    // Validate chart data
-                    const labels = Object.keys(rincianPendapatan);
-                    const values = Object.values(rincianPendapatan);
-                    
-                    if (labels.length === 0 || values.length === 0) {
-                        console.warn("No chart data available, skipping chart generation");
-                        chartCanvas = null;
-                    } else {
-                        const chartData = {
-                            labels: labels,
-                            datasets: [{
-                                data: values,
-                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
-                            }]
-                        };
-
-                        chartInstance = new Chart(chartCanvas, {
-                            type: 'pie',
-                            data: chartData,
-                            options: {
-                                responsive: false,
-                                animation: { duration: 0 },
-                                plugins: { legend: { position: 'right' } }
-                            }
-                        });
-                    }
-                } catch (chartInitError) {
-                    console.warn("Failed to initialize chart:", chartInitError);
-                    chartCanvas = null;
-                }
-
-                // --- 4. DRAW TABLE FIRST ---
-                const tableX = 20;
-                const tableY = yPos;
-                const cellPadding = 3;
-                const colWidths = [10, 70, 45, 30];
-                let rowY = tableY + 7;
-
-                // Table Header
-                doc.setFont('helvetica', 'bold');
-                doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), 8);
-                addText('No.', tableX + cellPadding, rowY, 10);
-                addText('Jenis Pajak/Retribusi', tableX + colWidths[0] + cellPadding, rowY, 10);
-                addText('Jumlah Setoran (Rp)', tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
-                addText('Persentase', tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
-                rowY += 1;
-                doc.line(tableX, rowY, tableX + colWidths.reduce((a, b) => a + b), rowY);
-                rowY += 7;
-
-                // Table Body
-                doc.setFont('helvetica', 'normal');
-                let i = 0;
-                const totalRincian = Object.values(rincianPendapatan).reduce((sum, val) => sum + val, 0);
-                for (const [jenis, jumlah] of Object.entries(rincianPendapatan)) {
-                    i++;
-                    const percentage = totalRincian > 0 ? ((jumlah / totalRincian) * 100).toFixed(1) + '%' : '0%';
-                    addText(String(i), tableX + cellPadding, rowY, 10);
-                    addText(jenis, tableX + colWidths[0] + cellPadding, rowY, 10);
-                    addText(new Intl.NumberFormat('id-ID').format(jumlah), tableX + colWidths[0] + colWidths[1] + cellPadding, rowY, 10);
-                    addText(percentage, tableX + colWidths[0] + colWidths[1] + colWidths[2] + cellPadding, rowY, 10);
-                    rowY += 7;
-                }
-                doc.rect(tableX, tableY, colWidths.reduce((a, b) => a + b), rowY - tableY); // Outer box
-                
-                // --- 5. GENERATE CHART IMAGE WITH ERROR HANDLING ---
-                yPos = rowY + 5;
-                addText('3. Grafik Komposisi Pendapatan', 15, yPos, 11, 'bold');
-                yPos += 5;
-                
-                if (chartCanvas) {
-                    try {
-                        // Wait longer for chart to render properly
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        
-                        const canvasImage = await html2canvas(chartCanvas, {
-                            useCORS: true,
-                            allowTaint: true,
-                            backgroundColor: '#ffffff',
-                            scale: 2, // Higher quality
-                            logging: false
-                        });
-                        
-                        // Convert to base64 with proper error handling
-                        const imageData = canvasImage.toDataURL('image/png', 0.9);
-                        
-                        // Validate the image data
-                        if (imageData && imageData.length > 1000) {
-                            try {
-                                // Remove data URL prefix for jsPDF
-                                const rawImage = imageData.substring(imageData.indexOf(',') + 1);
-                                doc.addImage(rawImage, 'PNG', 40, yPos, 120, 120);
-                            } catch (imageError) {
-                                console.warn("Failed to add chart image to PDF:", imageError);
-                                addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
-                            }
-                        } else {
-                            console.warn("Generated chart image is invalid, skipping chart");
-                            addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
-                        }
-                    } catch (chartError) {
-                        console.warn("Failed to generate chart image:", chartError);
-                        addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
-                    } finally {
-                        // Clean up canvas
-                        if (chartCanvas && chartCanvas.parentNode) {
-                            document.body.removeChild(chartCanvas);
-                        }
-                    }
-                } else {
-                    addText('(Grafik tidak dapat ditampilkan)', 40, yPos + 60, 10);
-                }
-                yPos += 110;
-
-                // --- 5. FOOTER AND SAVE ---
-                yPos = 250; // Set fixed position for signature
-                addText(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 15, yPos, 9);
-                addText('Mamberamo Raya, ....................', 120, yPos, 10);
-                yPos += 8;
-                addText('Kepala Bidang Pendapatan Daerah', 120, yPos, 10);
-                yPos += 22;
-                addText('(Nama Kepala Bidang)', 120, yPos, 10);
-                
-                const fileName = `Laporan_Ringkasan_Umum_${new Date().toISOString().split('T')[0]}.pdf`;
-                doc.save(fileName);
-
-            } catch (error) {
-                console.error("PDF Export failed:", error);
-                alert("Gagal membuat laporan PDF. Silakan periksa console browser untuk detail error (klik kanan -> Inspect -> Console).");
-            }
-        }
-        
         function exportExcel() {
-            // Implementation for Excel export
             alert('Fitur export Excel akan segera tersedia');
         }
     </script>
