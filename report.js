@@ -522,7 +522,13 @@ function updatePerformanceReport(data) {
     document.getElementById('targetRealisasi').textContent = '85%';
     document.getElementById('avgProcessTime').textContent = '2.5 hari';
     document.getElementById('wpCompliance').textContent = `${complianceRate}%`;
-    document.querySelector('#wpCompliance + .metric-bar .metric-fill').style.width = `${complianceRate}%`;
+    
+    // Perbaikan: Menggunakan ID unik untuk elemen 'fill'
+    const targetFill = document.getElementById('targetRealisasi-fill');
+    if(targetFill) targetFill.style.width = '85%';
+    
+    const complianceFill = document.getElementById('wpCompliance-fill');
+    if(complianceFill) complianceFill.style.width = `${complianceRate}%`;
 
     updatePerformanceChart(data);
 }
@@ -590,4 +596,4 @@ function exportReport() {
 
 function exportExcel() {
     alert('Fitur export Excel akan segera tersedia');
-} 
+}
