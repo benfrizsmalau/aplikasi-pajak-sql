@@ -548,6 +548,21 @@ function setupKetetapanEditModal() {
 async function fetchAllData() {
     try {
         const response = await fetch(apiUrl);
+
+        // Periksa apakah respons adalah fallback HTML dari Service Worker
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+            console.warn('Menerima respons HTML dari Service Worker (fallback offline). Mencoba dari IndexedDB.');
+            const cachedData = await getDataFromIndexedDB();
+            if (cachedData) {
+                console.log('Menggunakan data dari IndexedDB (mode offline).');
+                return cachedData;
+            } else {
+                throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
+            }
+        }
+
+        // Jika bukan fallback HTML, lanjutkan seperti biasa (mengharapkan JSON)
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
@@ -559,11 +574,11 @@ async function fetchAllData() {
         await saveDataToIndexedDB(result);
         return result;
 
-    } catch (networkError) {
-        console.warn('Gagal mengambil data dari network, mencoba dari IndexedDB:', networkError);
+    } catch (error) {
+        console.warn('Error mengambil data dari network, mencoba dari IndexedDB:', error);
         const cachedData = await getDataFromIndexedDB();
         if (cachedData) {
-            console.log('Menggunakan data dari IndexedDB (offline mode).');
+            console.log('Menggunakan data dari IndexedDB (mode offline).');
             return cachedData;
         } else {
             throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
