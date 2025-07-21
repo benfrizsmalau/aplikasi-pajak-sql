@@ -302,12 +302,20 @@ async function handleDeleteWp(data) {
 // =================================================================
 
 async function handleCreateKetetapan(data) {
-    // Ambil nomor urut terakhir dari tabel KetetapanPajak
-    const { count, error: countError } = await supabase
+    // Cari nomor urut terbesar yang sudah ada
+    const { data: existing, error: existingError } = await supabase
         .from('KetetapanPajak')
-        .select('*', { count: 'exact', head: true });
-    if (countError) throw new Error('Gagal mengambil nomor urut ketetapan.');
-    const nomorUrut = ((count || 0) + 1).toString().padStart(7, '0');
+        .select('ID_Ketetapan');
+    if (existingError) throw new Error('Gagal mengambil data ketetapan.');
+    let maxUrut = 0;
+    (existing || []).forEach(row => {
+        const match = String(row.ID_Ketetapan).match(/^(\d{6,})\//);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxUrut) maxUrut = num;
+        }
+    });
+    const nomorUrut = (maxUrut + 1).toString().padStart(7, '0');
 
     // Ambil data master pajak untuk tipe dan nama layanan
     let tipeLayanan = '';
