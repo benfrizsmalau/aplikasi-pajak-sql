@@ -468,7 +468,7 @@ function setupKetetapanEditModal() {
     const editForm = document.getElementById('editKetetapanForm');
     closeBtn.onclick = () => { modal.style.display = 'none'; };
     window.addEventListener('click', (event) => { if (event.target == modal) modal.style.display = 'none'; });
-    editForm.addEventListener('submit', handleUpdateKetetapanSubmit);
+    editForm.addEventListener('submit', handleUpdateKetapanSubmit);
 }
 
 async function fetchAllData() {
@@ -1258,4 +1258,76 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
             }
         }
     });
+}
+
+function updateRevenueReport(data) {
+    // Ambil data master pajak/retribusi dan target
+    const masterList = data.masterPajak || [];
+    const targetList = data.targetPajakRetribusi || [];
+    const pembayaranList = data.pembayaran || [];
+    const tahunDipilih = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
+
+    // Siapkan breakdown dinamis
+    const breakdownContainer = document.getElementById('revenueBreakdown');
+    breakdownContainer.innerHTML = '';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'revenue-header';
+    header.style.display = 'flex';
+    header.style.fontWeight = 'bold';
+    header.style.gap = '24px';
+    header.style.marginBottom = '4px';
+    header.innerHTML = `
+        <span style="width: 120px;">Jenis Pajak</span>
+        <span style="width: 120px;">Realisasi</span>
+        <span style="width: 120px;">Target</span>
+        <span style="width: 80px;">Kontribusi</span>
+        <span style="width: 80px;">Capaian</span>
+    `;
+    breakdownContainer.appendChild(header);
+
+    // Hitung total realisasi semua jenis
+    let totalRealisasi = 0;
+    const realisasiByKode = {};
+    masterList.forEach(row => {
+        const kode = row.KodeLayanan;
+        // Realisasi: total pembayaran sukses untuk kode layanan ini di tahun dipilih
+        const realisasi = pembayaranList.filter(p => {
+            const ketetapan = data.ketetapan?.find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+            return p.StatusPembayaran === 'Sukses' && ketetapan && ketetapan.KodeLayanan === kode && new Date(p.TanggalBayar).getFullYear().toString() === tahunDipilih;
+        }).reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+        realisasiByKode[kode] = realisasi;
+        totalRealisasi += realisasi;
+    });
+
+    // Render breakdown per jenis
+    masterList.forEach(row => {
+        const kode = row.KodeLayanan;
+        const nama = row.NamaLayanan;
+        // Target: dari tabel target untuk tahun dipilih
+        const targetRow = targetList.find(t => t.KodeLayanan === kode && t.Tahun.toString() === tahunDipilih);
+        const target = targetRow ? parseFloat(targetRow.Target) : 0;
+        const realisasi = realisasiByKode[kode] || 0;
+        const kontribusi = totalRealisasi > 0 ? (realisasi / totalRealisasi * 100).toFixed(1) : '0';
+        const capaian = target > 0 ? (realisasi / target * 100).toFixed(1) : '0';
+
+        const item = document.createElement('div');
+        item.className = 'revenue-item';
+        item.style.display = 'flex';
+        item.style.gap = '24px';
+        item.innerHTML = `
+            <span class="revenue-label" style="width: 120px;">${nama}</span>
+            <span class="revenue-value" style="width: 120px;">Rp ${realisasi.toLocaleString('id-ID')}</span>
+            <span class="revenue-target" style="width: 120px;">Rp ${target.toLocaleString('id-ID')}</span>
+            <span class="revenue-percentage" style="width: 80px;">${kontribusi}%</span>
+            <span class="revenue-achievement" style="width: 80px;">${capaian}%</span>
+        `;
+        breakdownContainer.appendChild(item);
+    });
+
+    // Update revenue chart (pie/doughnut)
+    updateRevenueChart(
+        Object.fromEntries(masterList.map(row => [row.NamaLayanan, realisasiByKode[row.KodeLayanan] || 0]))
+    );
 }
