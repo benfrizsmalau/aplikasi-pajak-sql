@@ -329,19 +329,16 @@ async function handleCreateKetetapan(data) {
     const ID_Ketetapan = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
 
     // Logika tanggal dan denda
-    let tanggalKetetapan = now;
+    const tanggalKetetapan = now; // Tanggal ketetapan selalu tanggal saat ini
     let denda = 0;
     if (data.tglTunggakan) {
-        tanggalKetetapan = new Date(data.tglTunggakan);
+        const tanggalTunggakan = new Date(data.tglTunggakan);
         const today = new Date();
-        let bulanTunggakan = (today.getFullYear() - tanggalKetetapan.getFullYear()) * 12 + (today.getMonth() - tanggalKetetapan.getMonth());
-        if (today.getDate() > tanggalKetetapan.getDate()) bulanTunggakan += 1;
+        let bulanTunggakan = (today.getFullYear() - tanggalTunggakan.getFullYear()) * 12 + (today.getMonth() - tanggalTunggakan.getMonth());
+        if (today.getDate() > tanggalTunggakan.getDate()) bulanTunggakan += 1;
         if (bulanTunggakan < 1) bulanTunggakan = 1;
         denda = bulanTunggakan * 0.02 * Number(data.jumlahPokok);
-    } else {
-        tanggalKetetapan = now;
-        denda = 0;
-    }
+    } 
     denda = Math.round(denda);
     const jumlahPokok = Number(data.jumlahPokok);
     const totalTagihan = jumlahPokok + denda;
@@ -353,6 +350,7 @@ async function handleCreateKetetapan(data) {
             NPWPD: data.npwpd,
             MasaPajak: data.masaPajak,
             TanggalKetetapan: tanggalKetetapan,
+            TanggalTunggakan: data.tglTunggakan ? new Date(data.tglTunggakan).toISOString() : null, // Simpan tanggal tunggakan jika ada
             JumlahPokok: jumlahPokok,
             Denda: denda,
             TotalTagihan: totalTagihan,
