@@ -246,26 +246,26 @@
                 npwpdStatusMap[item.NPWPD].push(item.Status);
             });
             const processedData = pageData.map((item, index) => {
-            const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
-            const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
-            const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '-';
-                const status = item.Status || 'Belum Lunas';
-            const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
+                const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
+                const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+                const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '-';
+                const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
                 const jumlahTerbayar = pembayaranKetetapan.reduce((sum, p) => sum + Number(p.JumlahBayar || 0), 0);
                 const sisaTagihan = Math.max(Number(item.TotalTagihan || 0) - jumlahTerbayar, 0);
-                const semuaLunas = npwpdStatusMap[item.NPWPD]?.every(s => s === 'Lunas');
-                const rowColor = semuaLunas ? 'row-lunas' : 'row-belum-lunas';
-            return {
-                ...item,
+                // Status dinamis
+                const status = jumlahTerbayar >= Number(item.TotalTagihan || 0) && Number(item.TotalTagihan || 0) > 0 ? 'Lunas' : 'Belum Lunas';
+                const rowColor = status === 'Lunas' ? 'row-lunas' : 'row-belum-lunas';
+                return {
+                    ...item,
                     index: (currentPage - 1) * rowsPerPage + index + 1,
-                namaUsaha: wp['Nama Usaha'] || '-',
-                namaLayanan: namaLayanan,
+                    namaUsaha: wp['Nama Usaha'] || '-',
+                    namaLayanan: namaLayanan,
                     status: status,
                     jumlahTerbayar: jumlahTerbayar,
                     sisaTagihan: sisaTagihan,
                     rowColor: rowColor
-            };
-        });
+                };
+            });
             // Update tableConfig untuk kolom baru dan pewarnaan baris
             tableConfig.columns.splice(9, 0, { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' });
             tableConfig.columns.splice(9, 0, { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' });
