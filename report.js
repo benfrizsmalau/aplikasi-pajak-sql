@@ -276,7 +276,7 @@ function updateRevenueReport(data) {
     const breakdownContainer = document.getElementById('revenueBreakdown');
     breakdownContainer.innerHTML = '';
 
-    // --- KARTU STATISTIK ---
+    // --- Perhitungan total tetap dipertahankan ---
     let totalKetetapan = 0;
     let totalRealisasi = 0;
     let totalKontribusi = 0;
@@ -293,14 +293,12 @@ function updateRevenueReport(data) {
         realisasiByKode[kode] += amount;
         totalRealisasi += amount;
     });
-    // Hitung total ketetapan (target)
     masterList.forEach(row => {
         const kode = row.KodeLayanan;
         const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
         const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
         totalKetetapan += target;
     });
-    // Hitung rata-rata capaian
     masterList.forEach(row => {
         const kode = row.KodeLayanan;
         const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
@@ -313,17 +311,8 @@ function updateRevenueReport(data) {
     });
     const rataCapaian = countCapaian > 0 ? (totalCapaian / countCapaian).toFixed(1) : 0;
 
-    // Kartu statistik
-    const statCard = document.createElement('div');
-    statCard.className = 'stat-card-grid';
-    statCard.style.cssText = 'display: flex; gap: 24px; margin-bottom: 16px;';
-    statCard.innerHTML = `
-        <div class="stat-card"><div class="stat-label">Total Ketetapan</div><div class="stat-value">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalKetetapan)}</div></div>
-        <div class="stat-card"><div class="stat-label">Total Realisasi</div><div class="stat-value">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalRealisasi)}</div></div>
-        <div class="stat-card"><div class="stat-label">% Capaian Rata-rata</div><div class="stat-value">${rataCapaian}%</div></div>
-        <div class="stat-card"><div class="stat-label">Total Kontribusi</div><div class="stat-value">100%</div></div>
-    `;
-    breakdownContainer.appendChild(statCard);
+    // --- KARTU STATISTIK DIHILANGKAN ---
+    // (Bagian statCard dihapus, hanya tabel dan baris total yang tampil)
 
     // --- HEADER TABEL ---
     const header = document.createElement('div');
