@@ -276,6 +276,56 @@ function updateRevenueReport(data) {
     const breakdownContainer = document.getElementById('revenueBreakdown');
     breakdownContainer.innerHTML = '';
 
+    // --- KARTU STATISTIK ---
+    let totalKetetapan = 0;
+    let totalRealisasi = 0;
+    let totalKontribusi = 0;
+    let totalCapaian = 0;
+    let countCapaian = 0;
+    const realisasiByKode = {};
+    pembayaranList.forEach(p => {
+        if (p.StatusPembayaran !== 'Sukses') return;
+        const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+        if (!ketetapan) return;
+        const kode = ketetapan.KodeLayanan;
+        if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
+        const amount = parseFloat(p.JumlahBayar) || 0;
+        realisasiByKode[kode] += amount;
+        totalRealisasi += amount;
+    });
+    // Hitung total ketetapan (target)
+    masterList.forEach(row => {
+        const kode = row.KodeLayanan;
+        const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
+        const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
+        totalKetetapan += target;
+    });
+    // Hitung rata-rata capaian
+    masterList.forEach(row => {
+        const kode = row.KodeLayanan;
+        const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
+        const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
+        const realisasi = realisasiByKode[kode] || 0;
+        if (target > 0) {
+            totalCapaian += (realisasi / target * 100);
+            countCapaian++;
+        }
+    });
+    const rataCapaian = countCapaian > 0 ? (totalCapaian / countCapaian).toFixed(1) : 0;
+
+    // Kartu statistik
+    const statCard = document.createElement('div');
+    statCard.className = 'stat-card-grid';
+    statCard.style.cssText = 'display: flex; gap: 24px; margin-bottom: 16px;';
+    statCard.innerHTML = `
+        <div class="stat-card"><div class="stat-label">Total Ketetapan</div><div class="stat-value">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalKetetapan)}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Realisasi</div><div class="stat-value">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalRealisasi)}</div></div>
+        <div class="stat-card"><div class="stat-label">% Capaian Rata-rata</div><div class="stat-value">${rataCapaian}%</div></div>
+        <div class="stat-card"><div class="stat-label">Total Kontribusi</div><div class="stat-value">100%</div></div>
+    `;
+    breakdownContainer.appendChild(statCard);
+
+    // --- HEADER TABEL ---
     const header = document.createElement('div');
     header.className = 'revenue-header';
     header.style.cssText = 'display: flex; font-weight: bold; gap: 16px; margin-bottom: 8px; padding: 8px; background-color: #f4f6f8; border-radius: 4px;';
@@ -288,20 +338,10 @@ function updateRevenueReport(data) {
     `;
     breakdownContainer.appendChild(header);
 
-    let totalRealisasi = 0;
-    const realisasiByKode = {};
-    pembayaranList.forEach(p => {
-        if (p.StatusPembayaran !== 'Sukses') return;
-        const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
-        if (!ketetapan) return;
-        const kode = ketetapan.KodeLayanan;
-        if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
-        const amount = parseFloat(p.JumlahBayar) || 0;
-        realisasiByKode[kode] += amount;
-        totalRealisasi += amount;
-    });
-
-    const revenueForChart = {};
+    // --- ISI TABEL ---
+    let totalKontribusiTabel = 0;
+    let totalCapaianTabel = 0;
+    let countCapaianTabel = 0;
     masterList.forEach(row => {
         const kode = row.KodeLayanan;
         const nama = row.NamaLayanan;
@@ -310,11 +350,11 @@ function updateRevenueReport(data) {
         const realisasi = realisasiByKode[kode] || 0;
         const kontribusi = totalRealisasi > 0 ? (realisasi / totalRealisasi * 100).toFixed(1) : 0;
         const capaian = target > 0 ? (realisasi / target * 100).toFixed(1) : 0;
-
-        if (realisasi > 0) {
-            revenueForChart[nama] = realisasi;
+        totalKontribusiTabel += parseFloat(kontribusi);
+        if (target > 0) {
+            totalCapaianTabel += parseFloat(capaian);
+            countCapaianTabel++;
         }
-
         const item = document.createElement('div');
         item.className = 'revenue-item';
         item.style.cssText = 'display: flex; gap: 16px; padding: 8px; border-bottom: 1px solid #e0e0e0; align-items: center;';
@@ -328,6 +368,29 @@ function updateRevenueReport(data) {
         breakdownContainer.appendChild(item);
     });
 
+    // --- BARIS TOTAL DI BAWAH TABEL ---
+    const totalRow = document.createElement('div');
+    totalRow.className = 'revenue-total-row';
+    totalRow.style.cssText = 'display: flex; gap: 16px; padding: 10px 8px; font-weight: bold; background: #e9ecef; border-radius: 4px; margin-top: 4px;';
+    totalRow.innerHTML = `
+        <span style="flex: 3; text-align: right;">TOTAL</span>
+        <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalRealisasi)}</span>
+        <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalKetetapan)}</span>
+        <span style="flex: 1; text-align: center;">100%</span>
+        <span style="flex: 1; text-align: center; color: #007bff;">${countCapaianTabel > 0 ? (totalCapaianTabel / countCapaianTabel).toFixed(1) : 0}%</span>
+    `;
+    breakdownContainer.appendChild(totalRow);
+
+    // Update chart
+    const revenueForChart = {};
+    masterList.forEach(row => {
+        const kode = row.KodeLayanan;
+        const nama = row.NamaLayanan;
+        const realisasi = realisasiByKode[kode] || 0;
+        if (realisasi > 0) {
+            revenueForChart[nama] = realisasi;
+        }
+    });
     updateRevenueChart(revenueForChart);
 }
 
