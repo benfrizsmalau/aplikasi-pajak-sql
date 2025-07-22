@@ -165,33 +165,56 @@ async function exportPendapatanToPDF({
   y += 7;
 
   // Tabel header
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
   // Kolom proporsional untuk landscape
-  const colX = [15, 28, 60, 120, 160, 200, 240];
-  pdf.text('No.', colX[0], y);
-  pdf.text('Kode', colX[1], y);
-  pdf.text('Uraian Pajak/Retribusi', colX[2], y);
-  pdf.text('Target (Rp)', colX[3], y);
-  pdf.text('Realisasi (Rp)', colX[4], y);
-  pdf.text('Kontribusi (%)', colX[5], y);
-  pdf.text('Capaian (%)', colX[6], y);
-  y += 6;
-  pdf.setFont('helvetica', 'normal');
+  const colX = [15, 27, 47, 142, 172, 202, 227];
+  const colW = [10, 18, 93, 28, 28, 23, 23];
+  const rowHeight = 6;
+  const maxY = 195; // batas bawah halaman landscape
+
+  function drawTableHeader(yPos) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('No.', colX[0], yPos);
+    pdf.text('Kode', colX[1], yPos);
+    pdf.text('Uraian Pajak/Retribusi', colX[2], yPos);
+    pdf.text('Target (Rp)', colX[3], yPos);
+    pdf.text('Realisasi (Rp)', colX[4], yPos);
+    pdf.text('Kontribusi (%)', colX[5], yPos);
+    pdf.text('Capaian (%)', colX[6], yPos);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+  }
+
+  drawTableHeader(y);
+  y += rowHeight;
 
   // Tabel isi
   rows.forEach(r => {
-    if (y > 265) { pdf.addPage(); y = 18; }
-    pdf.text(String(r.idx), colX[0], y);
-    pdf.text(r.kode, colX[1], y);
-    pdf.text(r.nama, colX[2], y);
-    pdf.text(formatRupiahPdf(r.target), colX[3], y, { align: 'right' });
-    pdf.text(formatRupiahPdf(r.realisasi), colX[4], y, { align: 'right' });
-    pdf.text(r.kontribusi.toFixed(1), colX[5], y, { align: 'right' });
-    pdf.text(r.capaian.toFixed(1), colX[6], y, { align: 'right' });
-    y += 6;
+    if (y > maxY) {
+      pdf.addPage();
+      y = 18;
+      drawTableHeader(y);
+      y += rowHeight;
+    }
+    pdf.text(String(r.idx), colX[0], y, { maxWidth: colW[0] });
+    pdf.text(r.kode, colX[1], y, { maxWidth: colW[1] });
+    // Potong uraian jika terlalu panjang
+    let uraian = r.nama.length > 50 ? r.nama.slice(0, 48) + '…' : r.nama;
+    pdf.text(uraian, colX[2], y, { maxWidth: colW[2] });
+    pdf.text(formatRupiahPdf(r.target), colX[3], y, { align: 'right', maxWidth: colW[3] });
+    pdf.text(formatRupiahPdf(r.realisasi), colX[4], y, { align: 'right', maxWidth: colW[4] });
+    pdf.text(r.kontribusi.toFixed(1), colX[5], y, { align: 'right', maxWidth: colW[5] });
+    pdf.text(r.capaian.toFixed(1), colX[6], y, { align: 'right', maxWidth: colW[6] });
+    y += rowHeight;
   });
+
   // Baris total
+  if (y > maxY) {
+    pdf.addPage();
+    y = 18;
+    drawTableHeader(y);
+    y += rowHeight;
+  }
   pdf.setFont('helvetica', 'bold');
   pdf.text('TOTAL', colX[2], y);
   pdf.text(formatRupiahPdf(totalTarget), colX[3], y, { align: 'right' });
