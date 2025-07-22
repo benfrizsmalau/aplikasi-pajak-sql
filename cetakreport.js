@@ -24,7 +24,7 @@ async function exportReportToPDF({
   const imgData = canvas.toDataURL('image/png');
 
   // Siapkan dokumen PDF
-  const pdf = new jsPDF({
+  const pdf = new window.jspdf.jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
@@ -124,7 +124,7 @@ async function exportPendapatanToPDF({
   const rataCapaian = rows.filter(r => r.target > 0).reduce((sum, r) => sum + r.capaian, 0) / (rows.filter(r => r.target > 0).length || 1);
 
   // Siapkan jsPDF
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = 210;
   let y = 18;
 
