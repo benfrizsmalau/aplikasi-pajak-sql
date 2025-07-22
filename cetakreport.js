@@ -184,7 +184,7 @@ async function exportPendapatanToPDF({
       x += colW[i];
     }
     pdf.text('No.', colX[0] + colW[0] / 2, yPos, { align: 'center' });
-    pdf.text('Kode', colX[1] + colW[1] / 2, yPos, { align: 'center' });
+    pdf.text('Kode', colX[1] + colW[1] / 2 - 2, yPos, { align: 'center' }); // header kode 2mm ke kiri
     pdf.text('Uraian Pajak/Retribusi', colX[2] + 2, yPos, { align: 'left' });
     pdf.text('Target (Rp)', colX[3] + colW[3] - 2, yPos, { align: 'right' });
     pdf.text('Realisasi (Rp)', colX[4] + colW[4] - 2, yPos, { align: 'right' });
@@ -201,7 +201,7 @@ async function exportPendapatanToPDF({
       x += colW[i];
     }
     pdf.text(String(r.idx), colX[0] + colW[0] / 2, yPos, { align: 'center' });
-    pdf.text(r.kode, colX[1] + colW[1] / 2, yPos, { align: 'center' });
+    pdf.text(r.kode, colX[1] + colW[1] / 2 - 2, yPos, { align: 'center' }); // isi kode 2mm ke kiri
     let uraian = r.nama.length > 45 ? r.nama.slice(0, 43) + '…' : r.nama;
     pdf.text(uraian, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
     pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2 + 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
