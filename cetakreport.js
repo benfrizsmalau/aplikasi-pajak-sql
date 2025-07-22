@@ -123,9 +123,9 @@ async function exportPendapatanToPDF({
   // Hitung rata-rata capaian
   const rataCapaian = rows.filter(r => r.target > 0).reduce((sum, r) => sum + r.capaian, 0) / (rows.filter(r => r.target > 0).length || 1);
 
-  // Siapkan jsPDF
-  const pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = 210;
+  // Siapkan jsPDF landscape
+  const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pageWidth = 297;
   let y = 18;
 
   // Kop dinas & logo
@@ -167,7 +167,8 @@ async function exportPendapatanToPDF({
   // Tabel header
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10);
-  const colX = [15, 25, 55, 110, 135, 160, 180];
+  // Kolom proporsional untuk landscape
+  const colX = [15, 28, 60, 120, 160, 200, 240];
   pdf.text('No.', colX[0], y);
   pdf.text('Kode', colX[1], y);
   pdf.text('Uraian Pajak/Retribusi', colX[2], y);
