@@ -258,20 +258,25 @@ async function exportPendapatanToPDF({
   pdf.setFontSize(10);
   pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', colX[0], y, { align: 'left' });
   y += 10;
-  pdf.text('Dibuat di : Burmeso', 25, y);
-  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), 120, y);
-  y += 8;
+  // Geser tanggal ke kanan tepat di bawah pertemuan kolom kontribusi dan capaian
+  const xTanggal = colX[5] + colW[5];
+  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
+  y += 7;
+  // Tulisan Dibuat di : tepat di bawah tanggal
+  pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
+  y += 10;
+  // Blok An., Pengelolaan Keuangan, Kepala Bidang, Nama, NIP di bawah Dibuat di
   pdf.setFont('helvetica', 'bold');
-  pdf.text('An. KEPALA BADAN PENDAPATAN', pageWidth / 2, y, { align: 'center' });
+  pdf.text('An. KEPALA BADAN PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', pageWidth / 2, y, { align: 'center' });
+  pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', pageWidth / 2, y, { align: 'center' });
+  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', pageWidth / 2, y, { align: 'center' });
+  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', pageWidth / 2, y, { align: 'center' });
+  pdf.text('NIP.', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Pendapatan_PAD.pdf');
