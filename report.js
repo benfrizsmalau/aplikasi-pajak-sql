@@ -109,46 +109,38 @@ async function loadReportData() {
 }
 
 function getDateRange() {
-    const reportType = document.getElementById('reportType').value;
+    const dateRange = document.getElementById('dateRange').value;
     const today = new Date();
     let startDate, endDate;
-
-    if (reportType === 'revenue') {
-        const year = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
-        startDate = new Date(year, 0, 1);
-        endDate = new Date(year, 11, 31, 23, 59, 59);
-    } else {
-        const dateRange = document.getElementById('dateRange').value;
-        switch (dateRange) {
-            case 'today':
-                startDate = new Date(today);
-                endDate = new Date(today);
-                break;
-            case 'week':
-                startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                endDate = new Date(today);
-                break;
-            case 'month':
-                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                endDate = new Date(today);
-                break;
-            case 'quarter':
-                const quarter = Math.floor(today.getMonth() / 3);
-                startDate = new Date(today.getFullYear(), quarter * 3, 1);
-                endDate = new Date(today);
-                break;
-            case 'year':
-                startDate = new Date(today.getFullYear(), 0, 1);
-                endDate = new Date(today);
-                break;
-            case 'custom':
-                startDate = new Date(document.getElementById('startDate').value);
-                endDate = new Date(document.getElementById('endDate').value);
-                break;
-            default:
-                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                endDate = new Date(today);
-        }
+    switch (dateRange) {
+        case 'today':
+            startDate = new Date(today);
+            endDate = new Date(today);
+            break;
+        case 'week':
+            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            endDate = new Date(today);
+            break;
+        case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today);
+            break;
+        case 'quarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1);
+            endDate = new Date(today);
+            break;
+        case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date(today);
+            break;
+        case 'custom':
+            startDate = new Date(document.getElementById('startDate').value);
+            endDate = new Date(document.getElementById('endDate').value);
+            break;
+        default:
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today);
     }
     return {
         startDate,
