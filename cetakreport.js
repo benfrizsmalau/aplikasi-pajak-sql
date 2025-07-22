@@ -167,7 +167,7 @@ async function exportPendapatanToPDF({
   // Tabel header
   // Kolom proporsional untuk landscape (disesuaikan agar angka muat)
   // Geser kolom Target (dan isian) 10mm ke kiri
-  const colX = [15, 27, 47, 119, 166, 203, 227]; // kolom Target dari 129 -> 119
+  const colX = [15, 27, 47, 119, 156, 193, 217]; // Realisasi dari 166->156, dst
   const colW = [10, 18, 80, 35, 35, 22, 22];
   const rowHeight = 7;
   const maxY = 195;
@@ -201,7 +201,7 @@ async function exportPendapatanToPDF({
     pdf.text(r.kode, colX[1] + colW[1] / 2, yPos, { align: 'center' });
     let uraian = r.nama.length > 45 ? r.nama.slice(0, 43) + '…' : r.nama;
     pdf.text(uraian, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
-    pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
+    pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2 + 2, yPos, { align: 'right', maxWidth: colW[3] - 4 }); // +2mm untuk isi target
     pdf.text(formatRupiahPdfShort(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
     pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] - 2, yPos, { align: 'right', maxWidth: colW[5] - 4 });
     pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
@@ -244,7 +244,7 @@ async function exportPendapatanToPDF({
   }
   pdf.setFont('helvetica', 'bold');
   pdf.text('TOTAL', colX[2] + 2, y, { align: 'left' });
-  pdf.text(formatRupiahPdfShort(totalTarget), colX[3] + colW[3] - 2, y, { align: 'right' });
+  pdf.text(formatRupiahPdfShort(totalTarget), colX[3] + colW[3] - 2 + 2, y, { align: 'right' });
   pdf.text(formatRupiahPdfShort(totalRealisasi), colX[4] + colW[4] - 2, y, { align: 'right' });
   pdf.text('100.0', colX[5] + colW[5] - 2, y, { align: 'right' });
   pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] - 2, y, { align: 'right' });
