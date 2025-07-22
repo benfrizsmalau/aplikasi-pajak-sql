@@ -168,8 +168,9 @@ async function exportPendapatanToPDF({
   // Kolom proporsional untuk landscape (disesuaikan agar angka muat)
   // Geser kolom Target (dan isian) 10mm ke kiri
   // Perlebar border kolom Kontribusi (%) 15mm ke kanan, header & isi tetap
-  const colX = [15, 27, 47, 119, 156, 193, 217];
-  const colW = [10, 18, 80, 35, 35, 37, 22]; // kolom kontribusi dari 22 -> 37
+  // Perlebar border kolom Capaian (%) 15mm ke kanan, header & isi digeser 15mm ke kanan
+  const colX = [15, 27, 47, 119, 156, 193, 217 + 15]; // header & isi capaian digeser 15mm ke kanan
+  const colW = [10, 18, 80, 35, 35, 37, 37]; // kolom capaian dari 22 -> 37
   const rowHeight = 7;
   const maxY = 195;
 
@@ -202,17 +203,17 @@ async function exportPendapatanToPDF({
     pdf.text(r.kode, colX[1] + colW[1] / 2, yPos, { align: 'center' });
     let uraian = r.nama.length > 45 ? r.nama.slice(0, 43) + '…' : r.nama;
     pdf.text(uraian, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
-    pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2 + 2, yPos, { align: 'right', maxWidth: colW[3] - 4 }); // +2mm untuk isi target
+    pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2 + 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
     pdf.text(formatRupiahPdfShort(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
     pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] - 2, yPos, { align: 'right', maxWidth: colW[5] - 4 });
     pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
   }
 
-  // Format angka pendek tanpa koma desimal jika tidak perlu
+  // Format angka pendek tanpa koma desimal jika tidak perlu, tanpa 'Rp'
   function formatRupiahPdfShort(angka) {
-    if (!angka || isNaN(angka)) return 'Rp 0';
+    if (!angka || isNaN(angka)) return '0';
     let str = Number(angka).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-    return 'Rp ' + str;
+    return str;
   }
 
   drawTableHeader(y);
