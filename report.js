@@ -643,8 +643,78 @@ function updatePerformanceChart(data) {
 }
 
 function exportReport() {
-    alert('Fitur export akan segera tersedia.');
+    // Hanya aktif untuk reportType 'revenue'
+    const reportType = document.getElementById('reportType').value;
+    if (reportType !== 'revenue') {
+        alert('Export PDF hanya tersedia untuk Laporan Pendapatan!');
+        return;
+    }
+    const tahun = document.getElementById('dateRangeTahun').value || '2025';
+    const periodeLabel = getPeriodeLabel();
+    const { startDate, endDate } = getDateRange();
+    if (typeof window.exportPendapatanToPDF === 'function') {
+        window.exportPendapatanToPDF({
+            reportData,
+            periodeLabel,
+            tahun,
+            startDate,
+            endDate
+        });
+    } else {
+        alert('Fungsi export PDF belum tersedia!');
+    }
 }
+
+// Helper label periode dinamis
+function getPeriodeLabel() {
+    const tahun = document.getElementById('dateRangeTahun')?.value || '2025';
+    const dateRange = document.getElementById('dateRange')?.value;
+    if (dateRange === undefined) return `Tahun ${tahun}`;
+    if (dateRange === 'custom') {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        if (start && end) {
+            const s = new Date(start);
+            const e = new Date(end);
+            return `${s.getDate()} ${getNamaBulan(s.getMonth())} ${s.getFullYear()} – ${e.getDate()} ${getNamaBulan(e.getMonth())} ${e.getFullYear()}`;
+        }
+    }
+    if (dateRange === 'month') {
+        const now = new Date();
+        return `${getNamaBulan(now.getMonth())} ${tahun}`;
+    }
+    if (dateRange === 'quarter') {
+        const now = new Date();
+        const q = Math.floor(now.getMonth() / 3) + 1;
+        return `Triwulan ${q} ${tahun}`;
+    }
+    if (dateRange === 'year') {
+        return `Tahun ${tahun}`;
+    }
+    // Default: tampilkan bulan berjalan
+    const now = new Date();
+    return `${getNamaBulan(now.getMonth())} ${tahun}`;
+}
+function getNamaBulan(idx) {
+    return [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ][idx] || '';
+}
+
+// Agar bisa dipanggil dari cetakreport.js
+window.getPendapatanExportContext = function() {
+    const tahun = document.getElementById('dateRangeTahun')?.value || '2025';
+    const periodeLabel = getPeriodeLabel();
+    const { startDate, endDate } = getDateRange();
+    return {
+        reportData,
+        periodeLabel,
+        tahun,
+        startDate,
+        endDate
+    };
+};
 
 function exportExcel() {
     alert('Fitur export Excel akan segera tersedia');
