@@ -165,9 +165,9 @@ async function exportPendapatanToPDF({
   y += 7;
 
   // Tabel header
-  // Kolom proporsional untuk landscape
-  const colX = [15, 27, 47, 142, 172, 202, 227];
-  const colW = [10, 18, 93, 28, 28, 23, 23];
+  // Kolom proporsional untuk landscape (disesuaikan agar angka muat)
+  const colX = [15, 27, 47, 129, 166, 203, 227];
+  const colW = [10, 18, 80, 35, 35, 22, 22];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -182,10 +182,10 @@ async function exportPendapatanToPDF({
     pdf.text('No.', colX[0] + colW[0] / 2, yPos, { align: 'center' });
     pdf.text('Kode', colX[1] + colW[1] / 2, yPos, { align: 'center' });
     pdf.text('Uraian Pajak/Retribusi', colX[2] + 2, yPos, { align: 'left' });
-    pdf.text('Target (Rp)', colX[3] + colW[3] / 2, yPos, { align: 'center' });
-    pdf.text('Realisasi (Rp)', colX[4] + colW[4] / 2, yPos, { align: 'center' });
-    pdf.text('Kontribusi (%)', colX[5] + colW[5] / 2, yPos, { align: 'center' });
-    pdf.text('Capaian (%)', colX[6] + colW[6] / 2, yPos, { align: 'center' });
+    pdf.text('Target (Rp)', colX[3] + colW[3] - 2, yPos, { align: 'right' });
+    pdf.text('Realisasi (Rp)', colX[4] + colW[4] - 2, yPos, { align: 'right' });
+    pdf.text('Kontribusi (%)', colX[5] + colW[5] - 2, yPos, { align: 'right' });
+    pdf.text('Capaian (%)', colX[6] + colW[6] - 2, yPos, { align: 'right' });
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
   }
@@ -198,12 +198,19 @@ async function exportPendapatanToPDF({
     }
     pdf.text(String(r.idx), colX[0] + colW[0] / 2, yPos, { align: 'center' });
     pdf.text(r.kode, colX[1] + colW[1] / 2, yPos, { align: 'center' });
-    let uraian = r.nama.length > 50 ? r.nama.slice(0, 48) + '…' : r.nama;
+    let uraian = r.nama.length > 45 ? r.nama.slice(0, 43) + '…' : r.nama;
     pdf.text(uraian, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
-    pdf.text(formatRupiahPdf(r.target), colX[3] + colW[3] - 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
-    pdf.text(formatRupiahPdf(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
-    pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] / 2, yPos, { align: 'center', maxWidth: colW[5] - 4 });
-    pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] / 2, yPos, { align: 'center', maxWidth: colW[6] - 4 });
+    pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
+    pdf.text(formatRupiahPdfShort(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
+    pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] - 2, yPos, { align: 'right', maxWidth: colW[5] - 4 });
+    pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
+  }
+
+  // Format angka pendek tanpa koma desimal jika tidak perlu
+  function formatRupiahPdfShort(angka) {
+    if (!angka || isNaN(angka)) return 'Rp 0';
+    let str = Number(angka).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+    return 'Rp ' + str;
   }
 
   drawTableHeader(y);
@@ -236,10 +243,10 @@ async function exportPendapatanToPDF({
   }
   pdf.setFont('helvetica', 'bold');
   pdf.text('TOTAL', colX[2] + 2, y, { align: 'left' });
-  pdf.text(formatRupiahPdf(totalTarget), colX[3] + colW[3] - 2, y, { align: 'right' });
-  pdf.text(formatRupiahPdf(totalRealisasi), colX[4] + colW[4] - 2, y, { align: 'right' });
-  pdf.text('100.0', colX[5] + colW[5] / 2, y, { align: 'center' });
-  pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] / 2, y, { align: 'center' });
+  pdf.text(formatRupiahPdfShort(totalTarget), colX[3] + colW[3] - 2, y, { align: 'right' });
+  pdf.text(formatRupiahPdfShort(totalRealisasi), colX[4] + colW[4] - 2, y, { align: 'right' });
+  pdf.text('100.0', colX[5] + colW[5] - 2, y, { align: 'right' });
+  pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] - 2, y, { align: 'right' });
   y += 10;
 
   // Penutup
