@@ -256,7 +256,7 @@ async function exportPendapatanToPDF({
   // Penutup
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
-  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', pageWidth / 2, y, { align: 'center' });
+  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', colX[0], y, { align: 'left' });
   y += 10;
   pdf.text('Dibuat di : Burmeso', 25, y);
   pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), 120, y);
