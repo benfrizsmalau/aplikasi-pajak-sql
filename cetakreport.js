@@ -168,21 +168,42 @@ async function exportPendapatanToPDF({
   // Kolom proporsional untuk landscape
   const colX = [15, 27, 47, 142, 172, 202, 227];
   const colW = [10, 18, 93, 28, 28, 23, 23];
-  const rowHeight = 6;
-  const maxY = 195; // batas bawah halaman landscape
+  const rowHeight = 7;
+  const maxY = 195;
 
   function drawTableHeader(yPos) {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
-    pdf.text('No.', colX[0], yPos);
-    pdf.text('Kode', colX[1], yPos);
-    pdf.text('Uraian Pajak/Retribusi', colX[2], yPos);
-    pdf.text('Target (Rp)', colX[3], yPos);
-    pdf.text('Realisasi (Rp)', colX[4], yPos);
-    pdf.text('Kontribusi (%)', colX[5], yPos);
-    pdf.text('Capaian (%)', colX[6], yPos);
+    let x = colX[0];
+    for (let i = 0; i < colW.length; i++) {
+      pdf.rect(x, yPos - rowHeight + 2, colW[i], rowHeight, 'S');
+      x += colW[i];
+    }
+    pdf.text('No.', colX[0] + colW[0] / 2, yPos, { align: 'center' });
+    pdf.text('Kode', colX[1] + colW[1] / 2, yPos, { align: 'center' });
+    pdf.text('Uraian Pajak/Retribusi', colX[2] + 2, yPos, { align: 'left' });
+    pdf.text('Target (Rp)', colX[3] + colW[3] / 2, yPos, { align: 'center' });
+    pdf.text('Realisasi (Rp)', colX[4] + colW[4] / 2, yPos, { align: 'center' });
+    pdf.text('Kontribusi (%)', colX[5] + colW[5] / 2, yPos, { align: 'center' });
+    pdf.text('Capaian (%)', colX[6] + colW[6] / 2, yPos, { align: 'center' });
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
+  }
+
+  function drawTableRow(r, yPos) {
+    let x = colX[0];
+    for (let i = 0; i < colW.length; i++) {
+      pdf.rect(x, yPos - rowHeight + 2, colW[i], rowHeight, 'S');
+      x += colW[i];
+    }
+    pdf.text(String(r.idx), colX[0] + colW[0] / 2, yPos, { align: 'center' });
+    pdf.text(r.kode, colX[1] + colW[1] / 2, yPos, { align: 'center' });
+    let uraian = r.nama.length > 50 ? r.nama.slice(0, 48) + '…' : r.nama;
+    pdf.text(uraian, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
+    pdf.text(formatRupiahPdf(r.target), colX[3] + colW[3] - 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
+    pdf.text(formatRupiahPdf(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
+    pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] / 2, yPos, { align: 'center', maxWidth: colW[5] - 4 });
+    pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] / 2, yPos, { align: 'center', maxWidth: colW[6] - 4 });
   }
 
   drawTableHeader(y);
@@ -196,15 +217,7 @@ async function exportPendapatanToPDF({
       drawTableHeader(y);
       y += rowHeight;
     }
-    pdf.text(String(r.idx), colX[0], y, { maxWidth: colW[0] });
-    pdf.text(r.kode, colX[1], y, { maxWidth: colW[1] });
-    // Potong uraian jika terlalu panjang
-    let uraian = r.nama.length > 50 ? r.nama.slice(0, 48) + '…' : r.nama;
-    pdf.text(uraian, colX[2], y, { maxWidth: colW[2] });
-    pdf.text(formatRupiahPdf(r.target), colX[3], y, { align: 'right', maxWidth: colW[3] });
-    pdf.text(formatRupiahPdf(r.realisasi), colX[4], y, { align: 'right', maxWidth: colW[4] });
-    pdf.text(r.kontribusi.toFixed(1), colX[5], y, { align: 'right', maxWidth: colW[5] });
-    pdf.text(r.capaian.toFixed(1), colX[6], y, { align: 'right', maxWidth: colW[6] });
+    drawTableRow(r, y);
     y += rowHeight;
   });
 
@@ -215,12 +228,18 @@ async function exportPendapatanToPDF({
     drawTableHeader(y);
     y += rowHeight;
   }
+  // Baris total dengan border
+  let x = colX[0];
+  for (let i = 0; i < colW.length; i++) {
+    pdf.rect(x, y - rowHeight + 2, colW[i], rowHeight, 'S');
+    x += colW[i];
+  }
   pdf.setFont('helvetica', 'bold');
-  pdf.text('TOTAL', colX[2], y);
-  pdf.text(formatRupiahPdf(totalTarget), colX[3], y, { align: 'right' });
-  pdf.text(formatRupiahPdf(totalRealisasi), colX[4], y, { align: 'right' });
-  pdf.text('100.0', colX[5], y, { align: 'right' });
-  pdf.text(rataCapaian.toFixed(1), colX[6], y, { align: 'right' });
+  pdf.text('TOTAL', colX[2] + 2, y, { align: 'left' });
+  pdf.text(formatRupiahPdf(totalTarget), colX[3] + colW[3] - 2, y, { align: 'right' });
+  pdf.text(formatRupiahPdf(totalRealisasi), colX[4] + colW[4] - 2, y, { align: 'right' });
+  pdf.text('100.0', colX[5] + colW[5] / 2, y, { align: 'center' });
+  pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] / 2, y, { align: 'center' });
   y += 10;
 
   // Penutup
