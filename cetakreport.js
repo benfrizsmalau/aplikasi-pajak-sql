@@ -166,7 +166,8 @@ async function exportPendapatanToPDF({
 
   // Tabel header
   // Kolom proporsional untuk landscape (disesuaikan agar angka muat)
-  const colX = [15, 27, 47, 129, 166, 203, 227];
+  // Geser kolom Target (dan isian) 10mm ke kiri
+  const colX = [15, 27, 47, 119, 166, 203, 227]; // kolom Target dari 129 -> 119
   const colW = [10, 18, 80, 35, 35, 22, 22];
   const rowHeight = 7;
   const maxY = 195;
