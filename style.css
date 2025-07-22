@@ -1200,13 +1200,10 @@ th {
   letter-spacing: 0.5px;
 }
 .stat-value {
-  font-size: 2.1rem;
+  font-size: 2.5rem;
   font-weight: bold;
-  color: #222;
-  letter-spacing: 1px;
-  margin-bottom: 0;
-  margin-top: 2px;
-  text-shadow: 0 2px 8px rgba(60,60,120,0.08);
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.18), 0 0 2px #1976d2;
 }
 .stat-blue {
   background: linear-gradient(120deg, #1976d2 60%, #64b5f6 100%);
