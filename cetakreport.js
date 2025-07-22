@@ -258,8 +258,8 @@ async function exportPendapatanToPDF({
   pdf.setFontSize(10);
   pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', colX[0], y, { align: 'left' });
   y += 10;
-  // Geser tanggal ke kanan tepat di bawah pertemuan kolom kontribusi dan capaian
-  const xTanggal = colX[5] + colW[5];
+  // Geser tanggal ke kiri tepat di bawah pertemuan kolom Realisasi dan Kontribusi
+  const xTanggal = colX[4] + colW[4];
   pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
   y += 7;
   // Tulisan Dibuat di : tepat di bawah tanggal
