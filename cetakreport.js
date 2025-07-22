@@ -169,8 +169,9 @@ async function exportPendapatanToPDF({
   // Geser kolom Target (dan isian) 10mm ke kiri
   // Perlebar border kolom Kontribusi (%) 15mm ke kanan, header & isi tetap
   // Perlebar border kolom Capaian (%) 15mm ke kanan, header & isi digeser 15mm ke kanan
-  const colX = [15, 27, 47, 119, 156, 193, 217 + 15]; // header & isi capaian digeser 15mm ke kanan
-  const colW = [10, 18, 80, 35, 35, 37, 37]; // kolom capaian dari 22 -> 37
+  // Geser header & isi kolom Capaian (%) 10mm ke kiri
+  const colX = [15, 27, 47, 119, 156, 193, 232]; // border tetap
+  const colW = [10, 18, 80, 35, 35, 37, 37];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -188,7 +189,7 @@ async function exportPendapatanToPDF({
     pdf.text('Target (Rp)', colX[3] + colW[3] - 2, yPos, { align: 'right' });
     pdf.text('Realisasi (Rp)', colX[4] + colW[4] - 2, yPos, { align: 'right' });
     pdf.text('Kontribusi (%)', colX[5] + colW[5] - 2, yPos, { align: 'right' });
-    pdf.text('Capaian (%)', colX[6] + colW[6] - 2, yPos, { align: 'right' });
+    pdf.text('Capaian (%)', colX[6] + colW[6] - 2 - 10, yPos, { align: 'right' });
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
   }
@@ -206,7 +207,7 @@ async function exportPendapatanToPDF({
     pdf.text(formatRupiahPdfShort(r.target), colX[3] + colW[3] - 2 + 2, yPos, { align: 'right', maxWidth: colW[3] - 4 });
     pdf.text(formatRupiahPdfShort(r.realisasi), colX[4] + colW[4] - 2, yPos, { align: 'right', maxWidth: colW[4] - 4 });
     pdf.text(r.kontribusi.toFixed(1), colX[5] + colW[5] - 2, yPos, { align: 'right', maxWidth: colW[5] - 4 });
-    pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
+    pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2 - 10, yPos, { align: 'right', maxWidth: colW[6] - 4 });
   }
 
   // Format angka pendek tanpa koma desimal jika tidak perlu, tanpa 'Rp'
@@ -249,7 +250,7 @@ async function exportPendapatanToPDF({
   pdf.text(formatRupiahPdfShort(totalTarget), colX[3] + colW[3] - 2 + 2, y, { align: 'right' });
   pdf.text(formatRupiahPdfShort(totalRealisasi), colX[4] + colW[4] - 2, y, { align: 'right' });
   pdf.text('100.0', colX[5] + colW[5] - 2, y, { align: 'right' });
-  pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] - 2, y, { align: 'right' });
+  pdf.text(rataCapaian.toFixed(1), colX[6] + colW[6] - 2 - 10, y, { align: 'right' });
   y += 10;
 
   // Penutup
