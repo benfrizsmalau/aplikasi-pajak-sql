@@ -767,30 +767,66 @@ async function handleApproveWajibPajak(data) {
             throw new Error('Data inbox tidak ditemukan atau sudah diproses!');
         }
         
-        const wpData = inboxItem.data;
-        
-        // Validasi data wajib pajak
-        if (!wpData.NPWPD || !wpData['Nama Usaha'] || !wpData['Nama Pemilik']) {
-            throw new Error('Data wajib pajak tidak lengkap!');
+        let wpData = inboxItem.data;
+        let generatedNpwpd = false;
+        // Jika NPWPD kosong, generate otomatis
+        if (!wpData.NPWPD || wpData.NPWPD.trim() === "") {
+            // Validasi field wajib untuk mode auto
+            validateDatawpInput({
+                ...wpData,
+                jenisWp: wpData.JenisWP || wpData.jenisWp || '',
+                namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
+                namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
+                nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
+                alamat: wpData.Alamat || wpData.alamat || '',
+                telephone: wpData.Telephone || wpData.telephone || '',
+                kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
+                kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
+                kodeKecamatan: wpData.kodeKecamatan || '',
+                kodeKelurahan: wpData.kodeKelurahan || ''
+            }, true);
+            // Ambil jumlah data WP untuk menentukan urutan berikutnya
+            const { count, error: countError } = await supabase
+                .from('datawp')
+                .select('*', { count: 'exact', head: true });
+            if (countError) throw new Error('Gagal menghitung data WP.');
+            const nextSequence = ((count || 0) + 1).toString().padStart(6, '0');
+            // Gunakan format sama seperti handleCreateWp
+            const jenisWp = wpData.JenisWP || wpData.jenisWp || 'BARU';
+            const kodeKecamatan = wpData.kodeKecamatan || '';
+            const kodeKelurahan = wpData.kodeKelurahan || '';
+            wpData.NPWPD = `P.${jenisWp}.${nextSequence}.${kodeKecamatan}.${kodeKelurahan}`;
+            generatedNpwpd = true;
+        } else {
+            // Validasi field wajib untuk mode manual
+            validateDatawpInput({
+                ...wpData,
+                jenisWp: wpData.JenisWP || wpData.jenisWp || '',
+                namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
+                namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
+                nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
+                alamat: wpData.Alamat || wpData.alamat || '',
+                telephone: wpData.Telephone || wpData.telephone || '',
+                kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
+                kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
+                npwpd: wpData.NPWPD
+            }, false);
         }
-        
         // Cek apakah NPWPD sudah ada di tabel datawp
         const { data: existingWp, error: checkError } = await supabase
             .from('datawp')
             .select('NPWPD')
             .eq('NPWPD', wpData.NPWPD);
-        
         if (checkError) throw new Error('Gagal mengecek NPWPD: ' + checkError.message);
         if (existingWp && existingWp.length > 0) {
             throw new Error(`NPWPD ${wpData.NPWPD} sudah terdaftar di sistem!`);
         }
-        
         // Insert data ke tabel datawp
         const insertData = {
             NPWPD: wpData.NPWPD,
             JenisWP: wpData.JenisWP || '',
-            "Nama Usaha": wpData['Nama Usaha'],
-            "Nama Pemilik": wpData['Nama Pemilik'],
+            "Nama Usaha": wpData['Nama Usaha'] || '',
+            "Nama Pemilik": wpData['Nama Pemilik'] || '',
             "NIK KTP": wpData['NIK KTP'] || '',
             Alamat: wpData.Alamat || '',
             Telephone: wpData.Telephone || '',
@@ -800,26 +836,21 @@ async function handleApproveWajibPajak(data) {
             "Foto Tempat Usaha": "",
             "Foto KTP": "",
         };
-        
         const { error: insertError } = await supabase
             .from('datawp')
             .insert([insertData]);
-        
         if (insertError) throw new Error('Gagal menyimpan data wajib pajak: ' + insertError.message);
-        
         // Update status inbox menjadi approved
         const { error: updateError } = await supabase
             .from('inbox_wajib_pajak')
             .update({ status: 'approved' })
             .eq('id', id);
-        
         if (updateError) throw new Error('Gagal update status inbox: ' + updateError.message);
-        
         return { 
-            message: `Data wajib pajak ${wpData.NPWPD} berhasil diapprove dan disimpan!`,
-            npwpd: wpData.NPWPD
+            message: `Data wajib pajak ${wpData.NPWPD} berhasil diapprove dan disimpan!${generatedNpwpd ? ' (NPWPD dibuat otomatis)' : ''}`,
+            npwpd: wpData.NPWPD,
+            generatedNpwpd
         };
-        
     } catch (error) {
         throw new Error('Gagal approve wajib pajak: ' + error.message);
     }

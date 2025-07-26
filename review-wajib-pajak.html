@@ -38,6 +38,9 @@
             <div class="content-header">
                 <h2>📋 Review Data Wajib Pajak</h2>
                 <p>Review dan approve data wajib pajak dari aplikasi eksternal "Pendataan WP Bolt"</p>
+                <div class="info-box" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong>ℹ️ Informasi Penting:</strong> Data WP tanpa NPWPD akan otomatis dibuatkan NPWPD saat proses approve. Pastikan data lainnya (Nama Usaha, Nama Pemilik, NIK KTP, dll) sudah lengkap.
+                </div>
             </div>
 
             <!-- Filter dan Pencarian -->
@@ -120,6 +123,9 @@
             <div class="modal-body">
                 <div id="detailContent">
                     <!-- Detail data akan diisi di sini -->
+                </div>
+                <div id="npwpdInfo" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; display: none;">
+                    <strong>⚠️ NPWPD akan dibuat otomatis</strong> karena data ini tidak memiliki NPWPD.
                 </div>
             </div>
             <div class="modal-footer">

@@ -103,47 +103,49 @@ function renderTable() {
     if (filteredData.length === 0) {
         inboxTableBody.innerHTML = `
             <tr>
-                <td colspan="14" class="text-center">Tidak ada data untuk ditampilkan</td>
+                <td colspan="14" style="text-align: center; padding: 20px; color: #666;">
+                    Tidak ada data yang ditemukan
+                </td>
             </tr>
         `;
         totalRecords.textContent = 'Total: 0 data';
         return;
     }
-
+    
     filteredData.forEach((item, index) => {
-        const wpData = item.data;
+        const data = item.data;
+        const hasNpwpd = data.NPWPD && data.NPWPD.trim() !== '';
+        
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="checkbox" class="row-checkbox" value="${item.id}"></td>
+            <td><input type="checkbox" class="item-checkbox" value="${item.id}"></td>
             <td>${index + 1}</td>
-            <td>${wpData.NPWPD || '-'}</td>
-            <td>${wpData.JenisWP || '-'}</td>
-            <td>${wpData['Nama Usaha'] || '-'}</td>
-            <td>${wpData['Nama Pemilik'] || '-'}</td>
-            <td>${wpData['NIK KTP'] || '-'}</td>
-            <td>${wpData.Alamat || '-'}</td>
-            <td>${wpData.Telephone || '-'}</td>
-            <td>${wpData.Kelurahan || '-'}</td>
-            <td>${wpData.Kecamatan || '-'}</td>
+            <td>
+                ${hasNpwpd ? data.NPWPD : '<span style="color: #ff9800; font-style: italic;">(Akan dibuat otomatis)</span>'}
+            </td>
+            <td>${data.JenisWP || '-'}</td>
+            <td>${data['Nama Usaha'] || '-'}</td>
+            <td>${data['Nama Pemilik'] || '-'}</td>
+            <td>${data['NIK KTP'] || '-'}</td>
+            <td>${data.Alamat || '-'}</td>
+            <td>${data.Telephone || '-'}</td>
+            <td>${data.Kelurahan || '-'}</td>
+            <td>${data.Kecamatan || '-'}</td>
             <td><span class="status-badge status-${item.status}">${getStatusText(item.status)}</span></td>
             <td>${formatDate(item.created_at)}</td>
             <td>
-                <button class="btn-small btn-info" onclick="showDetail(${item.id})">Detail</button>
+                <button class="btn-aksi btn-detail" onclick="showDetail(${item.id})">Detail</button>
                 ${item.status === 'pending' ? `
-                    <button class="btn-small btn-success" onclick="approveItem(${item.id})">Approve</button>
-                    <button class="btn-small btn-danger" onclick="rejectItem(${item.id})">Reject</button>
+                    <button class="btn-aksi btn-approve" onclick="approveItem(${item.id})">Approve</button>
+                    <button class="btn-aksi btn-reject" onclick="rejectItem(${item.id})">Reject</button>
                 ` : ''}
             </td>
         `;
         inboxTableBody.appendChild(row);
     });
-
-    // Add event listeners to checkboxes
-    document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedItems);
-    });
-
+    
     totalRecords.textContent = `Total: ${filteredData.length} data`;
+    updateSelectedItems();
 }
 
 // Filter data based on search and status
@@ -180,7 +182,7 @@ function filterData() {
 
 // Toggle select all checkboxes
 function toggleSelectAll() {
-    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const checkboxes = document.querySelectorAll('.item-checkbox');
     checkboxes.forEach(checkbox => {
         checkbox.checked = checkAllInbox.checked;
     });
@@ -189,7 +191,7 @@ function toggleSelectAll() {
 
 // Update selected items array
 function updateSelectedItems() {
-    selectedItems = Array.from(document.querySelectorAll('.row-checkbox:checked'))
+    selectedItems = Array.from(document.querySelectorAll('.item-checkbox:checked'))
         .map(checkbox => parseInt(checkbox.value));
     updateProsesButton();
 }
@@ -215,7 +217,23 @@ async function handleBulkAction() {
 
 // Bulk approve items
 async function bulkApprove() {
-    if (!confirm(`Apakah Anda yakin ingin approve ${selectedItems.length} data wajib pajak?`)) {
+    if (!Array.isArray(currentDetailId) || currentDetailId.length === 0) {
+        showAlert('error', 'Tidak ada data yang dipilih untuk diapprove!');
+        return;
+    }
+
+    // Cek apakah ada data tanpa NPWPD
+    const itemsWithoutNpwpd = currentDetailId.filter(id => {
+        const item = inboxData.find(item => item.id === id);
+        return item && (!item.data.NPWPD || item.data.NPWPD.trim() === '');
+    });
+
+    let confirmMessage = `Apakah Anda yakin ingin approve ${currentDetailId.length} data wajib pajak?`;
+    if (itemsWithoutNpwpd.length > 0) {
+        confirmMessage += `\n\n${itemsWithoutNpwpd.length} data tidak memiliki NPWPD dan akan dibuat otomatis.`;
+    }
+
+    if (!confirm(confirmMessage)) {
         return;
     }
 
@@ -223,12 +241,16 @@ async function bulkApprove() {
         showLoading(true);
         let successCount = 0;
         let errorCount = 0;
+        let generatedNpwpdCount = 0;
 
-        for (const id of selectedItems) {
+        for (const id of currentDetailId) {
             try {
                 const response = await createData('approveWajibPajak', { id });
                 if (response.status === 'sukses') {
                     successCount++;
+                    if (response.generatedNpwpd) {
+                        generatedNpwpdCount++;
+                    }
                 } else {
                     errorCount++;
                 }
@@ -238,12 +260,19 @@ async function bulkApprove() {
             }
         }
 
-        showAlert('success', `Berhasil approve ${successCount} data${errorCount > 0 ? `, ${errorCount} gagal` : ''}`);
+        let successMessage = `Berhasil approve ${successCount} data`;
+        if (generatedNpwpdCount > 0) {
+            successMessage += `\n${generatedNpwpdCount} NPWPD dibuat otomatis`;
+        }
+        if (errorCount > 0) {
+            successMessage += `\n${errorCount} data gagal diapprove`;
+        }
+
+        showAlert('success', successMessage);
         loadInboxData();
         selectedItems = [];
         checkAllInbox.checked = false;
         aksiInbox.value = '';
-        updateProsesButton();
     } catch (error) {
         showAlert('error', 'Gagal melakukan bulk approve: ' + error.message);
     } finally {
@@ -261,46 +290,59 @@ function showBulkRejectModal() {
 // Show detail modal
 function showDetail(id) {
     const item = inboxData.find(item => item.id === id);
-    if (!item) return;
+    if (!item) {
+        showAlert('error', 'Data tidak ditemukan!');
+        return;
+    }
 
-    const wpData = item.data;
+    currentDetailId = id;
+    const data = item.data;
+    
+    // Tampilkan info NPWPD otomatis jika NPWPD kosong
+    const npwpdInfo = document.getElementById('npwpdInfo');
+    if (!data.NPWPD || data.NPWPD.trim() === '') {
+        npwpdInfo.style.display = 'block';
+    } else {
+        npwpdInfo.style.display = 'none';
+    }
+
     detailContent.innerHTML = `
         <div class="detail-grid">
             <div class="detail-item">
                 <label>NPWPD:</label>
-                <span>${wpData.NPWPD || '-'}</span>
+                <span>${data.NPWPD || '<em style="color: #ff9800;">(Akan dibuat otomatis)</em>'}</span>
             </div>
             <div class="detail-item">
                 <label>Jenis WP:</label>
-                <span>${wpData.JenisWP || '-'}</span>
+                <span>${data.JenisWP || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Nama Usaha:</label>
-                <span>${wpData['Nama Usaha'] || '-'}</span>
+                <span>${data['Nama Usaha'] || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Nama Pemilik:</label>
-                <span>${wpData['Nama Pemilik'] || '-'}</span>
+                <span>${data['Nama Pemilik'] || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>NIK KTP:</label>
-                <span>${wpData['NIK KTP'] || '-'}</span>
+                <span>${data['NIK KTP'] || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Alamat:</label>
-                <span>${wpData.Alamat || '-'}</span>
+                <span>${data.Alamat || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Telephone:</label>
-                <span>${wpData.Telephone || '-'}</span>
+                <span>${data.Telephone || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Kelurahan:</label>
-                <span>${wpData.Kelurahan || '-'}</span>
+                <span>${data.Kelurahan || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Kecamatan:</label>
-                <span>${wpData.Kecamatan || '-'}</span>
+                <span>${data.Kecamatan || '-'}</span>
             </div>
             <div class="detail-item">
                 <label>Status:</label>
@@ -310,16 +352,16 @@ function showDetail(id) {
                 <label>Tanggal Input:</label>
                 <span>${formatDate(item.created_at)}</span>
             </div>
+            ${item.catatan ? `
+            <div class="detail-item full-width">
+                <label>Catatan:</label>
+                <span>${item.catatan}</span>
+            </div>
+            ` : ''}
         </div>
     `;
 
-    currentDetailId = id;
     detailModal.style.display = 'block';
-    
-    // Show/hide action buttons based on status
-    const canAction = item.status === 'pending';
-    approveBtn.style.display = canAction ? 'inline-block' : 'none';
-    rejectBtn.style.display = canAction ? 'inline-block' : 'none';
 }
 
 // Approve current item
@@ -330,7 +372,15 @@ async function approveCurrentItem() {
 
 // Approve single item
 async function approveItem(id) {
-    if (!confirm('Apakah Anda yakin ingin approve data wajib pajak ini?')) {
+    const item = inboxData.find(item => item.id === id);
+    const hasNpwpd = item && item.data && item.data.NPWPD && item.data.NPWPD.trim() !== '';
+    
+    let confirmMessage = 'Apakah Anda yakin ingin approve data wajib pajak ini?';
+    if (!hasNpwpd) {
+        confirmMessage = 'Data ini tidak memiliki NPWPD. NPWPD akan dibuat otomatis saat approve. Lanjutkan?';
+    }
+    
+    if (!confirm(confirmMessage)) {
         return;
     }
 
@@ -339,7 +389,11 @@ async function approveItem(id) {
         const response = await createData('approveWajibPajak', { id });
         
         if (response.status === 'sukses') {
-            showAlert('success', response.message);
+            let successMessage = response.message;
+            if (response.generatedNpwpd) {
+                successMessage += '\n\nNPWPD baru telah dibuat otomatis: ' + response.npwpd;
+            }
+            showAlert('success', successMessage);
             closeDetailModal();
             loadInboxData();
         } else {
