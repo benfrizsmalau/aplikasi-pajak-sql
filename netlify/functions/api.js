@@ -103,8 +103,14 @@ exports.handler = async (event) => {
                 case 'deleteTarget':
                     responseData = await handleDeleteTarget(body);
                     break;
-                case 'sync_ketetapan_status':
-                    responseData = await syncKetetapanStatus();
+                case 'getInboxWajibPajak':
+                    responseData = await handleGetInboxWajibPajak(body);
+                    break;
+                case 'approveWajibPajak':
+                    responseData = await handleApproveWajibPajak(body);
+                    break;
+                case 'rejectWajibPajak':
+                    responseData = await handleRejectWajibPajak(body);
                     break;
                 // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
@@ -132,26 +138,13 @@ exports.handler = async (event) => {
 
 async function handleGet() {
     // Query datawp dan Wilayah tetap seperti biasa
-    let wajibPajak = [];
-    let wilayah = [];
-    let wpError = null;
-    let wilayahError = null;
-    try {
-        const res = await supabase.from('datawp').select('*');
-        wajibPajak = res.data || [];
-        wpError = res.error;
-    } catch (e) {
-        wajibPajak = [];
-        wpError = { message: e.message };
-    }
-    try {
-        const res = await supabase.from('Wilayah').select('*');
-        wilayah = res.data || [];
-        wilayahError = res.error;
-    } catch (e) {
-        wilayah = [];
-        wilayahError = { message: e.message };
-    }
+    const [
+        { data: wajibPajak, error: wpError },
+        { data: wilayah, error: wilayahError }
+    ] = await Promise.all([
+        supabase.from('datawp').select('*'),
+        supabase.from('Wilayah').select('*'),
+    ]);
 
     // Query masterPajak (MasterPajakRetribusi) dengan error handling terpisah
     let masterPajak = [];
@@ -197,9 +190,8 @@ async function handleGet() {
         targetPajakRetribusi = [];
     }
 
-    // Jangan throw error, tapi log dan kembalikan array kosong jika gagal
-    if (wpError) console.error('Error mengambil data WP:', wpError.message);
-    if (wilayahError) console.error('Error mengambil data Wilayah:', wilayahError.message);
+    if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
+    if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
 
     return {
         wajibPajak: wajibPajak || [],
@@ -302,20 +294,12 @@ async function handleDeleteWp(data) {
 // =================================================================
 
 async function handleCreateKetetapan(data) {
-    // Cari nomor urut terbesar yang sudah ada
-    const { data: existing, error: existingError } = await supabase
+    // Ambil nomor urut terakhir dari tabel KetetapanPajak
+    const { count, error: countError } = await supabase
         .from('KetetapanPajak')
-        .select('ID_Ketetapan');
-    if (existingError) throw new Error('Gagal mengambil data ketetapan.');
-    let maxUrut = 0;
-    (existing || []).forEach(row => {
-        const match = String(row.ID_Ketetapan).match(/^(\d{6,})\//);
-        if (match) {
-            const num = parseInt(match[1], 10);
-            if (num > maxUrut) maxUrut = num;
-        }
-    });
-    const nomorUrut = (maxUrut + 1).toString().padStart(7, '0');
+        .select('*', { count: 'exact', head: true });
+    if (countError) throw new Error('Gagal mengambil nomor urut ketetapan.');
+    const nomorUrut = ((count || 0) + 1).toString().padStart(7, '0');
 
     // Ambil data master pajak untuk tipe dan nama layanan
     let tipeLayanan = '';
@@ -507,49 +491,11 @@ async function handleCreatePembayaran(data) {
 
 // Handler hapus pembayaran
 async function handleDeletePembayaran(data) {
-    // Ambil ID_Ketetapan dari pembayaran yang akan dihapus
-    const { data: pembayaran, error: getError } = await supabase
-        .from('RiwayatPembayaran')
-        .select('ID_Ketetapan')
-        .eq('ID_Pembayaran', data.id_pembayaran)
-        .single();
-    if (getError || !pembayaran) throw new Error('Gagal mengambil data pembayaran: ' + (getError ? getError.message : 'Data tidak ditemukan'));
-    const id_ketetapan = pembayaran.ID_Ketetapan;
-
-    // Hapus pembayaran
     const { error } = await supabase
         .from('RiwayatPembayaran')
         .delete()
         .eq('ID_Pembayaran', data.id_pembayaran);
     if (error) throw new Error('Gagal hapus pembayaran: ' + error.message);
-
-    // Hitung ulang total pembayaran untuk ketetapan ini
-    const { data: pembayaranList, error: pembayaranError } = await supabase
-        .from('RiwayatPembayaran')
-        .select('JumlahBayar')
-        .eq('ID_Ketetapan', id_ketetapan);
-    if (pembayaranError) throw new Error('Gagal mengambil riwayat pembayaran: ' + pembayaranError.message);
-    const totalBayar = (pembayaranList || []).reduce((sum, p) => sum + Number(p.JumlahBayar), 0);
-
-    // Ambil total tagihan dari KetetapanPajak
-    const { data: ketetapan, error: ketetapanError } = await supabase
-        .from('KetetapanPajak')
-        .select('TotalTagihan')
-        .eq('ID_Ketetapan', id_ketetapan)
-        .single();
-    if (ketetapanError) throw new Error('Gagal mengambil data ketetapan: ' + ketetapanError.message);
-
-    // Update status ketetapan sesuai total pembayaran
-    let statusBaru = 'Belum Lunas';
-    if (totalBayar >= Number(ketetapan.TotalTagihan)) {
-        statusBaru = 'Lunas';
-    }
-    const { error: updateError } = await supabase
-        .from('KetetapanPajak')
-        .update({ Status: statusBaru })
-        .eq('ID_Ketetapan', id_ketetapan);
-    if (updateError) throw new Error('Gagal update status ketetapan: ' + updateError.message);
-
     return { message: 'Pembayaran berhasil dihapus!' };
 }
 
@@ -777,31 +723,131 @@ async function handleDeleteTarget(data) {
     return { message: 'Target berhasil dihapus!' };
 }
 
-// Fungsi sinkronisasi massal status ketetapan
-async function syncKetetapanStatus() {
-    // Ambil semua ketetapan
-    const { data: ketetapanList, error: ketetapanError } = await supabase
-        .from('KetetapanPajak')
-        .select('ID_Ketetapan, TotalTagihan');
-    if (ketetapanError) throw new Error('Gagal mengambil data ketetapan: ' + ketetapanError.message);
-    let updated = 0;
-    for (const ket of ketetapanList) {
-        // Hitung total pembayaran untuk ketetapan ini
-        const { data: pembayaranList, error: pembayaranError } = await supabase
-            .from('RiwayatPembayaran')
-            .select('JumlahBayar')
-            .eq('ID_Ketetapan', ket.ID_Ketetapan);
-        if (pembayaranError) continue;
-        const totalBayar = (pembayaranList || []).reduce((sum, p) => sum + Number(p.JumlahBayar), 0);
-        let statusBaru = 'Belum Lunas';
-        if (totalBayar >= Number(ket.TotalTagihan)) {
-            statusBaru = 'Lunas';
-        }
-        const { error: updateError } = await supabase
-            .from('KetetapanPajak')
-            .update({ Status: statusBaru })
-            .eq('ID_Ketetapan', ket.ID_Ketetapan);
-        if (!updateError) updated++;
+// =================================================================
+// FUNGSI HANDLER INBOX WAJIB PAJAK
+// =================================================================
+
+// Handler untuk mengambil data inbox wajib pajak dengan status pending
+async function handleGetInboxWajibPajak(data) {
+    try {
+        const { status = 'pending' } = data;
+        
+        const { data: inboxData, error } = await supabase
+            .from('inbox_wajib_pajak')
+            .select('*')
+            .eq('status', status)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw new Error('Gagal mengambil data inbox: ' + error.message);
+        
+        return { 
+            inboxWajibPajak: inboxData || [],
+            total: inboxData ? inboxData.length : 0
+        };
+    } catch (error) {
+        throw new Error('Gagal mengambil data inbox wajib pajak: ' + error.message);
     }
-    return { message: `Sinkronisasi selesai. Status diperbarui untuk ${updated} ketetapan.` };
+}
+
+// Handler untuk approve data wajib pajak dari inbox
+async function handleApproveWajibPajak(data) {
+    try {
+        const { id } = data;
+        if (!id) throw new Error('ID inbox wajib pajak harus diisi!');
+        
+        // Ambil data dari inbox
+        const { data: inboxItem, error: fetchError } = await supabase
+            .from('inbox_wajib_pajak')
+            .select('*')
+            .eq('id', id)
+            .eq('status', 'pending')
+            .single();
+        
+        if (fetchError || !inboxItem) {
+            throw new Error('Data inbox tidak ditemukan atau sudah diproses!');
+        }
+        
+        const wpData = inboxItem.data;
+        
+        // Validasi data wajib pajak
+        if (!wpData.NPWPD || !wpData['Nama Usaha'] || !wpData['Nama Pemilik']) {
+            throw new Error('Data wajib pajak tidak lengkap!');
+        }
+        
+        // Cek apakah NPWPD sudah ada di tabel datawp
+        const { data: existingWp, error: checkError } = await supabase
+            .from('datawp')
+            .select('NPWPD')
+            .eq('NPWPD', wpData.NPWPD);
+        
+        if (checkError) throw new Error('Gagal mengecek NPWPD: ' + checkError.message);
+        if (existingWp && existingWp.length > 0) {
+            throw new Error(`NPWPD ${wpData.NPWPD} sudah terdaftar di sistem!`);
+        }
+        
+        // Insert data ke tabel datawp
+        const insertData = {
+            NPWPD: wpData.NPWPD,
+            JenisWP: wpData.JenisWP || '',
+            "Nama Usaha": wpData['Nama Usaha'],
+            "Nama Pemilik": wpData['Nama Pemilik'],
+            "NIK KTP": wpData['NIK KTP'] || '',
+            Alamat: wpData.Alamat || '',
+            Telephone: wpData.Telephone || '',
+            Kelurahan: wpData.Kelurahan || '',
+            Kecamatan: wpData.Kecamatan || '',
+            "Foto Pemilik": "",
+            "Foto Tempat Usaha": "",
+            "Foto KTP": "",
+        };
+        
+        const { error: insertError } = await supabase
+            .from('datawp')
+            .insert([insertData]);
+        
+        if (insertError) throw new Error('Gagal menyimpan data wajib pajak: ' + insertError.message);
+        
+        // Update status inbox menjadi approved
+        const { error: updateError } = await supabase
+            .from('inbox_wajib_pajak')
+            .update({ status: 'approved' })
+            .eq('id', id);
+        
+        if (updateError) throw new Error('Gagal update status inbox: ' + updateError.message);
+        
+        return { 
+            message: `Data wajib pajak ${wpData.NPWPD} berhasil diapprove dan disimpan!`,
+            npwpd: wpData.NPWPD
+        };
+        
+    } catch (error) {
+        throw new Error('Gagal approve wajib pajak: ' + error.message);
+    }
+}
+
+// Handler untuk reject data wajib pajak dari inbox
+async function handleRejectWajibPajak(data) {
+    try {
+        const { id, alasan } = data;
+        if (!id) throw new Error('ID inbox wajib pajak harus diisi!');
+        
+        // Update status inbox menjadi rejected
+        const { error } = await supabase
+            .from('inbox_wajib_pajak')
+            .update({ 
+                status: 'rejected',
+                catatan: alasan || 'Ditolak oleh operator'
+            })
+            .eq('id', id)
+            .eq('status', 'pending');
+        
+        if (error) throw new Error('Gagal update status inbox: ' + error.message);
+        
+        return { 
+            message: 'Data wajib pajak berhasil ditolak!'
+        };
+        
+    } catch (error) {
+        throw new Error('Gagal reject wajib pajak: ' + error.message);
+    }
 }
