@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API - Aplikasi Pajak Daerah</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API - Aplikasi Pajak Daerah</h1>
+    
+    <div class="test-section">
+        <h3>1. Test GET Data</h3>
+        <button class="btn" onclick="testGetData()">Test GET Data</button>
+        <div id="getResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test Get Inbox Wajib Pajak</h3>
+        <button class="btn" onclick="testGetInbox()">Test Get Inbox</button>
+        <div id="inboxResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test Approve Wajib Pajak (dengan ID dummy)</h3>
+        <input type="number" id="testId" placeholder="Masukkan ID inbox" value="1" style="padding: 5px; margin-right: 10px;">
+        <button class="btn" onclick="testApprove()">Test Approve</button>
+        <div id="approveResult" class="result"></div>
+    </div>
+
+    <script>
+        const apiUrl = '/.netlify/functions/api';
+        
+        async function testGetData() {
+            const resultDiv = document.getElementById('getResult');
+            resultDiv.textContent = 'Loading...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = '✅ GET Data berhasil:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = '❌ GET Data gagal:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testGetInbox() {
+            const resultDiv = document.getElementById('inboxResult');
+            resultDiv.textContent = 'Loading...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'getInboxWajibPajak',
+                        status: 'pending'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = '✅ Get Inbox berhasil:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = '❌ Get Inbox gagal:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testApprove() {
+            const testId = document.getElementById('testId').value;
+            const resultDiv = document.getElementById('approveResult');
+            resultDiv.textContent = 'Loading...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'approveWajibPajak',
+                        id: parseInt(testId)
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = '✅ Approve berhasil:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = '❌ Approve gagal:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -39,6 +39,34 @@ function validateDatawpInput(data, isAuto) {
     }
 }
 
+// Fungsi validasi khusus untuk data inbox (lebih fleksibel)
+function validateInboxData(data, isAuto) {
+    const required = [
+        'namaUsaha', 'namaPemilik', 'nikKtp', 'alamat', 'telephone', 'kelurahan', 'kecamatan'
+    ];
+    
+    // Jika mode auto, tambahkan kodeKecamatan dan kodeKelurahan
+    if (isAuto) {
+        required.push('kodeKecamatan', 'kodeKelurahan');
+    }
+    
+    for (const key of required) {
+        if (!data[key] || typeof data[key] !== 'string' || data[key].trim() === '') {
+            throw new Error(`Field '${key}' wajib diisi dan harus berupa string.`);
+        }
+    }
+    
+    // Validasi NIK harus 16 digit
+    if (data.nikKtp && data.nikKtp.length !== 16) {
+        throw new Error('NIK KTP harus 16 digit angka.');
+    }
+    
+    // Validasi telephone minimal 8 digit
+    if (data.telephone && data.telephone.length < 8) {
+        throw new Error('Nomor telepon harus minimal 8 digit.');
+    }
+}
+
 // Fungsi otentikasi untuk Google Drive
 async function getAuthClient() {
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
@@ -128,7 +156,20 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error('API ERROR:', error); // Logging error ke Netlify log
-        return { statusCode: 500, headers, body: JSON.stringify({ status: 'gagal', message: error.message || 'Terjadi error pada server.' }) };
+        console.error('Error stack:', error.stack); // Log stack trace untuk debugging
+        
+        // Pastikan error message ada
+        const errorMessage = error.message || 'Terjadi error pada server.';
+        
+        return { 
+            statusCode: 500, 
+            headers, 
+            body: JSON.stringify({ 
+                status: 'gagal', 
+                message: errorMessage,
+                action: event.httpMethod === 'POST' ? JSON.parse(event.body || '{}').action : 'unknown'
+            }) 
+        };
     }
 };
 
@@ -769,49 +810,62 @@ async function handleApproveWajibPajak(data) {
         
         let wpData = inboxItem.data;
         let generatedNpwpd = false;
+        
+        // Pastikan wpData adalah object
+        if (!wpData || typeof wpData !== 'object') {
+            throw new Error('Data wajib pajak tidak valid!');
+        }
+        
         // Jika NPWPD kosong, generate otomatis
         if (!wpData.NPWPD || wpData.NPWPD.trim() === "") {
             // Validasi field wajib untuk mode auto
-            validateDatawpInput({
-                ...wpData,
-                jenisWp: wpData.JenisWP || wpData.jenisWp || '',
-                namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
-                namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
-                nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
-                alamat: wpData.Alamat || wpData.alamat || '',
-                telephone: wpData.Telephone || wpData.telephone || '',
-                kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
-                kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
-                kodeKecamatan: wpData.kodeKecamatan || '',
-                kodeKelurahan: wpData.kodeKelurahan || ''
-            }, true);
+            try {
+                validateInboxData({
+                    namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
+                    namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
+                    nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
+                    alamat: wpData.Alamat || wpData.alamat || '',
+                    telephone: wpData.Telephone || wpData.telephone || '',
+                    kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
+                    kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
+                    kodeKecamatan: wpData.kodeKecamatan || '001',
+                    kodeKelurahan: wpData.kodeKelurahan || '001'
+                }, true);
+            } catch (validationError) {
+                throw new Error('Validasi data gagal: ' + validationError.message);
+            }
+            
             // Ambil jumlah data WP untuk menentukan urutan berikutnya
             const { count, error: countError } = await supabase
                 .from('datawp')
                 .select('*', { count: 'exact', head: true });
-            if (countError) throw new Error('Gagal menghitung data WP.');
+            if (countError) throw new Error('Gagal menghitung data WP: ' + countError.message);
+            
             const nextSequence = ((count || 0) + 1).toString().padStart(6, '0');
-            // Gunakan format sama seperti handleCreateWp
             const jenisWp = wpData.JenisWP || wpData.jenisWp || 'BARU';
-            const kodeKecamatan = wpData.kodeKecamatan || '';
-            const kodeKelurahan = wpData.kodeKelurahan || '';
+            const kodeKecamatan = wpData.kodeKecamatan || '001';
+            const kodeKelurahan = wpData.kodeKelurahan || '001';
+            
             wpData.NPWPD = `P.${jenisWp}.${nextSequence}.${kodeKecamatan}.${kodeKelurahan}`;
             generatedNpwpd = true;
         } else {
             // Validasi field wajib untuk mode manual
-            validateDatawpInput({
-                ...wpData,
-                jenisWp: wpData.JenisWP || wpData.jenisWp || '',
-                namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
-                namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
-                nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
-                alamat: wpData.Alamat || wpData.alamat || '',
-                telephone: wpData.Telephone || wpData.telephone || '',
-                kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
-                kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
-                npwpd: wpData.NPWPD
-            }, false);
+            try {
+                validateInboxData({
+                    namaUsaha: wpData['Nama Usaha'] || wpData.namaUsaha || '',
+                    namaPemilik: wpData['Nama Pemilik'] || wpData.namaPemilik || '',
+                    nikKtp: wpData['NIK KTP'] || wpData.nikKtp || '',
+                    alamat: wpData.Alamat || wpData.alamat || '',
+                    telephone: wpData.Telephone || wpData.telephone || '',
+                    kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
+                    kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
+                    npwpd: wpData.NPWPD
+                }, false);
+            } catch (validationError) {
+                throw new Error('Validasi data gagal: ' + validationError.message);
+            }
         }
+        
         // Cek apakah NPWPD sudah ada di tabel datawp
         const { data: existingWp, error: checkError } = await supabase
             .from('datawp')
@@ -821,37 +875,43 @@ async function handleApproveWajibPajak(data) {
         if (existingWp && existingWp.length > 0) {
             throw new Error(`NPWPD ${wpData.NPWPD} sudah terdaftar di sistem!`);
         }
+        
         // Insert data ke tabel datawp
         const insertData = {
             NPWPD: wpData.NPWPD,
-            JenisWP: wpData.JenisWP || '',
-            "Nama Usaha": wpData['Nama Usaha'] || '',
-            "Nama Pemilik": wpData['Nama Pemilik'] || '',
-            "NIK KTP": wpData['NIK KTP'] || '',
-            Alamat: wpData.Alamat || '',
-            Telephone: wpData.Telephone || '',
-            Kelurahan: wpData.Kelurahan || '',
-            Kecamatan: wpData.Kecamatan || '',
+            JenisWP: wpData.JenisWP || wpData.jenisWp || 'BARU',
+            "Nama Usaha": wpData['Nama Usaha'] || wpData.namaUsaha || '',
+            "Nama Pemilik": wpData['Nama Pemilik'] || wpData.namaPemilik || '',
+            "NIK KTP": wpData['NIK KTP'] || wpData.nikKtp || '',
+            Alamat: wpData.Alamat || wpData.alamat || '',
+            Telephone: wpData.Telephone || wpData.telephone || '',
+            Kelurahan: wpData.Kelurahan || wpData.kelurahan || '',
+            Kecamatan: wpData.Kecamatan || wpData.kecamatan || '',
             "Foto Pemilik": "",
             "Foto Tempat Usaha": "",
             "Foto KTP": "",
         };
+        
         const { error: insertError } = await supabase
             .from('datawp')
             .insert([insertData]);
         if (insertError) throw new Error('Gagal menyimpan data wajib pajak: ' + insertError.message);
+        
         // Update status inbox menjadi approved
         const { error: updateError } = await supabase
             .from('inbox_wajib_pajak')
             .update({ status: 'approved' })
             .eq('id', id);
         if (updateError) throw new Error('Gagal update status inbox: ' + updateError.message);
+        
         return { 
             message: `Data wajib pajak ${wpData.NPWPD} berhasil diapprove dan disimpan!${generatedNpwpd ? ' (NPWPD dibuat otomatis)' : ''}`,
             npwpd: wpData.NPWPD,
             generatedNpwpd
         };
+        
     } catch (error) {
+        console.error('Error in handleApproveWajibPajak:', error);
         throw new Error('Gagal approve wajib pajak: ' + error.message);
     }
 }
