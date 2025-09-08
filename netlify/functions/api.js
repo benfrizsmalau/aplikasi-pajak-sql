@@ -289,35 +289,6 @@ async function handleCreateKetetapan(data) {
     const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
     const tahun = now.getFullYear();
 
-    // Cari nomor urut terakhir berdasarkan bulan dan tahun saat ini untuk menghindari race condition
-    const { data: lastKetetapan, error: lastError } = await supabase
-        .from('KetetapanPajak')
-        .select('ID_Ketetapan')
-        .like('ID_Ketetapan', `%/${bulanRomawi}/${tahun}`)
-        .order('ID_Ketetapan', { ascending: false })
-        .limit(1)
-        .single();
-
-    // Abaikan error jika tidak ada baris yang ditemukan (PGRST116), karena itu berarti ini adalah entri pertama bulan ini.
-    if (lastError && lastError.code !== 'PGRST116') {
-        throw new Error('Gagal mengambil nomor urut terakhir: ' + lastError.message);
-    }
-
-    let nextSequence = 1;
-    if (lastKetetapan) {
-        try {
-            const lastNomorUrut = parseInt(lastKetetapan.ID_Ketetapan.split('/')[0], 10);
-            if (!isNaN(lastNomorUrut)) {
-                nextSequence = lastNomorUrut + 1;
-            }
-        } catch (e) {
-            // Jika parsing gagal, kembali ke 1 sebagai fallback aman
-            nextSequence = 1; 
-        }
-    }
-    
-    const nomorUrut = nextSequence.toString().padStart(7, '0');
-
     // Ambil data master pajak untuk tipe dan nama layanan
     let tipeLayanan = '';
     let namaLayanan = '';
@@ -346,10 +317,6 @@ async function handleCreateKetetapan(data) {
         kodeSurat = 'SKRD';
     }
 
-    // Bulan romawi dan tahun
-    // Gabungkan ID_Ketetapan
-    const ID_Ketetapan = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
-
     // Logika tanggal dan denda
     const tanggalKetetapan = now; // Tanggal ketetapan selalu tanggal saat ini
     let denda = 0;
@@ -360,27 +327,77 @@ async function handleCreateKetetapan(data) {
         if (today.getDate() > tanggalTunggakan.getDate()) bulanTunggakan += 1;
         if (bulanTunggakan < 1) bulanTunggakan = 1;
         denda = bulanTunggakan * 0.02 * Number(data.jumlahPokok);
-    } 
+    }
     denda = Math.round(denda);
     const jumlahPokok = Number(data.jumlahPokok);
     const totalTagihan = jumlahPokok + denda;
-    const { error } = await supabase
-        .from('KetetapanPajak')
-        .insert([{
-            ID_Ketetapan,
-            KodeLayanan: data.kodeLayanan,
-            NPWPD: data.npwpd,
-            MasaPajak: data.masaPajak,
-            TanggalKetetapan: tanggalKetetapan,
-            TanggalTunggakan: data.tglTunggakan ? new Date(data.tglTunggakan).toISOString() : null, // Simpan tanggal tunggakan jika ada
-            JumlahPokok: jumlahPokok,
-            Denda: denda,
-            TotalTagihan: totalTagihan,
-            Status: 'Belum Lunas',
-            Catatan: data.catatan || ''
-        }]);
-    if (error) throw new Error('Gagal membuat ketetapan: ' + error.message);
-    return { message: 'Ketetapan berhasil dibuat!' };
+
+    // Retry logic untuk mengatasi race condition
+    let maxRetries = 5;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+        try {
+            // Gunakan count untuk mendapatkan nomor urut yang lebih reliable
+            const { count, error: countError } = await supabase
+                .from('KetetapanPajak')
+                .select('*', { count: 'exact', head: true });
+            
+            if (countError) throw new Error('Gagal mengambil jumlah ketetapan: ' + countError.message);
+            
+            // Generate nomor urut berdasarkan total count + 1 + timestamp untuk uniqueness
+            const baseSequence = (count || 0) + 1;
+            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
+            const nomorUrut = `${baseSequence.toString().padStart(4, '0')}${timestamp}`;
+            
+            // Gabungkan ID_Ketetapan dengan format yang lebih unik
+            const ID_Ketetapan = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+
+            // Coba insert data
+            const { error } = await supabase
+                .from('KetetapanPajak')
+                .insert([{
+                    ID_Ketetapan,
+                    KodeLayanan: data.kodeLayanan,
+                    NPWPD: data.npwpd,
+                    MasaPajak: data.masaPajak,
+                    TanggalKetetapan: tanggalKetetapan,
+                    TanggalTunggakan: data.tglTunggakan ? new Date(data.tglTunggakan).toISOString() : null,
+                    JumlahPokok: jumlahPokok,
+                    Denda: denda,
+                    TotalTagihan: totalTagihan,
+                    Status: 'Belum Lunas',
+                    Catatan: data.catatan || ''
+                }]);
+
+            if (!error) {
+                // Berhasil, keluar dari loop
+                return { message: 'Ketetapan berhasil dibuat!', id_ketetapan: ID_Ketetapan };
+            }
+
+            // Jika error adalah duplicate key, coba lagi
+            if (error.message && error.message.includes('duplicate key')) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    throw new Error('Gagal membuat ketetapan setelah beberapa percobaan: ' + error.message);
+                }
+                // Tunggu sebentar sebelum retry (random delay untuk mengurangi collision)
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                continue;
+            } else {
+                // Error lain, langsung throw
+                throw new Error('Gagal membuat ketetapan: ' + error.message);
+            }
+        } catch (e) {
+            if (retryCount >= maxRetries - 1) {
+                throw e;
+            }
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+        }
+    }
+    
+    throw new Error('Gagal membuat ketetapan setelah beberapa percobaan');
 }
 
 // Handler update ketetapan
@@ -432,13 +449,6 @@ async function handleDeleteKetetapan(data) {
 
 // Handler create pembayaran
 async function handleCreatePembayaran(data) {
-    // Ambil nomor urut terakhir dari tabel RiwayatPembayaran
-    const { count, error: countError } = await supabase
-        .from('RiwayatPembayaran')
-        .select('*', { count: 'exact', head: true });
-    if (countError) throw new Error('Gagal mengambil nomor urut pembayaran.');
-    const nomorUrut = ((count || 0) + 1).toString().padStart(7, '0');
-
     // Ambil ID_Ketetapan untuk menentukan SSPD/SSRD
     let kodeSurat = 'SSPD';
     if (data.id_ketetapan && typeof data.id_ketetapan === 'string') {
@@ -454,23 +464,68 @@ async function handleCreatePembayaran(data) {
     const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
     const tahun = now.getFullYear();
 
-    // Gabungkan ID_Pembayaran
-    const ID_Pembayaran = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+    // Retry logic untuk mengatasi race condition
+    let maxRetries = 5;
+    let retryCount = 0;
+    let ID_Pembayaran = '';
+    
+    while (retryCount < maxRetries) {
+        try {
+            // Ambil nomor urut dengan count + timestamp untuk uniqueness
+            const { count, error: countError } = await supabase
+                .from('RiwayatPembayaran')
+                .select('*', { count: 'exact', head: true });
+            if (countError) throw new Error('Gagal mengambil nomor urut pembayaran: ' + countError.message);
+            
+            const baseSequence = (count || 0) + 1;
+            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
+            const nomorUrut = `${baseSequence.toString().padStart(4, '0')}${timestamp}`;
+            
+            // Gabungkan ID_Pembayaran
+            ID_Pembayaran = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
 
-    const { error } = await supabase
-        .from('RiwayatPembayaran')
-        .insert([{
-            ID_Pembayaran,
-            ID_Ketetapan: data.id_ketetapan,
-            NPWPD: data.npwpd,
-            TanggalBayar: data.tanggalBayar,
-            JumlahBayar: Number(data.jumlahBayar),
-            MetodeBayar: data.metodeBayar,
-            WaktuInput: data.waktuInput,
-            Operator: data.operator,
-            StatusPembayaran: data.statusPembayaran
-        }]);
-    if (error) throw new Error('Gagal mencatat pembayaran: ' + error.message);
+            const { error } = await supabase
+                .from('RiwayatPembayaran')
+                .insert([{
+                    ID_Pembayaran,
+                    ID_Ketetapan: data.id_ketetapan,
+                    NPWPD: data.npwpd,
+                    TanggalBayar: data.tanggalBayar,
+                    JumlahBayar: Number(data.jumlahBayar),
+                    MetodeBayar: data.metodeBayar,
+                    WaktuInput: data.waktuInput,
+                    Operator: data.operator,
+                    StatusPembayaran: data.statusPembayaran
+                }]);
+
+            if (!error) {
+                // Berhasil, keluar dari loop
+                break;
+            }
+
+            // Jika error adalah duplicate key, coba lagi
+            if (error.message && error.message.includes('duplicate key')) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    throw new Error('Gagal mencatat pembayaran setelah beberapa percobaan: ' + error.message);
+                }
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                continue;
+            } else {
+                throw new Error('Gagal mencatat pembayaran: ' + error.message);
+            }
+        } catch (e) {
+            if (retryCount >= maxRetries - 1) {
+                throw e;
+            }
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+        }
+    }
+
+    if (retryCount >= maxRetries) {
+        throw new Error('Gagal mencatat pembayaran setelah beberapa percobaan');
+    }
 
     // Hitung total pembayaran untuk ketetapan ini
     const { data: pembayaranList, error: pembayaranError } = await supabase
@@ -499,7 +554,7 @@ async function handleCreatePembayaran(data) {
         .eq('ID_Ketetapan', data.id_ketetapan);
     if (updateError) throw new Error('Gagal update status ketetapan: ' + updateError.message);
 
-    return { message: 'Pembayaran berhasil dicatat!' };
+    return { message: 'Pembayaran berhasil dicatat!', id_pembayaran: ID_Pembayaran };
 }
 
 // Handler hapus pembayaran
@@ -514,45 +569,76 @@ async function handleDeletePembayaran(data) {
 
 // Handler create fiskal
 async function handleCreateFiskal(data) {
-    // Ambil nomor urut terakhir dari tabel Fiskal
-    const { count, error: countError } = await supabase
-        .from('Fiskal')
-        .select('*', { count: 'exact', head: true });
-    if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
-    const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
-
     // Bulan romawi dan tahun
     const now = new Date();
     const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
     const tahun = now.getFullYear();
 
-    // Gabungkan nomor_fiskal
-    const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
-
     // Tanggal cetak dan berlaku
     const tanggal_cetak = now.toISOString();
     const tanggal_berlaku = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString();
 
-    // Insert data ke tabel Fiskal
-    const { error, data: inserted } = await supabase
-        .from('Fiskal')
-        .insert([{
-            nomor_fiskal,
-            NPWPD: data.npwpd,
-            "Nama Pemilik": data.nama_pemilik,
-            "Nama Usaha": data.nama_usaha,
-            Alamat: data.alamat,
-            tanggal_cetak,
-            tanggal_berlaku,
-            operator: data.operator,
-            keterangan: data.keterangan || ''
-        }])
-        .select('*')
-        .single();
-    if (error) {
-        return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+    // Retry logic untuk mengatasi race condition
+    let maxRetries = 5;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+        try {
+            // Ambil nomor urut dengan count + timestamp untuk uniqueness
+            const { count, error: countError } = await supabase
+                .from('Fiskal')
+                .select('*', { count: 'exact', head: true });
+            if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
+            
+            const baseSequence = (count || 0) + 1;
+            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
+            const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
+            
+            // Gabungkan nomor_fiskal
+            const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+
+            // Insert data ke tabel Fiskal
+            const { error, data: inserted } = await supabase
+                .from('Fiskal')
+                .insert([{
+                    nomor_fiskal,
+                    NPWPD: data.npwpd,
+                    "Nama Pemilik": data.nama_pemilik,
+                    "Nama Usaha": data.nama_usaha,
+                    Alamat: data.alamat,
+                    tanggal_cetak,
+                    tanggal_berlaku,
+                    operator: data.operator,
+                    keterangan: data.keterangan || ''
+                }])
+                .select('*')
+                .single();
+
+            if (!error) {
+                return { status: 'sukses', ...inserted };
+            }
+
+            // Jika error adalah duplicate key, coba lagi
+            if (error.message && error.message.includes('duplicate key')) {
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    return { status: 'gagal', message: 'Gagal membuat dokumen fiskal setelah beberapa percobaan: ' + error.message };
+                }
+                await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                continue;
+            } else {
+                return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+            }
+        } catch (e) {
+            if (retryCount >= maxRetries - 1) {
+                return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + e.message };
+            }
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+        }
     }
-    return { status: 'sukses', ...inserted };
+    
+    return { status: 'gagal', message: 'Gagal membuat dokumen fiskal setelah beberapa percobaan' };
 }
 
 // Handler hapus fiskal
@@ -577,12 +663,15 @@ async function handleDeleteFiskal(data) {
 // Handler untuk mendapatkan nomor fiskal berikutnya
 async function handleGetNextFiskalNumber() {
     try {
-        // Ambil nomor urut terakhir dari tabel Fiskal
+        // Ambil nomor urut dengan count + timestamp untuk uniqueness
         const { count, error: countError } = await supabase
             .from('Fiskal')
             .select('*', { count: 'exact', head: true });
-        if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
-        const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
+        if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
+        
+        const baseSequence = (count || 0) + 1;
+        const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
+        const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
 
         // Bulan romawi dan tahun
         const now = new Date();
@@ -592,7 +681,7 @@ async function handleGetNextFiskalNumber() {
         // Gabungkan nomor_fiskal
         const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
 
-        return { 
+        return {
             nomor_fiskal,
             nomor_urut: nomorUrut,
             bulan_romawi: bulanRomawi,
@@ -656,51 +745,80 @@ async function handleAutoCreateFiskal(data) {
 
         // Jika kedua syarat terpenuhi, buat fiskal
         if (lunasReklame && lunasSampah) {
-            // Ambil nomor urut terakhir dari tabel Fiskal
-            const { count, error: countError } = await supabase
-                .from('Fiskal')
-                .select('*', { count: 'exact', head: true });
-            if (countError) throw new Error('Gagal mengambil nomor urut fiskal.');
-            const nomorUrut = ((count || 0) + 1).toString().padStart(6, '0');
-
             // Bulan romawi dan tahun
             const now = new Date();
             const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
             const tahun = now.getFullYear();
 
-            // Gabungkan nomor_fiskal
-            const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
-
             // Tanggal cetak dan berlaku
             const tanggal_cetak = now.toISOString();
             const tanggal_berlaku = new Date(now.getFullYear()+1, now.getMonth(), now.getDate()).toISOString();
 
-            // Insert data ke tabel Fiskal
-            const { error, data: inserted } = await supabase
-                .from('Fiskal')
-                .insert([{
-                    nomor_fiskal,
-                    NPWPD: npwpd,
-                    "Nama Pemilik": wajibPajak?.['Nama Pemilik'] || '',
-                    "Nama Usaha": wajibPajak?.['Nama Usaha'] || '',
-                    Alamat: wajibPajak?.Alamat || '',
-                    tanggal_cetak,
-                    tanggal_berlaku,
-                    operator: 'Sistem',
-                    keterangan: 'Auto-generated saat syarat terpenuhi'
-                }])
-                .select('*')
-                .single();
+            // Retry logic untuk mengatasi race condition
+            let maxRetries = 5;
+            let retryCount = 0;
+            
+            while (retryCount < maxRetries) {
+                try {
+                    // Ambil nomor urut dengan count + timestamp untuk uniqueness
+                    const { count, error: countError } = await supabase
+                        .from('Fiskal')
+                        .select('*', { count: 'exact', head: true });
+                    if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
+                    
+                    const baseSequence = (count || 0) + 1;
+                    const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
+                    const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
+                    
+                    // Gabungkan nomor_fiskal
+                    const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
 
-            if (error) {
-                return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+                    // Insert data ke tabel Fiskal
+                    const { error, data: inserted } = await supabase
+                        .from('Fiskal')
+                        .insert([{
+                            nomor_fiskal,
+                            NPWPD: npwpd,
+                            "Nama Pemilik": wajibPajak?.['Nama Pemilik'] || '',
+                            "Nama Usaha": wajibPajak?.['Nama Usaha'] || '',
+                            Alamat: wajibPajak?.Alamat || '',
+                            tanggal_cetak,
+                            tanggal_berlaku,
+                            operator: 'Sistem',
+                            keterangan: 'Auto-generated saat syarat terpenuhi'
+                        }])
+                        .select('*')
+                        .single();
+
+                    if (!error) {
+                        return {
+                            status: 'sukses',
+                            message: 'Fiskal berhasil dibuat otomatis',
+                            fiskal: inserted
+                        };
+                    }
+
+                    // Jika error adalah duplicate key, coba lagi
+                    if (error.message && error.message.includes('duplicate key')) {
+                        retryCount++;
+                        if (retryCount >= maxRetries) {
+                            return { status: 'gagal', message: 'Gagal membuat dokumen fiskal setelah beberapa percobaan: ' + error.message };
+                        }
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                        continue;
+                    } else {
+                        return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + error.message };
+                    }
+                } catch (e) {
+                    if (retryCount >= maxRetries - 1) {
+                        return { status: 'gagal', message: 'Gagal membuat dokumen fiskal: ' + e.message };
+                    }
+                    retryCount++;
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+                }
             }
-
-            return { 
-                status: 'sukses', 
-                message: 'Fiskal berhasil dibuat otomatis',
-                fiskal: inserted
-            };
+            
+            return { status: 'gagal', message: 'Gagal membuat dokumen fiskal setelah beberapa percobaan' };
         } else {
             return { 
                 status: 'gagal', 
