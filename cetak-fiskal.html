@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Dokumen Fiskal</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none !important; }
+            @page { size: A4; margin: 1cm; }
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            font-size: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+        }
+        .header {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 16px;
+        }
+        .logo {
+            flex-shrink: 0;
+            width: 80px;
+            height: 96px;
+            background: #2563eb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .header-text {
+            flex: 1;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .header h2 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .header p {
+            margin: 0;
+            font-size: 12px;
+        }
+        .document-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .document-title h3 {
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+        }
+        .document-number {
+            font-weight: bold;
+            margin: 0;
+        }
+        .content {
+            margin-bottom: 24px;
+        }
+        .content p {
+            margin: 0 0 16px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 20px 1fr;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .info-label {
+            font-weight: normal;
+        }
+        .info-value {
+            font-weight: bold;
+        }
+        .status-text {
+            font-weight: bold;
+            margin: 16px 0;
+        }
+        .purpose-list {
+            margin: 8px 0 16px 20px;
+        }
+        .purpose-list li {
+            margin: 4px 0;
+        }
+        .validity-text {
+            margin: 16px 0;
+        }
+        .closing-text {
+            margin: 32px 0;
+            font-style: italic;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .signature-box {
+            text-align: center;
+        }
+        .signature-info {
+            margin-bottom: 4px;
+        }
+        .signature-space {
+            height: 64px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 8px;
+            display: inline-block;
+            min-width: 200px;
+        }
+        .signature-name {
+            font-weight: bold;
+            margin: 0;
+        }
+        .signature-nip {
+            font-size: 10px;
+            margin: 4px 0 0 0;
+        }
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .print-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Print</button>
+    
+    <div class="header">
+        <div class="logo">
+            <img src="images/logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        
+        <div class="header-text">
+            <h1>PEMERINTAH KABUPATEN MAMBERAMO RAYA</h1>
+            <h2>BADAN PENDAPATAN PENGELOLAAN KEUANGAN</h2>
+            <h2>DAN ASET DAERAH</h2>
+            <p>KOMPLEKS PERKANTORAN OTONOM, BURMESO DISTRIK MAMBERAMO TENGAH,<br/>KABUPATEN MAMBERAMO RAYA, PROVINSI PAPUA</p>
+        </div>
+    </div>
+
+    <div class="document-title">
+        <h3>FISKAL PEMBAYARAN PAJAK DAN RETRIBUSI DAERAH</h3>
+        <p class="document-number">NOMOR : <span id="nomorFiskal">-</span></p>
+    </div>
+
+    <div class="content">
+        <p>Atas Nama Bupati Kabupaten Mamberamo Raya menerangkan bahwa Wajib Pajak dibawah ini :</p>
+
+        <div class="info-grid">
+            <div class="info-label">Nama Pemilik</div>
+            <div>:</div>
+            <div class="info-value" id="namaPemilik">-</div>
+            
+            <div class="info-label">Nama Usaha</div>
+            <div>:</div>
+            <div class="info-value" id="namaUsaha">-</div>
+            
+            <div class="info-label">Alamat</div>
+            <div>:</div>
+            <div class="info-value" id="alamat">-</div>
+            
+            <div class="info-label">NPWPD</div>
+            <div>:</div>
+            <div class="info-value" id="npwpd">-</div>
+        </div>
+
+        <p class="status-text">TELAH MELAKSANAKAN KEWAJIBAN PEMBAYARAN PAJAK DAERAH DAN RETRIBUSI DAERAH DENGAN BAIK</p>
+
+        <p>Surat Fiskal ini diberikan atas nama pemohon yang bersangkutan untuk keperluan untuk :</p>
+
+        <ol class="purpose-list">
+            <li>Mengurus Surat Izin Jasa Konstruksi</li>
+            <li>Surat Izin Usaha Perdagangan (SIUP)</li>
+            <li>Tanda Daftar Perusahaan (TDP)</li>
+        </ol>
+
+        <p class="validity-text">Surat ini berlaku sampai dengan tanggal <span class="info-value" id="tanggalBerlaku">-</span> dan hanya berlaku untuk penggunaan di Kabupaten Mamberamo Raya.</p>
+
+        <p class="closing-text">Demikian surat Fiskal ini diberikan untuk dapat dipergunakan sebagaimana mestinya.</p>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <p class="signature-info">Dikeluarkan di : <span id="tempatDikeluarkan">Burmeso</span></p>
+            <p class="signature-info">Pada Tanggal : <span id="tanggalCetak">-</span></p>
+            <p class="signature-info">An. KEPALA BADAN PENDAPATAN</p>
+            <p class="signature-info">PENGELOLAAN KEUANGAN DAN ASET DAERAH</p>
+            
+            <div class="signature-space"></div>
+            <p class="signature-name">HERMAN TARIBABA, SE</p>
+            <p class="signature-nip">NIP. 197610202003121007</p>
+        </div>
+    </div>
+
+    <script>
+        // Ambil parameter dari URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const npwpd = urlParams.get('npwpd');
+        
+        if (!npwpd) {
+            document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: NPWPD tidak ditemukan</h1>';
+        } else {
+            loadFiskalData(npwpd);
+        }
+
+        async function loadFiskalData(npwpd) {
+            try {
+                const response = await fetch('/.netlify/functions/api');
+                const data = await response.json();
+                
+                const wajibPajak = data.wajibPajak || [];
+                const wp = wajibPajak.find(w => w.NPWPD === npwpd);
+                
+                if (!wp) {
+                    document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: Data Wajib Pajak tidak ditemukan</h1>';
+                    return;
+                }
+
+                // Isi data ke form
+                document.getElementById('npwpd').textContent = npwpd;
+                document.getElementById('namaUsaha').textContent = wp['Nama Usaha'] || '-';
+                document.getElementById('namaPemilik').textContent = wp['Nama Pemilik'] || '-';
+                document.getElementById('alamat').textContent = wp['Alamat'] || '-';
+
+                // Generate nomor fiskal yang berurut dari database
+                try {
+                    const nomorResponse = await fetch('/.netlify/functions/api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'getNextFiskalNumber' })
+                    });
+                    const nomorData = await nomorResponse.json();
+                    if (nomorData.status === 'sukses') {
+                        document.getElementById('nomorFiskal').textContent = nomorData.nomor_fiskal;
+                    } else {
+                        // Fallback jika gagal, gunakan random
+                        const fallbackNow = new Date();
+                        const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][fallbackNow.getMonth()];
+                        const tahun = fallbackNow.getFullYear();
+                        const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+                        const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                        document.getElementById('nomorFiskal').textContent = nomorFiskal;
+                    }
+                } catch (error) {
+                    console.error('Error getting fiskal number:', error);
+                    // Fallback jika gagal
+                    const fallbackNow = new Date();
+                    const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][fallbackNow.getMonth()];
+                    const tahun = fallbackNow.getFullYear();
+                    const nomorUrut = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+                    const nomorFiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                    document.getElementById('nomorFiskal').textContent = nomorFiskal;
+                }
+
+                // Tanggal cetak dan berlaku
+                const currentDate = new Date();
+                document.getElementById('tanggalCetak').textContent = currentDate.toLocaleDateString('id-ID');
+                const tanggalBerlaku = new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), currentDate.getDate());
+                document.getElementById('tanggalBerlaku').textContent = tanggalBerlaku.toLocaleDateString('id-ID');
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.body.innerHTML = '<h1 style="text-align: center; color: red;">Error: Gagal memuat data</h1>';
+            }
+        }
+    </script>
+</body>
+</html> 

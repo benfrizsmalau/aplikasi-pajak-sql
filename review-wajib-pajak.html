@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Data Wajib Pajak - Aplikasi Pajak Daerah</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="page-review-wajib-pajak">
+
+    <div class="instansi-header">
+        <img src="images/logo.png" alt="Logo" class="instansi-logo">
+        <div class="instansi-text">
+            <div class="instansi-title">APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH</div>
+            <div class="instansi-sub">BIDANG PENDAPATAN DAERAH</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <nav>
+            <a href="index.html">Dasbor</a>
+            <a href="tambah-data.html">Tambah Data WP</a>
+            <a href="lihat-data.html">Lihat Data WP</a>
+            <a href="tambah-ketetapan.html">Buat Ketetapan</a>
+            <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
+            <a href="setoran-pajak.html">Setoran Pajak</a>
+            <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="daftar-fiskal.html">Daftar Fiskal</a>
+            <a href="review-wajib-pajak.html" class="active">Review Data WP</a>
+            <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <main class="container">
+            <div class="content-header">
+                <h2>📋 Review Data Wajib Pajak</h2>
+                <p>Review dan approve data wajib pajak dari aplikasi eksternal "Pendataan WP Bolt"</p>
+                <div class="info-box" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong>ℹ️ Informasi Penting:</strong> Data WP tanpa NPWPD akan otomatis dibuatkan NPWPD saat proses approve. Pastikan data lainnya (Nama Usaha, Nama Pemilik, NIK KTP, dll) sudah lengkap.
+                </div>
+            </div>
+
+            <!-- Filter dan Pencarian -->
+            <div class="standard-search-filter">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Cari NPWPD, nama usaha, atau nama pemilik...">
+                    <button type="button" id="searchButton" class="btn-primary">
+                        <span class="btn-icon">🔍</span>
+                        Cari
+                    </button>
+                </div>
+                <div class="filter-options">
+                    <select id="filterStatus" class="filter-select">
+                        <option value="pending">Status Pending</option>
+                        <option value="approved">Status Approved</option>
+                        <option value="rejected">Status Rejected</option>
+                    </select>
+                    <button type="button" id="refreshData" class="btn-secondary">
+                        <span class="btn-icon">🔄</span>
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabel Inbox Wajib Pajak -->
+            <div class="standard-table-container">
+                <div class="table-header">
+                    <h3>📊 Data Inbox Wajib Pajak</h3>
+                    <div class="table-info">
+                        <span id="totalRecords">Total: 0 data</span>
+                    </div>
+                </div>
+                
+                <!-- Aksi Terpusat -->
+                <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
+                    <select id="aksiInbox" style="width: 110px;">
+                        <option value="">Aksi...</option>
+                        <option value="approve">Approve</option>
+                        <option value="reject">Reject</option>
+                    </select>
+                    <button id="prosesAksiInbox" disabled>Proses</button>
+                </div>
+                
+                <div class="table-content">
+                    <table id="inboxTable" class="standard-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="checkAllInbox"></th>
+                                <th>No</th>
+                                <th>NPWPD</th>
+                                <th>Jenis WP</th>
+                                <th>Nama Usaha</th>
+                                <th>Nama Pemilik</th>
+                                <th>NIK KTP</th>
+                                <th>Alamat</th>
+                                <th>Telephone</th>
+                                <th>Kelurahan</th>
+                                <th>Kecamatan</th>
+                                <th>Status</th>
+                                <th>Tanggal Input</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inboxTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Detail Data -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detail Data Wajib Pajak</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="detailContent">
+                    <!-- Detail data akan diisi di sini -->
+                </div>
+                <div id="npwpdInfo" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; display: none;">
+                    <strong>⚠️ NPWPD akan dibuat otomatis</strong> karena data ini tidak memiliki NPWPD.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="approveBtn" class="btn-primary">Approve</button>
+                <button id="rejectBtn" class="btn-danger">Reject</button>
+                <button id="closeModalBtn" class="btn-secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reject -->
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tolak Data Wajib Pajak</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rejectReason">Alasan Penolakan:</label>
+                    <textarea id="rejectReason" rows="4" placeholder="Masukkan alasan penolakan..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmRejectBtn" class="btn-danger">Tolak Data</button>
+                <button id="cancelRejectBtn" class="btn-secondary">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Memproses data...</div>
+    </div>
+
+    <script type="module" src="review-wajib-pajak.js"></script>
+</body>
+</html> 

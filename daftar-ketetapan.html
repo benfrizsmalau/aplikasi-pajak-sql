@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Ketetapan - Aplikasi Pajak Daerah</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="page-daftar-ketetapan">
+
+    <div class="instansi-header">
+        <img src="images/logo.png" alt="Logo" class="instansi-logo">
+        <div class="instansi-text">
+            <div class="instansi-title">APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH</div>
+            <div class="instansi-sub">BIDANG PENDAPATAN DAERAH</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <nav>
+            <a href="index.html">Dasbor</a>
+            <a href="tambah-data.html">Tambah Data WP</a>
+            <a href="lihat-data.html">Lihat Data WP</a>
+            <a href="tambah-ketetapan.html">Buat Ketetapan</a>
+            <a href="daftar-ketetapan.html" class="active">Daftar Ketetapan</a>
+            <a href="setoran-pajak.html">Setoran Pajak</a>
+            <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="daftar-fiskal.html">Daftar Fiskal</a>
+            <a href="review-wajib-pajak.html">Review Data WP</a>
+            <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <main class="container">
+            <div class="content-header">
+                <h2>📋 Daftar Ketetapan Pajak/Retribusi</h2>
+                <p>Kelola dan lihat semua ketetapan pajak yang telah dibuat</p>
+            </div>
+
+            <!-- Filter dan Pencarian -->
+            <div class="standard-search-filter">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Cari NPWPD, nama usaha, atau ID ketetapan...">
+                    <button type="button" id="searchButton" class="btn-primary">
+                        <span class="btn-icon">🔍</span>
+                        Cari
+                    </button>
+                </div>
+                <div class="filter-options">
+                    <select id="filterStatus" class="filter-select">
+                        <option value="">Semua Status</option>
+                        <option value="Belum Lunas">Belum Lunas</option>
+                        <option value="Lunas">Lunas</option>
+                    </select>
+                    <select id="filterJenisPajak" class="filter-select">
+                        <option value="">Semua Jenis Pajak</option>
+                    </select>
+                    <button type="button" id="resetFilter" class="btn-secondary">
+                        <span class="btn-icon">🔄</span>
+                        Reset Filter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabel Ketetapan -->
+            <div class="standard-table-container">
+                <div class="table-header">
+                    <h3>📊 Data Ketetapan</h3>
+                    <div class="table-info">
+                        <span id="totalRecords">Total: 0 ketetapan</span>
+                    </div>
+                </div>
+                <!-- Aksi Terpusat -->
+                <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
+                  <select id="aksiKetetapan" style="width: 110px;">
+                    <option value="">Aksi...</option>
+                    <option value="print">Print</option>
+                    <option value="delete">Hapus</option>
+                    <option value="edit">Edit</option>
+                  </select>
+                  <button id="prosesAksiKetetapan" disabled>Proses</button>
+                </div>
+                <div class="table-content">
+                    <table id="ketetapanTable" class="standard-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="checkAllKetetapan"></th>
+                                <th>No</th>
+                                <th>ID Ketetapan</th>
+                                <th>NPWPD</th>
+                                <th>Nama Usaha</th>
+                                <th>Jenis Pajak</th>
+                                <th>Masa Pajak</th>
+                                <th>Jumlah Pokok</th>
+                                <th>Denda</th>
+                                <th>Total Tagihan</th>
+                                <th>Jumlah Terbayar</th>
+                                <th>Sisa Tagihan</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="14" class="table-loading">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Navigasi Pagination -->
+            <div id="pagination" class="pagination-container"></div>
+        </main>
+    </div>
+
+    <!-- Modal Edit Ketetapan -->
+    <div id="editKetetapanModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeKetetapanModal">&times;</span>
+            <h2>✏️ Edit Ketetapan Pajak</h2>
+            <form id="editKetetapanForm">
+                <input type="hidden" id="editKetetapanId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editKetetapanMasaPajak">Masa Pajak</label>
+                        <input type="text" id="editKetetapanMasaPajak" required>
+                        <small class="helper-text">Periode masa pajak yang dikenakan</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editKetetapanJumlahPokok">Jumlah Pokok (Rp)</label>
+                        <input type="number" id="editKetetapanJumlahPokok" required>
+                        <small class="helper-text">Jumlah pokok pajak yang harus dibayar</small>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editKetetapanCatatan">Catatan</label>
+                        <input type="text" id="editKetetapanCatatan">
+                        <small class="helper-text">Catatan atau keterangan tambahan</small>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="updateKetetapanButton" class="btn-primary">
+                        <span class="btn-icon">💾</span>
+                        Simpan Perubahan
+                    </button>
+                </div>
+                <p style="font-size: 0.9em; color: #666; margin-top: 1rem;">* Hanya Masa Pajak dan Jumlah Pokok yang bisa diubah. Denda akan dihitung ulang otomatis.</p>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+(function() {
+    // Script khusus untuk halaman daftar ketetapan
+    let ketetapanDataGlobal = [];
+    let wajibPajakDataGlobal = [];
+    let masterPajakDataGlobal = [];
+    let pembayaranDataGlobal = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadKetetapanData();
+        setupEventListeners();
+    });
+
+    async function loadKetetapanData() {
+        try {
+        const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
+        if (!response.ok) { alert('Gagal fetch API: ' + response.status + ' ' + response.statusText); return; }
+            const data = await response.json();
+            ketetapanDataGlobal = data.ketetapan || [];
+            wajibPajakDataGlobal = data.wajibPajak || [];
+            masterPajakDataGlobal = data.masterPajak || [];
+            pembayaranDataGlobal = data.pembayaran || [];
+            populateJenisPajakFilter();
+            displayKetetapanData(ketetapanDataGlobal);
+        } catch (error) {
+        alert('Gagal fetch API: ' + error.message);
+            document.querySelector('#ketetapanTable tbody').innerHTML = 
+                '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
+        }
+    }
+
+    function populateJenisPajakFilter() {
+        const filterSelect = document.getElementById('filterJenisPajak');
+        const uniqueJenisPajak = [...new Set(ketetapanDataGlobal.map(k => {
+            const master = masterPajakDataGlobal.find(m => m.KodeLayanan === k.KodeLayanan);
+            return master ? master.NamaLayanan : k.KodeLayanan;
+        }))];
+        
+        uniqueJenisPajak.forEach(jenis => {
+            const option = document.createElement('option');
+            option.value = jenis;
+            option.textContent = jenis;
+            filterSelect.appendChild(option);
+        });
+    }
+
+    function displayKetetapanData(data) {
+        const totalRecords = document.getElementById('totalRecords');
+        totalRecords.textContent = `Total: ${data.length} ketetapan`;
+        
+        // PAGINATION
+        const rowsPerPage = 10;
+        let currentPage = 1;
+        const paginationContainer = document.getElementById('pagination');
+        
+        function renderPage(page) {
+            currentPage = page;
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = data.slice(start, end);
+            renderTable(pageData);
+            renderPagination();
+        }
+        function renderTable(pageData) {
+        // Konfigurasi tabel standar
+        const tableConfig = {
+                showCheckbox: true,
+            columns: [
+                { key: 'index', label: 'No', type: 'text' },
+                { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
+                { key: 'NPWPD', label: 'NPWPD', type: 'link', linkUrl: 'detail.html?npwpd=', linkKey: 'NPWPD' },
+                { key: 'namaUsaha', label: 'Nama Usaha', type: 'text' },
+                { key: 'namaLayanan', label: 'Jenis Pajak', type: 'text' },
+                { key: 'MasaPajak', label: 'Masa Pajak', type: 'text' },
+                { key: 'JumlahPokok', label: 'Jumlah Pokok', type: 'rupiah' },
+                { key: 'Denda', label: 'Denda', type: 'rupiah' },
+                { key: 'TotalTagihan', label: 'Total Tagihan', type: 'rupiah' },
+                    { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' },
+                    { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' },
+                { key: 'status', label: 'Status', type: 'status', statusColors: { 'Lunas': 'green', 'Belum Lunas': 'red' } },
+                { key: 'TanggalKetetapan', label: 'Tanggal', type: 'date' }
+            ],
+                emptyMessage: 'Tidak ada data ketetapan.',
+                rowClass: row => row.rowColor
+        };
+        // Proses data untuk tabel
+            // Hitung status lunas per NPWPD
+            const npwpdStatusMap = {};
+            ketetapanDataGlobal.forEach(item => {
+                if (!npwpdStatusMap[item.NPWPD]) npwpdStatusMap[item.NPWPD] = [];
+                npwpdStatusMap[item.NPWPD].push(item.Status);
+            });
+            const processedData = pageData.map((item, index) => {
+            const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
+            const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+            const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '-';
+            const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
+                const jumlahTerbayar = pembayaranKetetapan.reduce((sum, p) => sum + Number(p.JumlahBayar || 0), 0);
+                const sisaTagihan = Math.max(Number(item.TotalTagihan || 0) - jumlahTerbayar, 0);
+                // Status dinamis
+                const status = jumlahTerbayar >= Number(item.TotalTagihan || 0) && Number(item.TotalTagihan || 0) > 0 ? 'Lunas' : 'Belum Lunas';
+                const rowColor = status === 'Lunas' ? 'row-lunas' : 'row-belum-lunas';
+            return {
+                ...item,
+                    index: (currentPage - 1) * rowsPerPage + index + 1,
+                namaUsaha: wp['Nama Usaha'] || '-',
+                namaLayanan: namaLayanan,
+                    status: status,
+                    jumlahTerbayar: jumlahTerbayar,
+                    sisaTagihan: sisaTagihan,
+                    rowColor: rowColor
+            };
+        });
+            // Update tableConfig untuk kolom baru dan pewarnaan baris
+            tableConfig.columns.splice(9, 0, { key: 'sisaTagihan', label: 'Sisa Tagihan', type: 'rupiah' });
+            tableConfig.columns.splice(9, 0, { key: 'jumlahTerbayar', label: 'Jumlah Terbayar', type: 'rupiah' });
+            tableConfig.rowClass = row => row.rowColor;
+        
+        // Gunakan fungsi standar tabel
+        createStandardTable('ketetapanTable', processedData, tableConfig);
+        }
+        function renderPagination() {
+            const totalPages = Math.ceil(data.length / rowsPerPage);
+            let html = '';
+            if (totalPages > 1) {
+                html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage-1})">&laquo;</button>`;
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                }
+                html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage+1})">&raquo;</button>`;
+            }
+            paginationContainer.innerHTML = html;
+        }
+        window.goToPage = function(page) {
+            const totalPages = Math.ceil(data.length / rowsPerPage);
+            if (page < 1 || page > totalPages) return;
+            renderPage(page);
+        };
+        renderPage(1);
+    }
+
+    function setupEventListeners() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+        
+        // Filter functionality
+        const filterStatus = document.getElementById('filterStatus');
+        const filterJenisPajak = document.getElementById('filterJenisPajak');
+        const resetFilter = document.getElementById('resetFilter');
+        
+        filterStatus.addEventListener('change', applyFilters);
+        filterJenisPajak.addEventListener('change', applyFilters);
+        resetFilter.addEventListener('click', resetAllFilters);
+
+        // Aksi terpusat
+        setupAksiKetetapan();
+    }
+
+    function setupAksiKetetapan() {
+        const aksiSelect = document.getElementById('aksiKetetapan');
+        const prosesBtn = document.getElementById('prosesAksiKetetapan');
+        const checkAll = document.getElementById('checkAllKetetapan');
+        const table = document.getElementById('ketetapanTable');
+
+        function updateProsesBtn() {
+            const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+            prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
+        }
+
+        aksiSelect.addEventListener('change', updateProsesBtn);
+        table.addEventListener('change', function(e) {
+            if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
+            if (e.target.id === 'checkAllKetetapan') {
+                const all = table.querySelectorAll('.rowCheckKetetapan');
+                all.forEach(cb => cb.checked = e.target.checked);
+                updateProsesBtn();
+            }
+        });
+
+        prosesBtn.addEventListener('click', function() {
+            const aksi = aksiSelect.value;
+            const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+
+            if (!aksi || ids.length === 0) return;
+
+            if (aksi === 'print') {
+                if (ids.length === 1) {
+                    window.open(`cetak-skpd.html?id=${ids[0]}`, '_blank');
+                } else if (ids.length > 1) {
+                    window.open(`cetak-skpd-multi.html?ids=${ids.join(',')}`, '_blank');
+                }
+            } else if (aksi === 'delete') {
+                if (confirm(`Anda yakin ingin menghapus ${ids.length} ketetapan?`)) {
+                    ids.forEach(async (id) => {
+                        try {
+                            await postData({ action: 'deleteKetetapan', id_ketetapan: id });
+                        } catch (error) {
+                            console.error('Gagal hapus ketetapan:', error);
+                        }
+                    });
+                    alert('Ketetapan berhasil dihapus!');
+                    loadKetetapanData();
+                }
+            } else if (aksi === 'edit') {
+                if (ids.length === 1) {
+                    handleEditKetetapanClick(ids[0]);
+                } else {
+                    alert('Edit hanya bisa untuk satu ketetapan saja.');
+                }
+            }
+        });
+    }
+
+    function performSearch() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        const filteredData = ketetapanDataGlobal.filter(item => {
+            const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
+            const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+            const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '';
+            
+            return (
+                item.ID_Ketetapan?.toLowerCase().includes(searchTerm) ||
+                item.NPWPD?.toLowerCase().includes(searchTerm) ||
+                wp['Nama Usaha']?.toLowerCase().includes(searchTerm) ||
+                namaLayanan.toLowerCase().includes(searchTerm)
+            );
+        });
+        
+        displayKetetapanData(filteredData);
+    }
+
+    function applyFilters() {
+        const statusFilter = document.getElementById('filterStatus').value;
+        const jenisFilter = document.getElementById('filterJenisPajak').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        let filteredData = ketetapanDataGlobal;
+        
+        // Apply search filter
+        if (searchTerm) {
+            filteredData = filteredData.filter(item => {
+                const wp = wajibPajakDataGlobal.find(w => w.NPWPD === item.NPWPD) || {};
+                const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+                const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '';
+                
+                return (
+                    item.ID_Ketetapan?.toLowerCase().includes(searchTerm) ||
+                    item.NPWPD?.toLowerCase().includes(searchTerm) ||
+                    wp['Nama Usaha']?.toLowerCase().includes(searchTerm) ||
+                    namaLayanan.toLowerCase().includes(searchTerm)
+                );
+            });
+        }
+        
+        // Apply status filter
+        if (statusFilter) {
+            filteredData = filteredData.filter(item => {
+                const pembayaranKetetapan = pembayaranDataGlobal.filter(p => p.ID_Ketetapan === item.ID_Ketetapan);
+                const status = pembayaranKetetapan.some(p => p.StatusPembayaran === 'Sukses') ? 'Lunas' : 'Belum Lunas';
+                return status === statusFilter;
+            });
+        }
+        
+        // Apply jenis pajak filter
+        if (jenisFilter) {
+            filteredData = filteredData.filter(item => {
+                const master = masterPajakDataGlobal.find(m => m.KodeLayanan === item.KodeLayanan);
+                const namaLayanan = master ? master.NamaLayanan : item.KodeLayanan || '';
+                return namaLayanan === jenisFilter;
+            });
+        }
+        
+        displayKetetapanData(filteredData);
+    }
+
+    function resetAllFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterJenisPajak').value = '';
+        displayKetetapanData(ketetapanDataGlobal);
+    }
+
+    function printKetetapan(idKetetapan) {
+        window.open(`cetak-skpd.html?id=${idKetetapan}`, '_blank');
+    }
+
+    function formatRupiah(angka) {
+        if (!angka) return 'Rp 0';
+        return new Intl.NumberFormat('id-ID', { 
+            style: 'currency', 
+            currency: 'IDR', 
+            minimumFractionDigits: 0 
+        }).format(angka);
+    }
+
+    // Pastikan fungsi edit ketetapan di daftar ketetapan pakai array global yang benar
+    function handleEditKetetapanClick(idKetetapan) {
+        const dataToEdit = ketetapanDataGlobal.find(item =>
+            String(item.ID_Ketetapan).trim() === String(idKetetapan).trim()
+        );
+        if (!dataToEdit) {
+            console.warn('Data ketetapan tidak ditemukan! ID:', idKetetapan, 'List:', ketetapanDataGlobal.map(d=>d.ID_Ketetapan));
+            alert('Data ketetapan tidak ditemukan!');
+            return;
+        }
+        document.getElementById('editKetetapanId').value = dataToEdit.ID_Ketetapan;
+        document.getElementById('editKetetapanMasaPajak').value = dataToEdit.MasaPajak;
+        document.getElementById('editKetetapanJumlahPokok').value = dataToEdit.JumlahPokok;
+        document.getElementById('editKetetapanCatatan').value = dataToEdit.Catatan;
+        document.getElementById('editKetetapanModal').style.display = 'block';
+    }
+
+    // Tambahkan event listener submit pada form editKetetapanForm
+    document.addEventListener('DOMContentLoaded', function() {
+        const editForm = document.getElementById('editKetetapanForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const updateButton = document.getElementById('updateKetetapanButton');
+                updateButton.disabled = true; updateButton.textContent = 'Menyimpan...';
+                try {
+                    const updatedData = {
+                        action: 'updateKetetapan',
+                        id_ketetapan: document.getElementById('editKetetapanId').value,
+                        masaPajak: document.getElementById('editKetetapanMasaPajak').value,
+                        jumlahPokok: document.getElementById('editKetetapanJumlahPokok').value,
+                        catatan: document.getElementById('editKetetapanCatatan').value
+                    };
+                    const response = await fetch('/.netlify/functions/api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+                    const result = await response.json();
+                    alert(result.message || 'Ketetapan berhasil diperbarui!');
+                    document.getElementById('editKetetapanModal').style.display = 'none';
+                    await loadKetetapanData(); // refresh data setelah edit
+                } catch (error) {
+                    alert('Gagal memperbarui data: ' + error.message);
+                } finally {
+                    updateButton.disabled = false; updateButton.textContent = 'Simpan Perubahan';
+                }
+            });
+        }
+    });
+
+    // Tambahan: Logika aksi terpusat ketetapan
+    document.addEventListener('DOMContentLoaded', function() {
+      const aksiSelect = document.getElementById('aksiKetetapan');
+      const prosesBtn = document.getElementById('prosesAksiKetetapan');
+      const checkAll = document.getElementById('checkAllKetetapan');
+      const table = document.getElementById('ketetapanTable');
+      // Enable tombol proses jika ada yang dicentang
+      function updateProsesBtn() {
+        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+        prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
+      }
+      aksiSelect.addEventListener('change', updateProsesBtn);
+      table.addEventListener('change', function(e) {
+        if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
+        if (e.target.id === 'checkAllKetetapan') {
+          const all = table.querySelectorAll('.rowCheckKetetapan');
+          all.forEach(cb => cb.checked = e.target.checked);
+          updateProsesBtn();
+        }
+      });
+      prosesBtn.addEventListener('click', function() {
+        const aksi = aksiSelect.value;
+        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
+        const ids = Array.from(checked).map(cb => cb.value);
+        if (!aksi || ids.length === 0) return;
+        if (aksi === 'delete') {
+          if (confirm('Yakin hapus data terpilih?')) {
+            ids.forEach(async id => {
+              await handleDeleteKetetapanClick(id);
+            });
+            setTimeout(() => loadKetetapanData(), 500);
+          }
+        } else if (aksi === 'print') {
+          // Print satu: buka cetak-skpd.html?id=ID, banyak: buka cetak-skpd-multi.html?ids=ID1,ID2,...
+          if (ids.length === 1) {
+            window.open(`cetak-skpd.html?id=${ids[0]}`, '_blank');
+          } else if (ids.length > 1) {
+            window.open(`cetak-skpd-multi.html?ids=${ids.join(',')}`, '_blank');
+          }
+        } else if (aksi === 'edit') {
+          if (ids.length > 1) {
+            alert('Edit hanya bisa untuk satu ketetapan sekaligus!');
+            return;
+          }
+          if (ids.length === 1) {
+            handleEditKetetapanClick(ids[0]);
+          }
+        }
+      });
+    });
+})();
+    </script>
+    <div class="watermark-footer">MADE BY REYNOLDS</div>
+</body>
+</html> 

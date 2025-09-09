@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan - Aplikasi Pajak Daerah</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+  
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body id="page-report">
+
+    <div class="instansi-header">
+        <img src="images/logo.png" alt="Logo" class="instansi-logo">
+        <div class="instansi-text">
+            <div class="instansi-title">APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH</div>
+            <div class="instansi-sub">BIDANG PENDAPATAN DAERAH</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <nav>
+            <a href="index.html">Dasbor</a>
+            <a href="tambah-data.html">Tambah Data WP</a>
+            <a href="lihat-data.html">Lihat Data WP</a>
+            <a href="tambah-ketetapan.html">Buat Ketetapan</a>
+            <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
+            <a href="setoran-pajak.html">Setoran Pajak</a>
+            <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="daftar-fiskal.html">Daftar Fiskal</a>
+            <a href="report.html" class="active">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <h2>Laporan dan Analisis</h2>
+        
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="reportType">Jenis Laporan:</label>
+                <select id="reportType" onchange="changeReportType()">
+                    <option value="summary">Ringkasan Umum</option>
+                    <option value="revenue">Laporan Pendapatan</option>
+                    <option value="wp">Laporan Wajib Pajak</option>
+                    <option value="ketetapan">Laporan Ketetapan</option>
+                    <option value="pembayaran">Laporan Pembayaran</option>
+                    <option value="fiskal">Laporan Fiskal</option>
+                    <option value="performance">Laporan Kinerja</option>
+                </select>
+            </div>
+            
+            <div class="filter-group" id="dateRangeFilter">
+                <label for="dateRange">Periode:</label>
+                <select id="dateRange" onchange="loadReportData()">
+                    <option value="today">Hari Ini</option>
+                    <option value="week">Minggu Ini</option>
+                    <option value="month" selected>Bulan Ini</option>
+                    <option value="quarter">Triwulan</option>
+                    <option value="year">Tahun Ini</option>
+                    <option value="custom">Kustom</option>
+                </select>
+            </div>
+            <div class="filter-group" id="revenueYearFilter" style="display: none;">
+                <label for="dateRangeTahun">Tahun:</label>
+                <select id="dateRangeTahun"></select>
+            </div>           
+            <div class="filter-group" id="customDateGroup" style="display: none;">
+                <label for="startDate">Dari:</label>
+                <input type="date" id="startDate" onchange="loadReportData()">
+                <label for="endDate">Sampai:</label>
+                <input type="date" id="endDate" onchange="loadReportData()">
+            </div>
+            
+            <div class="filter-group">
+                <button onclick="exportReport()" class="btn-primary">📄 Export PDF</button>
+                <button onclick="exportExcel()" class="btn-secondary">📊 Export Excel</button>
+            </div>
+        </div>
+
+        <!-- Report Content -->
+        <div id="reportContent">
+            
+            <!-- Summary Report -->
+            <div id="summaryReport" class="report-section">
+                <h3>Ringkasan Umum</h3>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h4>Total Pendapatan</h4>
+                        <div class="summary-value" id="totalRevenue">Rp 0</div>
+                        <div class="summary-change positive">+12.5% dari bulan lalu</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Wajib Pajak Aktif</h4>
+                        <div class="summary-value" id="activeWp">0</div>
+                        <div class="summary-change positive">+5.2% dari bulan lalu</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Ketetapan Terbit</h4>
+                        <div class="summary-value" id="totalKetetapan">0</div>
+                        <div class="summary-change neutral">0% dari bulan lalu</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>Pembayaran Sukses</h4>
+                        <div class="summary-value" id="successPayment">0</div>
+                        <div class="summary-change positive">+8.7% dari bulan lalu</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="summaryChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Revenue Report -->
+            <div id="revenueReport" class="report-section" style="display: none;">
+                <h3>Laporan Pendapatan</h3>
+                <div class="revenue-breakdown" id="revenueBreakdown"></div>
+
+                <div class="chart-container">
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- WP Report -->
+            <div id="wpReport" class="report-section" style="display: none;">
+                <h3>Laporan Wajib Pajak</h3>
+                <div class="wp-stats">
+                    <div class="wp-stat">
+                        <h4>Total WP Terdaftar</h4>
+                        <div class="wp-value" id="totalWpRegistered">0</div>
+                    </div>
+                    <div class="wp-stat">
+                        <h4>WP Aktif</h4>
+                        <div class="wp-value" id="activeWpCount">0</div>
+                    </div>
+                    <div class="wp-stat">
+                        <h4>WP Non-Aktif</h4>
+                        <div class="wp-value" id="inactiveWpCount">0</div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="wpTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>NPWPD</th>
+                                <th>Nama Usaha</th>
+                                <th>Nama Pemilik</th>
+                                <th>Jenis WP</th>
+                                <th>Status</th>
+                                <th>Total Pembayaran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wpTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ketetapan Report -->
+            <div id="ketetapanReport" class="report-section" style="display: none;">
+                <h3>Laporan Ketetapan</h3>
+                <div class="ketetapan-stats">
+                    <div class="ketetapan-stat">
+                        <h4>Total Ketetapan</h4>
+                        <div class="ketetapan-value" id="totalKetetapanCount">0</div>
+                    </div>
+                    <div class="ketetapan-stat">
+                        <h4>Sudah Lunas</h4>
+                        <div class="ketetapan-value" id="lunasCount">0</div>
+                    </div>
+                    <div class="ketetapan-stat">
+                        <h4>Belum Lunas</h4>
+                        <div class="ketetapan-value" id="belumLunasCount">0</div>
+                    </div>
+                    <div class="ketetapan-stat">
+                        <h4>Total Nilai</h4>
+                        <div class="ketetapan-value" id="totalNilaiKetetapan">Rp 0</div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="ketetapanTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Ketetapan</th>
+                                <th>NPWPD</th>
+                                <th>Jenis Pajak</th>
+                                <th>Masa Pajak</th>
+                                <th>Total Tagihan</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ketetapanTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pembayaran Report -->
+            <div id="pembayaranReport" class="report-section" style="display: none;">
+                <h3>Laporan Pembayaran</h3>
+                <div class="pembayaran-stats">
+                    <div class="pembayaran-stat">
+                        <h4>Total Pembayaran</h4>
+                        <div class="pembayaran-value" id="totalPembayaranCount">0</div>
+                    </div>
+                    <div class="pembayaran-stat">
+                        <h4>Sukses</h4>
+                        <div class="pembayaran-value" id="successCount">0</div>
+                    </div>
+                    <div class="pembayaran-stat">
+                        <h4>Gagal</h4>
+                        <div class="pembayaran-value" id="failedCount">0</div>
+                    </div>
+                    <div class="pembayaran-stat">
+                        <h4>Total Nilai</h4>
+                        <div class="pembayaran-value" id="totalNilaiPembayaran">Rp 0</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="pembayaranChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Fiskal Report -->
+            <div id="fiskalReport" class="report-section" style="display: none;">
+                <h3>Laporan Fiskal</h3>
+                <div class="fiskal-stats">
+                    <div class="fiskal-stat">
+                        <h4>Total Fiskal Terbit</h4>
+                        <div class="fiskal-value" id="totalFiskalCount">0</div>
+                    </div>
+                    <div class="fiskal-stat">
+                        <h4>Fiskal Aktif</h4>
+                        <div class="fiskal-value" id="activeFiskalCount">0</div>
+                    </div>
+                    <div class="fiskal-stat">
+                        <h4>Fiskal Kadaluarsa</h4>
+                        <div class="fiskal-value" id="expiredFiskalCount">0</div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="fiskalTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nomor Fiskal</th>
+                                <th>NPWPD</th>
+                                <th>Nama Usaha</th>
+                                <th>Tanggal Cetak</th>
+                                <th>Tanggal Berlaku</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fiskalTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Performance Report -->
+            <div id="performanceReport" class="report-section" style="display: none;">
+                <h3>Laporan Kinerja</h3>
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <h4>Target vs Realisasi</h4>
+                        <div class="metric-value">
+                            <span id="targetRealisasi">85%</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div id="targetRealisasi-fill" class="metric-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Rata-rata Waktu Proses</h4>
+                        <div class="metric-value">
+                            <span id="avgProcessTime">2.5 hari</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Kepatuhan WP</h4>
+                        <div class="metric-value">
+                            <span id="wpCompliance">78%</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div id="wpCompliance-fill" class="metric-fill" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="performanceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Library untuk export PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="report.js"></script>
+    <script src="cetakreport.js"></script>
+</body>
+</html>
