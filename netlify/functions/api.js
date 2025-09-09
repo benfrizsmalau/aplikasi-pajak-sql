@@ -158,20 +158,35 @@ exports.handler = async (event) => {
             body = '{"status":"gagal","message":"Serialization error"}';
         }
 
-        // Ensure Content-Length is always set
+        // Force Content-Length to be set properly
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
         console.log('API Handler: Final Content-Length:', contentLength);
 
         console.log('API Handler finished successfully');
-        return {
+
+        // Return response with explicit headers
+        const response = {
             statusCode: 200,
             headers: {
-                ...headers,
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Content-Type': 'application/json',
                 'Content-Length': contentLength,
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
             body: body,
         };
+
+        console.log('API Handler: Final response object:', {
+            statusCode: response.statusCode,
+            contentLength: response.headers['Content-Length'],
+            bodyLength: body.length
+        });
+
+        return response;
 
     } catch (error) {
         console.error('API ERROR:', error);
@@ -199,19 +214,33 @@ exports.handler = async (event) => {
             });
         }
 
-        // Ensure Content-Length is always set for error responses too
+        // Force Content-Length to be set properly for error responses
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
         console.log('API Handler: Error response Content-Length:', contentLength);
 
-        return {
+        // Return error response with explicit headers
+        const response = {
             statusCode: 500,
             headers: {
-                ...headers,
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Content-Type': 'application/json',
                 'Content-Length': contentLength,
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
-            body: body
+            body: body,
         };
+
+        console.log('API Handler: Final error response object:', {
+            statusCode: response.statusCode,
+            contentLength: response.headers['Content-Length'],
+            bodyLength: body.length
+        });
+
+        return response;
     }
 };
 
