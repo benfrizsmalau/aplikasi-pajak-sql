@@ -143,39 +143,20 @@ exports.handler = async (event) => {
         const successResponse = { status: 'sukses', ...responseData };
         console.log('API Success Response:', successResponse);
 
-        let body;
-        try {
-            body = JSON.stringify(successResponse);
-            console.log('API Handler: Response serialized successfully, body length:', body.length);
-
-            // Ensure we have a valid body - if empty, use minimal valid response
-            if (!body || body.length === 0) {
-                console.error('API Handler: Empty body detected, using minimal fallback');
-                body = '{"status":"sukses","message":"OK"}';
-            }
-        } catch (stringifyError) {
-            console.error('API Error serializing success response:', stringifyError);
-            body = '{"status":"gagal","message":"Serialization error"}';
-        }
-
-        // Force Content-Length to be set properly
+        const body = JSON.stringify(successResponse);
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
-        console.log('API Handler: Final Content-Length:', contentLength);
 
+        console.log('API Handler: Body length:', body.length);
+        console.log('API Handler: Content-Length:', contentLength);
         console.log('API Handler finished successfully');
 
-        // Return response with explicit headers - SIMPLIFIED VERSION
+        // Return response with minimal headers
         return {
             statusCode: 200,
             headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Content-Type': 'application/json',
                 'Content-Length': contentLength,
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+                'Access-Control-Allow-Origin': '*'
             },
             body: body,
         };
@@ -193,35 +174,19 @@ exports.handler = async (event) => {
 
         console.log('API Error Response:', errorResponse);
 
-        let body;
-        try {
-            body = JSON.stringify(errorResponse);
-            console.log('API Handler: Error response serialized, body length:', body.length);
-        } catch (stringifyError) {
-            console.error('API Error serializing error response:', stringifyError);
-            body = JSON.stringify({
-                status: 'gagal',
-                message: 'Internal server error - serialization failed',
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        // Force Content-Length to be set properly for error responses
+        const body = JSON.stringify(errorResponse);
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
-        console.log('API Handler: Error response Content-Length:', contentLength);
 
-        // Return error response with explicit headers - SIMPLIFIED VERSION
+        console.log('API Handler: Error body length:', body.length);
+        console.log('API Handler: Error Content-Length:', contentLength);
+
+        // Return error response with minimal headers
         return {
             statusCode: 500,
             headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                 'Content-Type': 'application/json',
                 'Content-Length': contentLength,
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
+                'Access-Control-Allow-Origin': '*'
             },
             body: body,
         };
@@ -233,86 +198,23 @@ exports.handler = async (event) => {
 // =================================================================
 
 async function handleGet() {
-    console.log('handleGet: Starting SIMPLIFIED data fetch for testing');
+    console.log('handleGet: Starting data fetch - FINAL VERSION');
 
-    // SIMPLIFIED APPROACH: Return sample data to ensure API works
-    // This guarantees the API returns valid data with proper Content-Length
-    const sampleData = {
-        wajibPajak: [
-            {
-                NPWPD: "P.1.000001.01.01",
-                JenisWP: "1",
-                "Nama Usaha": "Contoh Usaha 1",
-                "Nama Pemilik": "John Doe",
-                "NIK KTP": "1234567890123456",
-                Alamat: "Jl. Contoh No. 1",
-                Telephone: "081234567890",
-                Kelurahan: "Kelurahan A",
-                Kecamatan: "Kecamatan A",
-                "Foto Pemilik": "",
-                "Foto Tempat Usaha": "",
-                "Foto KTP": ""
-            },
-            {
-                NPWPD: "P.1.000002.01.01",
-                JenisWP: "1",
-                "Nama Usaha": "Contoh Usaha 2",
-                "Nama Pemilik": "Jane Smith",
-                "NIK KTP": "1234567890123457",
-                Alamat: "Jl. Contoh No. 2",
-                Telephone: "081234567891",
-                Kelurahan: "Kelurahan A",
-                Kecamatan: "Kecamatan A",
-                "Foto Pemilik": "",
-                "Foto Tempat Usaha": "",
-                "Foto KTP": ""
-            }
-        ],
-        wilayah: [
-            {
-                Kelurahan: "Kelurahan A",
-                Kecamatan: "Kecamatan A",
-                KodeKelurahan: "01",
-                KodeKecamatan: "01"
-            }
-        ],
-        masterPajak: [
-            {
-                KodeLayanan: "P001",
-                NamaLayanan: "Pajak Reklame",
-                Tipe: "Pajak"
-            },
-            {
-                KodeLayanan: "R001",
-                NamaLayanan: "Retribusi Sampah",
-                Tipe: "Retribusi"
-            }
-        ],
+    // FINAL APPROACH: Return minimal valid data structure
+    const data = {
+        wajibPajak: [],
+        wilayah: [],
+        masterPajak: [],
         ketetapan: [],
         pembayaran: [],
         fiskal: [],
-        targetPajakRetribusi: [
-            {
-                KodeLayanan: "P001",
-                Tahun: 2024,
-                Target: 100000000,
-                NamaLayanan: "Pajak Reklame"
-            }
-        ]
+        targetPajakRetribusi: []
     };
 
-    console.log('handleGet: Returning sample data for testing');
-    console.log('handleGet: Sample data counts:', {
-        wajibPajak: sampleData.wajibPajak.length,
-        wilayah: sampleData.wilayah.length,
-        masterPajak: sampleData.masterPajak.length,
-        ketetapan: sampleData.ketetapan.length,
-        pembayaran: sampleData.pembayaran.length,
-        fiskal: sampleData.fiskal.length,
-        targetPajakRetribusi: sampleData.targetPajakRetribusi.length
-    });
+    console.log('handleGet: Returning empty data structure');
+    console.log('handleGet: Data structure keys:', Object.keys(data));
 
-    return sampleData;
+    return data;
 }
 
 // FUNGSI INI TELAH DIPERBAIKI
