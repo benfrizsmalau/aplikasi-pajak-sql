@@ -147,25 +147,45 @@ exports.handler = async (event) => {
         try {
             body = JSON.stringify(successResponse);
             console.log('API Handler: Response serialized successfully, body length:', body.length);
+
+            // Ensure we have a valid body
+            if (!body || body.length === 0) {
+                console.error('API Handler: Empty body detected, using fallback');
+                body = JSON.stringify({
+                    status: 'gagal',
+                    message: 'Empty response generated',
+                    timestamp: new Date().toISOString()
+                });
+            }
         } catch (stringifyError) {
             console.error('API Error serializing success response:', stringifyError);
-            body = JSON.stringify({ status: 'gagal', message: 'Error serializing response data' });
+            body = JSON.stringify({
+                status: 'gagal',
+                message: 'Error serializing response data',
+                error: stringifyError.message,
+                timestamp: new Date().toISOString()
+            });
         }
 
         console.log('API Handler finished successfully');
         return {
             statusCode: 200,
-            headers,
+            headers: {
+                ...headers,
+                'Content-Length': Buffer.byteLength(body, 'utf8').toString()
+            },
             body: body,
         };
 
     } catch (error) {
         console.error('API ERROR:', error);
+        console.error('API ERROR Stack:', error.stack);
 
         const errorResponse = {
             status: 'gagal',
             message: error.message || 'Terjadi error pada server.',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            errorType: error.name || 'UnknownError'
         };
 
         console.log('API Error Response:', errorResponse);
@@ -173,14 +193,22 @@ exports.handler = async (event) => {
         let body;
         try {
             body = JSON.stringify(errorResponse);
+            console.log('API Handler: Error response serialized, body length:', body.length);
         } catch (stringifyError) {
             console.error('API Error serializing error response:', stringifyError);
-            body = '{"status":"gagal","message":"Internal server error"}';
+            body = JSON.stringify({
+                status: 'gagal',
+                message: 'Internal server error - serialization failed',
+                timestamp: new Date().toISOString()
+            });
         }
 
         return {
             statusCode: 500,
-            headers,
+            headers: {
+                ...headers,
+                'Content-Length': Buffer.byteLength(body, 'utf8').toString()
+            },
             body: body
         };
     }
@@ -192,48 +220,123 @@ exports.handler = async (event) => {
 
 async function handleGet() {
     console.log('handleGet: Starting data fetch from database');
+    console.log('handleGet: Environment check:', {
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+        supabaseUrl: process.env.SUPABASE_URL ? 'SET' : 'NOT SET',
+        supabaseKey: process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'NOT SET'
+    });
+
+    // Check if Supabase is properly configured
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+        console.error('handleGet: Supabase environment variables not configured!');
+        return {
+            wajibPajak: [],
+            wilayah: [],
+            masterPajak: [],
+            ketetapan: [],
+            pembayaran: [],
+            fiskal: [],
+            targetPajakRetribusi: [],
+            error: 'Database configuration missing'
+        };
+    }
 
     try {
-        // Fetch all data from Supabase with timeout protection
-        const [
-            { data: wajibPajak, error: wpError },
-            { data: wilayah, error: wilayahError },
-            { data: masterPajak, error: masterError },
-            { data: ketetapan, error: ketetapanError },
-            { data: pembayaran, error: pembayaranError },
-            { data: fiskal, error: fiskalError },
-            { data: targetPajakRetribusi, error: targetError }
-        ] = await Promise.all([
-            queryWithTimeout(supabase.from('datawp').select('*')),
-            queryWithTimeout(supabase.from('Wilayah').select('*')),
-            queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*')),
-            queryWithTimeout(supabase.from('KetetapanPajak').select('*')),
-            queryWithTimeout(supabase.from('RiwayatPembayaran').select('*')),
-            queryWithTimeout(supabase.from('Fiskal').select('*')),
-            queryWithTimeout(supabase.from('TargetPajakRetribusi').select('*'))
-        ]);
+        console.log('handleGet: Attempting to connect to Supabase...');
 
-        // Check for errors
-        if (wpError) console.error('Error fetching wajibPajak:', wpError);
-        if (wilayahError) console.error('Error fetching wilayah:', wilayahError);
-        if (masterError) console.error('Error fetching masterPajak:', masterError);
-        if (ketetapanError) console.error('Error fetching ketetapan:', ketetapanError);
-        if (pembayaranError) console.error('Error fetching pembayaran:', pembayaranError);
-        if (fiskalError) console.error('Error fetching fiskal:', fiskalError);
-        if (targetError) console.error('Error fetching target:', targetError);
+        // Test connection first
+        const { data: testData, error: testError } = await supabase
+            .from('datawp')
+            .select('count', { count: 'exact', head: true });
+
+        if (testError) {
+            console.error('handleGet: Database connection test failed:', testError);
+            throw new Error('Database connection failed: ' + testError.message);
+        }
+
+        console.log('handleGet: Database connection successful, count:', testData);
+
+        // Fetch all data from Supabase with individual error handling
+        console.log('handleGet: Starting individual data fetches...');
+
+        let wajibPajak = [], wilayah = [], masterPajak = [], ketetapan = [], pembayaran = [], fiskal = [], targetPajakRetribusi = [];
+
+        // Fetch wajibPajak
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('datawp').select('*'));
+            wajibPajak = data || [];
+            if (error) console.warn('handleGet: Error fetching wajibPajak:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching wajibPajak:', err);
+        }
+
+        // Fetch wilayah
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('Wilayah').select('*'));
+            wilayah = data || [];
+            if (error) console.warn('handleGet: Error fetching wilayah:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching wilayah:', err);
+        }
+
+        // Fetch masterPajak
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*'));
+            masterPajak = data || [];
+            if (error) console.warn('handleGet: Error fetching masterPajak:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching masterPajak:', err);
+        }
+
+        // Fetch ketetapan
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('KetetapanPajak').select('*'));
+            ketetapan = data || [];
+            if (error) console.warn('handleGet: Error fetching ketetapan:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching ketetapan:', err);
+        }
+
+        // Fetch pembayaran
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('RiwayatPembayaran').select('*'));
+            pembayaran = data || [];
+            if (error) console.warn('handleGet: Error fetching pembayaran:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching pembayaran:', err);
+        }
+
+        // Fetch fiskal
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('Fiskal').select('*'));
+            fiskal = data || [];
+            if (error) console.warn('handleGet: Error fetching fiskal:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching fiskal:', err);
+        }
+
+        // Fetch target
+        try {
+            const { data, error } = await queryWithTimeout(supabase.from('TargetPajakRetribusi').select('*'));
+            targetPajakRetribusi = data || [];
+            if (error) console.warn('handleGet: Error fetching target:', error);
+        } catch (err) {
+            console.warn('handleGet: Exception fetching target:', err);
+        }
 
         const result = {
-            wajibPajak: wajibPajak || [],
-            wilayah: wilayah || [],
-            masterPajak: masterPajak || [],
-            ketetapan: ketetapan || [],
-            pembayaran: pembayaran || [],
-            fiskal: fiskal || [],
-            targetPajakRetribusi: targetPajakRetribusi || [],
+            wajibPajak,
+            wilayah,
+            masterPajak,
+            ketetapan,
+            pembayaran,
+            fiskal,
+            targetPajakRetribusi,
         };
 
         console.log('handleGet: Successfully fetched data from database');
-        console.log('Data counts:', {
+        console.log('handleGet: Data counts:', {
             wajibPajak: result.wajibPajak.length,
             wilayah: result.wilayah.length,
             masterPajak: result.masterPajak.length,
@@ -246,9 +349,10 @@ async function handleGet() {
         return result;
 
     } catch (error) {
-        console.error('handleGet: Error fetching data from database:', error);
+        console.error('handleGet: Critical error fetching data from database:', error);
+        console.error('handleGet: Error stack:', error.stack);
 
-        // Return empty data structure as fallback
+        // Return empty data structure as fallback with error info
         return {
             wajibPajak: [],
             wilayah: [],
@@ -257,6 +361,8 @@ async function handleGet() {
             pembayaran: [],
             fiskal: [],
             targetPajakRetribusi: [],
+            error: error.message,
+            timestamp: new Date().toISOString()
         };
     }
 }
