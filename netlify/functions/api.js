@@ -164,8 +164,8 @@ exports.handler = async (event) => {
 
         console.log('API Handler finished successfully');
 
-        // Return response with explicit headers
-        const response = {
+        // Return response with explicit headers - SIMPLIFIED VERSION
+        return {
             statusCode: 200,
             headers: {
                 'Access-Control-Allow-Origin': '*',
@@ -179,14 +179,6 @@ exports.handler = async (event) => {
             },
             body: body,
         };
-
-        console.log('API Handler: Final response object:', {
-            statusCode: response.statusCode,
-            contentLength: response.headers['Content-Length'],
-            bodyLength: body.length
-        });
-
-        return response;
 
     } catch (error) {
         console.error('API ERROR:', error);
@@ -218,8 +210,8 @@ exports.handler = async (event) => {
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
         console.log('API Handler: Error response Content-Length:', contentLength);
 
-        // Return error response with explicit headers
-        const response = {
+        // Return error response with explicit headers - SIMPLIFIED VERSION
+        return {
             statusCode: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*',
@@ -233,14 +225,6 @@ exports.handler = async (event) => {
             },
             body: body,
         };
-
-        console.log('API Handler: Final error response object:', {
-            statusCode: response.statusCode,
-            contentLength: response.headers['Content-Length'],
-            bodyLength: body.length
-        });
-
-        return response;
     }
 };
 
