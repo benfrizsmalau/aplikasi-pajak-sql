@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pajak-app-cache-v1';
+const CACHE_NAME = 'pajak-app-cache-v2';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -30,6 +30,14 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Skip caching for API calls - these should always be fresh
+    if (event.request.url.includes('/.netlify/functions/api') ||
+        event.request.url.includes('/api') ||
+        event.request.method !== 'GET') {
+        console.log('Skipping cache for API call:', event.request.url);
+        return fetch(event.request);
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => {

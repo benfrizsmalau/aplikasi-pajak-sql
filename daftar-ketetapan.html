@@ -165,7 +165,14 @@
 
     async function loadKetetapanData() {
         try {
-        const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
+        const response = await fetch('/.netlify/functions/api', {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
         if (!response.ok) { alert('Gagal fetch API: ' + response.status + ' ' + response.statusText); return; }
             const data = await response.json();
             ketetapanDataGlobal = data.ketetapan || [];

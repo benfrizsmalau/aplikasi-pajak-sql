@@ -453,7 +453,8 @@ async function postData(data) {
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+            cache: 'no-store' // Prevent caching of API responses
         });
 
         console.log('PostData: Response status:', response.status);
@@ -538,7 +539,14 @@ function setupKetetapanEditModal() {
 
 async function fetchAllData() {
     try {
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
 
         // Periksa apakah respons adalah fallback HTML dari Service Worker
         const contentType = response.headers.get('content-type');
@@ -985,7 +993,14 @@ function performStandardSearch(data, displayFunction) {
 
 async function loadDashboardData() {
     try {
-        const response = await fetch('/.netlify/functions/api');
+        const response = await fetch('/.netlify/functions/api', {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
 
         // Check if response has content
         const contentLength = response.headers.get('content-length');
