@@ -3,6 +3,15 @@
 const apiUrl = '/.netlify/functions/api';
 // --------------------
 
+// --- VARIABEL GLOBAL ---
+// Variabel global untuk menyimpan data dari API
+let dataWajibPajakGlobal = [];
+let dataWilayahGlobal = [];
+let dataKetetapanGlobal = [];
+let dataMasterPajakGlobal = [];
+let dataPembayaranGlobal = [];
+// --------------------
+
 // Logging service - menggunakan non-module loading
 // import Logger from './loggingService.js';
 // import dataBackup from './backupService.js';
