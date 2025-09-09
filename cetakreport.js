@@ -45,11 +45,30 @@ async function exportReportToPDF({
       // Logo gagal dimuat, lanjutkan tanpa logo
     }
   }
-  pdf.setFontSize(14);
-  pdf.text(namaDinas, pageWidth / 2, y + 8, { align: 'center' });
+  pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
-  pdf.text(namaLaporan, pageWidth / 2, y + 16, { align: 'center' });
-  y += 28;
+  pdf.text('PEMERINTAH KABUPATEN MAMBERAMO RAYA', pageWidth / 2, y + 8, { align: 'center' });
+  y += 7;
+  pdf.setFontSize(14);
+  pdf.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN', pageWidth / 2, y + 8, { align: 'center' });
+  y += 6;
+  pdf.text('DAN ASET DAERAH', pageWidth / 2, y + 8, { align: 'center' });
+  y += 6;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  pdf.text('KANTOR OTONOM PEMDA KABUPATEN MAMBERAMO RAYA JL. LINGKAR BURMESO', pageWidth / 2, y + 8, { align: 'center' });
+  y += 5;
+  pdf.text('DISTRIK MAMBERAMO TENGAH KABUPATEN MAMBERAMO RAYA PROVINSI PAPUA', pageWidth / 2, y + 8, { align: 'center' });
+  y += 3;
+  pdf.setLineWidth(1.2);
+  pdf.line(15, y + 8, pageWidth - 15, y + 8);
+  y += 15;
+  
+  // Judul laporan
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(12);
+  pdf.text(namaLaporan, pageWidth / 2, y + 8, { align: 'center' });
+  y += 15;
 
   // Gambar isi laporan (tabel)
   const imgWidth = pageWidth - 30;
@@ -57,13 +76,31 @@ async function exportReportToPDF({
   pdf.addImage(imgData, 'PNG', 15, y, imgWidth, imgHeight);
   y += imgHeight + 10;
 
+  // Penutup dan tanda tangan
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y + 10, { align: 'left' });
+  y += 20;
+  
+  // Tanggal dan tempat
+  const xTanggal = pageWidth - 80;
+  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
+  y += 7;
+  pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
+  y += 10;
+  
   // Tanda tangan
-  pdf.setFontSize(11);
-  pdf.text('Mengetahui,', pageWidth - 80, y + 10);
-  pdf.text('Kepala Dinas', pageWidth - 80, y + 16);
-  pdf.text(' ', pageWidth - 80, y + 28);
-  pdf.text('Nama: ' + (ttdNama || '..................'), pageWidth - 80, y + 38);
-  pdf.text('NIP: ' + (ttdNip || '..................'), pageWidth - 80, y + 44);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('An. KEPALA BADAN PENDAPATAN', xTanggal, y, { align: 'left' });
+  y += 6;
+  pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
+  y += 6;
+  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  y += 18;
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  y += 6;
+  pdf.text('NIP.', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save(`${namaLaporan.replace(/\s+/g, '_')}.pdf`);
