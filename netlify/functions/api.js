@@ -148,31 +148,27 @@ exports.handler = async (event) => {
             body = JSON.stringify(successResponse);
             console.log('API Handler: Response serialized successfully, body length:', body.length);
 
-            // Ensure we have a valid body
+            // Ensure we have a valid body - if empty, use minimal valid response
             if (!body || body.length === 0) {
-                console.error('API Handler: Empty body detected, using fallback');
-                body = JSON.stringify({
-                    status: 'gagal',
-                    message: 'Empty response generated',
-                    timestamp: new Date().toISOString()
-                });
+                console.error('API Handler: Empty body detected, using minimal fallback');
+                body = '{"status":"sukses","message":"OK"}';
             }
         } catch (stringifyError) {
             console.error('API Error serializing success response:', stringifyError);
-            body = JSON.stringify({
-                status: 'gagal',
-                message: 'Error serializing response data',
-                error: stringifyError.message,
-                timestamp: new Date().toISOString()
-            });
+            body = '{"status":"gagal","message":"Serialization error"}';
         }
+
+        // Ensure Content-Length is always set
+        const contentLength = Buffer.byteLength(body, 'utf8').toString();
+        console.log('API Handler: Final Content-Length:', contentLength);
 
         console.log('API Handler finished successfully');
         return {
             statusCode: 200,
             headers: {
                 ...headers,
-                'Content-Length': Buffer.byteLength(body, 'utf8').toString()
+                'Content-Length': contentLength,
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
             },
             body: body,
         };
@@ -203,11 +199,16 @@ exports.handler = async (event) => {
             });
         }
 
+        // Ensure Content-Length is always set for error responses too
+        const contentLength = Buffer.byteLength(body, 'utf8').toString();
+        console.log('API Handler: Error response Content-Length:', contentLength);
+
         return {
             statusCode: 500,
             headers: {
                 ...headers,
-                'Content-Length': Buffer.byteLength(body, 'utf8').toString()
+                'Content-Length': contentLength,
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
             },
             body: body
         };
