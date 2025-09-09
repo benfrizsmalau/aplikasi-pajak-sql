@@ -385,21 +385,10 @@ async function handleDeleteKetetapanClick(idKetetapan) {
 
         alert(result.message || 'Ketetapan berhasil dihapus.');
 
-        // Check if we're on the daftar-ketetapan page and refresh data accordingly
-        if (window.location.pathname.includes('daftar-ketetapan.html')) {
-            // Use the local loadKetetapanData function if available
-            if (typeof loadKetetapanData === 'function') {
-                console.log('Frontend: Refreshing data using local loadKetetapanData');
-                await loadKetetapanData();
-            } else {
-                console.log('Frontend: Reloading page');
-                location.reload();
-            }
-        } else {
-            // For other pages, reload the page
-            console.log('Frontend: Reloading page (not on daftar-ketetapan)');
-            location.reload();
-        }
+        // Always reload the page to ensure fresh data
+        console.log('Frontend: Reloading page to refresh data');
+        location.reload();
+
     } catch (error) {
         console.error('Frontend: Delete failed:', error);
         alert('Gagal menghapus ketetapan: ' + error.message);

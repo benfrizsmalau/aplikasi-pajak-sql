@@ -373,11 +373,11 @@
                         }
 
                         // Refresh data after all operations complete
-                        await loadKetetapanData();
+                        location.reload();
                     } catch (error) {
                         console.error('Error during bulk delete:', error);
                         alert('Terjadi kesalahan saat menghapus data.');
-                        await loadKetetapanData();
+                        location.reload();
                     }
                 }
             } else if (aksi === 'edit') {
@@ -514,7 +514,7 @@
                     const result = await response.json();
                     alert(result.message || 'Ketetapan berhasil diperbarui!');
                     document.getElementById('editKetetapanModal').style.display = 'none';
-                    await loadKetetapanData(); // refresh data setelah edit
+                    location.reload(); // refresh data setelah edit
                 } catch (error) {
                     alert('Gagal memperbarui data: ' + error.message);
                 } finally {
@@ -574,11 +574,11 @@
               }
 
               // Refresh data after all operations complete
-              await loadKetetapanData();
+              location.reload();
             } catch (error) {
               console.error('Error during bulk delete:', error);
               alert('Terjadi kesalahan saat menghapus data.');
-              await loadKetetapanData();
+              location.reload();
             }
           }
         } else if (aksi === 'print') {
