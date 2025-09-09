@@ -238,7 +238,7 @@ async function exportReportToPDF({
   const imgData = canvas.toDataURL('image/png');
 
   // Siapkan dokumen PDF
-  const pdf = new window.jspdf.jsPDF({
+  const pdf = new window.jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
@@ -426,7 +426,7 @@ async function exportPendapatanToPDF({
   const rataCapaian = rows.filter(r => r.target > 0).reduce((sum, r) => sum + r.capaian, 0) / (rows.filter(r => r.target > 0).length || 1);
 
   // Siapkan jsPDF landscape
-  const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const pdf = new window.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = 297;
   let y = 18;
 
@@ -617,7 +617,7 @@ window.exportPotensiToPDF = async function() {
     const potensiPerJenis = calculatePotensiForPDF(data, masterPajakData, tahun, tingkatKepatuhan, faktorPertumbuhan, bulanAnalisis);
 
     // Setup PDF
-    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pdf = new window.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = 297;
     let y = 18;
 
