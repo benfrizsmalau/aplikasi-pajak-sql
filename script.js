@@ -3,6 +3,34 @@
 const apiUrl = '/.netlify/functions/api';
 // --------------------
 
+// Debug logging for font loading issues
+console.log('🔤 Font Loading Debug: Checking for font-related errors');
+console.log('🔤 Font Loading Debug: Document fonts:', document.fonts);
+
+// Monitor for font loading errors
+document.fonts.onloadingerror = function(event) {
+    console.error('❌ Font Loading Error:', event);
+    console.log('🔍 Font Loading Debug: Failed font details:', {
+        family: event.family,
+        source: event.source,
+        error: event.error
+    });
+};
+
+// Check for chrome extension font errors
+window.addEventListener('error', function(event) {
+    if (event.message && event.message.includes('chrome-extension') && event.message.includes('font')) {
+        console.warn('⚠️ Chrome Extension Font Error Detected:', event.message);
+        console.log('🔍 Chrome Extension Debug: Error details:', {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            error: event.error
+        });
+    }
+});
+
 // Variabel global untuk menyimpan data
 let dataWajibPajakGlobal = [];
 let dataWilayahGlobal = [];
@@ -498,36 +526,50 @@ function showStatus(message, isSuccess, elementId = 'status') {
 }
 
 async function postData(data) {
-    console.log('PostData: Sending request:', data);
+    console.log('📤 PostData: Sending request:', data);
+    console.log('🔗 PostData: API URL:', apiUrl);
+    console.log('📊 PostData: Request action:', data.action || 'unknown');
 
     try {
+        const startTime = Date.now();
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
             cache: 'no-store' // Prevent caching of API responses
         });
+        const endTime = Date.now();
 
-        console.log('PostData: Response status:', response.status);
-        console.log('PostData: Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log(`✅ PostData: Response received in ${endTime - startTime}ms`);
+        console.log('📊 PostData: Response status:', response.status, response.statusText);
+        console.log('📋 PostData: Response headers:', Object.fromEntries(response.headers.entries()));
 
         // Check if response has content
         const contentLength = response.headers.get('content-length');
         const contentType = response.headers.get('content-type');
 
-        console.log('PostData: Content-Length:', contentLength);
-        console.log('PostData: Content-Type:', contentType);
+        console.log('📏 PostData: Content-Length:', contentLength);
+        console.log('📄 PostData: Content-Type:', contentType);
 
         // If response is empty or not JSON, handle gracefully
         if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
-            console.log('PostData: Empty or non-JSON response detected');
+            console.warn('⚠️ PostData: Empty or non-JSON response detected');
+            console.log('🔍 PostData: Response validation:', {
+                hasContentLength: !!contentLength,
+                contentLength,
+                hasContentType: !!contentType,
+                contentType,
+                isJson: contentType && contentType.includes('application/json'),
+                responseOk: response.ok
+            });
+
             if (response.ok) {
                 // If response is OK but empty, assume success
-                console.log('PostData: Returning success for empty OK response');
+                console.log('✅ PostData: Returning success for empty OK response');
                 return { status: 'sukses', message: 'Operation completed successfully' };
             } else {
                 // If response is not OK and empty, throw error with status
-                console.log('PostData: Throwing error for non-OK empty response');
+                console.error('❌ PostData: Throwing error for non-OK empty response');
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
         }
@@ -536,34 +578,44 @@ async function postData(data) {
         let result;
         try {
             const responseText = await response.text();
-            console.log('PostData: Raw response text:', responseText);
+            console.log('📄 PostData: Raw response text length:', responseText.length);
+            console.log('📄 PostData: Response text (first 500 chars):', responseText.substring(0, 500));
 
             result = JSON.parse(responseText);
-            console.log('PostData: Parsed JSON result:', result);
+            console.log('✅ PostData: Successfully parsed JSON result:', result);
         } catch (jsonError) {
-            console.error('PostData: JSON parsing failed:', jsonError);
+            console.error('❌ PostData: JSON parsing failed:', jsonError);
+            console.error('🔍 PostData: Raw response that failed to parse:', responseText);
+
             // If JSON parsing fails, check if response is actually OK
             if (response.ok) {
-                console.log('PostData: Response OK but JSON parsing failed, returning success');
+                console.log('✅ PostData: Response OK but JSON parsing failed, returning success');
                 return { status: 'sukses', message: 'Operation completed successfully' };
             } else {
                 // Get text content for better error message
                 const textContent = await response.text().catch(() => '');
-                console.error('PostData: Server error with text content:', textContent);
+                console.error('❌ PostData: Server error with text content:', textContent);
                 throw new Error(`Server error (${response.status}): ${textContent || response.statusText}`);
             }
         }
 
         // Check for API-level errors
         if (result.status === 'gagal' || !response.ok) {
-            console.error('PostData: API-level error detected:', result);
+            console.error('❌ PostData: API-level error detected:', result);
+            console.log('🔍 PostData: Error details:', {
+                resultStatus: result.status,
+                responseOk: response.ok,
+                responseStatus: response.status,
+                message: result.message
+            });
             throw new Error(result.message || `HTTP error! status: ${response.status}`);
         }
 
-        console.log('PostData: Returning successful result:', result);
+        console.log('✅ PostData: Returning successful result:', result);
         return result;
     } catch (error) {
-        console.error('PostData: Final error:', error);
+        console.error('❌ PostData: Final error:', error);
+        console.error('🔍 PostData: Error stack:', error.stack);
         throw error;
     }
 }
@@ -592,10 +644,13 @@ async function fetchAllData() {
     let retryCount = 0;
     const maxRetries = 3;
 
+    console.log('🔄 fetchAllData: Starting data fetch process');
+
     while (retryCount < maxRetries) {
         try {
-            console.log(`fetchAllData: Attempt ${retryCount + 1}/${maxRetries}`);
+            console.log(`🔄 fetchAllData: Attempt ${retryCount + 1}/${maxRetries} - Making GET request`);
 
+            const startTime = Date.now();
             const response = await fetch(apiUrl, {
                 cache: 'no-store',
                 headers: {
@@ -604,39 +659,78 @@ async function fetchAllData() {
                     'Expires': '0'
                 }
             });
+            const endTime = Date.now();
 
-        // Periksa apakah respons adalah fallback HTML dari Service Worker
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-            console.warn('Menerima respons HTML dari Service Worker (fallback offline).');
-            throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
-        }
+            console.log(`✅ fetchAllData: Response received in ${endTime - startTime}ms`);
+            console.log('📊 fetchAllData: Response status:', response.status, response.statusText);
 
-        // Jika bukan fallback HTML, lanjutkan seperti biasa (mengharapkan JSON)
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
-        }
+            // Periksa apakah respons adalah fallback HTML dari Service Worker
+            const contentType = response.headers.get('content-type');
+            console.log('📄 fetchAllData: Content-Type:', contentType);
 
-        // Check if response has content - be more lenient
-        const contentLength = response.headers.get('content-length');
-        console.log('fetchAllData: Content-Length:', contentLength);
+            if (contentType && contentType.includes('text/html')) {
+                console.warn('⚠️ fetchAllData: Received HTML response from Service Worker (offline fallback)');
+                throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
+            }
 
-        // Don't immediately throw error for empty content-length
-        // Let the JSON parsing handle it
-        if (!contentLength || contentLength === '0') {
-            console.warn('fetchAllData: Server returned empty content-length, attempting to parse anyway');
-        }
+            // Jika bukan fallback HTML, lanjutkan seperti biasa (mengharapkan JSON)
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ fetchAllData: HTTP error:', response.status, response.statusText);
+                console.error('🔍 fetchAllData: Error response text:', errorText);
+                throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
+            }
 
-        // Try to parse JSON response
-        let result;
-        try {
-            const responseText = await response.text();
-            console.log('fetchAllData: Raw response text:', responseText);
+            // Check if response has content - be more lenient
+            const contentLength = response.headers.get('content-length');
+            console.log('📏 fetchAllData: Content-Length:', contentLength);
 
-            if (!responseText || responseText.trim() === '') {
-                console.warn('fetchAllData: Empty response text, API might be cached or returning empty');
-                // Return empty data structure instead of throwing error
+            // Don't immediately throw error for empty content-length
+            // Let the JSON parsing handle it
+            if (!contentLength || contentLength === '0') {
+                console.warn('⚠️ fetchAllData: Server returned empty content-length, attempting to parse anyway');
+            }
+
+            // Try to parse JSON response
+            let result;
+            try {
+                const responseText = await response.text();
+                console.log('📄 fetchAllData: Raw response text length:', responseText.length);
+                console.log('📄 fetchAllData: Response text (first 500 chars):', responseText.substring(0, 500));
+
+                if (!responseText || responseText.trim() === '') {
+                    console.warn('⚠️ fetchAllData: Empty response text received');
+                    console.log('🔄 fetchAllData: Returning empty data structure as fallback');
+                    // Return empty data structure instead of throwing error
+                    return {
+                        wajibPajak: [],
+                        wilayah: [],
+                        masterPajak: [],
+                        ketetapan: [],
+                        pembayaran: [],
+                        fiskal: [],
+                        targetPajakRetribusi: []
+                    };
+                }
+
+                result = JSON.parse(responseText);
+                console.log('✅ fetchAllData: Successfully parsed JSON result');
+                console.log('📊 fetchAllData: Data structure keys:', Object.keys(result));
+                console.log('📈 fetchAllData: Data counts:', {
+                    wajibPajak: result.wajibPajak?.length || 0,
+                    wilayah: result.wilayah?.length || 0,
+                    masterPajak: result.masterPajak?.length || 0,
+                    ketetapan: result.ketetapan?.length || 0,
+                    pembayaran: result.pembayaran?.length || 0,
+                    fiskal: result.fiskal?.length || 0,
+                    targetPajakRetribusi: result.targetPajakRetribusi?.length || 0
+                });
+
+            } catch (jsonError) {
+                console.error('❌ fetchAllData: JSON parsing failed:', jsonError);
+                console.error('🔍 fetchAllData: Response text that failed to parse:', responseText);
+                // If JSON parsing fails, return empty data instead of throwing error
+                console.warn('🔄 fetchAllData: Returning empty data due to parsing error');
                 return {
                     wajibPajak: [],
                     wilayah: [],
@@ -648,46 +742,33 @@ async function fetchAllData() {
                 };
             }
 
-            result = JSON.parse(responseText);
-            console.log('fetchAllData: Parsed JSON result:', result);
+            if (result.status === 'gagal') {
+                console.warn('⚠️ fetchAllData: API returned error status:', result.message);
+                console.log('🔍 fetchAllData: Error result:', result);
+                // Return empty data instead of throwing error
+                console.log('🔄 fetchAllData: Returning empty data due to API error');
+                return {
+                    wajibPajak: [],
+                    wilayah: [],
+                    masterPajak: [],
+                    ketetapan: [],
+                    pembayaran: [],
+                    fiskal: [],
+                    targetPajakRetribusi: []
+                };
+            }
 
-        } catch (jsonError) {
-            console.error('fetchAllData: JSON parsing failed:', jsonError);
-            // If JSON parsing fails, return empty data instead of throwing error
-            console.warn('fetchAllData: Returning empty data due to parsing error');
-            return {
-                wajibPajak: [],
-                wilayah: [],
-                masterPajak: [],
-                ketetapan: [],
-                pembayaran: [],
-                fiskal: [],
-                targetPajakRetribusi: []
-            };
-        }
-
-        if (result.status === 'gagal') {
-            console.warn('fetchAllData: API returned error status:', result.message);
-            // Return empty data instead of throwing error
-            return {
-                wajibPajak: [],
-                wilayah: [],
-                masterPajak: [],
-                ketetapan: [],
-                pembayaran: [],
-                fiskal: [],
-                targetPajakRetribusi: []
-            };
-        }
-
-        return result;
+            console.log('✅ fetchAllData: Successfully returning data');
+            return result;
 
         } catch (error) {
-            console.warn(`fetchAllData: Attempt ${retryCount + 1} failed:`, error);
+            console.warn(`❌ fetchAllData: Attempt ${retryCount + 1} failed:`, error.message);
+            console.error('🔍 fetchAllData: Error details:', error);
             retryCount++;
 
             if (retryCount >= maxRetries) {
-                console.error('fetchAllData: All retry attempts failed');
+                console.error('🚫 fetchAllData: All retry attempts failed');
+                console.log('🔄 fetchAllData: Returning empty data structure as final fallback');
                 // Return empty data structure instead of throwing error
                 return {
                     wajibPajak: [],
@@ -702,7 +783,7 @@ async function fetchAllData() {
 
             // Wait before retrying (exponential backoff)
             const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-            console.log(`fetchAllData: Retrying in ${delay}ms...`);
+            console.log(`⏳ fetchAllData: Retrying in ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }
@@ -1157,10 +1238,13 @@ async function loadDashboardData() {
     let retryCount = 0;
     const maxRetries = 3;
 
+    console.log('🔄 loadDashboardData: Starting dashboard data load process');
+
     while (retryCount < maxRetries) {
         try {
-            console.log(`loadDashboardData: Attempt ${retryCount + 1}/${maxRetries}`);
+            console.log(`🔄 loadDashboardData: Attempt ${retryCount + 1}/${maxRetries} - Making API request`);
 
+            const startTime = Date.now();
             const response = await fetch('/.netlify/functions/api', {
                 cache: 'no-store',
                 headers: {
@@ -1170,26 +1254,40 @@ async function loadDashboardData() {
                 },
                 timeout: 10000 // 10 second timeout
             });
+            const endTime = Date.now();
 
             // Debug logging for response details
-            console.log('loadDashboardData: Response status:', response.status, response.statusText);
-            console.log('loadDashboardData: Response headers:', Object.fromEntries(response.headers.entries()));
+            console.log(`✅ loadDashboardData: Response received in ${endTime - startTime}ms`);
+            console.log('📊 loadDashboardData: Response status:', response.status, response.statusText);
+            console.log('📋 loadDashboardData: Response headers:', Object.fromEntries(response.headers.entries()));
 
             // Check if response has content
             const contentLength = response.headers.get('content-length');
             const contentType = response.headers.get('content-type');
-            console.log('loadDashboardData: Content-Length:', contentLength, 'Content-Type:', contentType);
+            console.log('📏 loadDashboardData: Content-Length:', contentLength, 'Content-Type:', contentType);
 
             // Handle empty or invalid responses gracefully
             if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
-                console.warn('loadDashboardData: Empty or invalid response, setting default values');
+                console.warn('⚠️ loadDashboardData: Empty or invalid response detected');
+                console.log('🔍 loadDashboardData: Response details:', {
+                    hasContentLength: !!contentLength,
+                    contentLength,
+                    hasContentType: !!contentType,
+                    contentType,
+                    isJson: contentType && contentType.includes('application/json')
+                });
                 setDashboardDefaults();
                 return; // Exit gracefully without throwing error
             }
 
             // Handle non-OK HTTP responses
             if (!response.ok) {
-                console.warn(`loadDashboardData: HTTP error ${response.status}, setting default values`);
+                console.warn(`❌ loadDashboardData: HTTP error ${response.status} - ${response.statusText}`);
+                console.log('🔍 loadDashboardData: Error response details:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
                 setDashboardDefaults();
                 return; // Exit gracefully without throwing error
             }
@@ -1198,53 +1296,66 @@ async function loadDashboardData() {
             let data;
             try {
                 const responseText = await response.text();
-                console.log('loadDashboardData: Raw response text length:', responseText.length);
-                console.log('loadDashboardData: Response text (first 500 chars):', responseText.substring(0, 500));
+                console.log('📄 loadDashboardData: Raw response text length:', responseText.length);
+                console.log('📄 loadDashboardData: Response text (first 500 chars):', responseText.substring(0, 500));
 
                 if (!responseText || responseText.trim() === '') {
-                    console.warn('loadDashboardData: Empty response text, setting default values');
+                    console.warn('⚠️ loadDashboardData: Empty response text received');
                     setDashboardDefaults();
                     return; // Exit gracefully
                 }
 
                 data = JSON.parse(responseText);
-                console.log('loadDashboardData: Successfully parsed data');
-                console.log('loadDashboardData: Parsed data keys:', Object.keys(data));
+                console.log('✅ loadDashboardData: Successfully parsed JSON data');
+                console.log('📊 loadDashboardData: Parsed data keys:', Object.keys(data));
+                console.log('📈 loadDashboardData: Data counts:', {
+                    wajibPajak: data.wajibPajak?.length || 0,
+                    wilayah: data.wilayah?.length || 0,
+                    masterPajak: data.masterPajak?.length || 0,
+                    ketetapan: data.ketetapan?.length || 0,
+                    pembayaran: data.pembayaran?.length || 0,
+                    fiskal: data.fiskal?.length || 0,
+                    targetPajakRetribusi: data.targetPajakRetribusi?.length || 0
+                });
+
             } catch (jsonError) {
-                console.error('loadDashboardData: JSON parsing failed:', jsonError);
-                console.error('loadDashboardData: Response text that failed to parse:', responseText);
-                console.warn('loadDashboardData: Setting default values due to JSON error');
+                console.error('❌ loadDashboardData: JSON parsing failed:', jsonError.message);
+                console.error('🔍 loadDashboardData: Response text that failed to parse:', responseText);
+                console.warn('⚠️ loadDashboardData: Setting default values due to JSON parsing error');
                 setDashboardDefaults();
                 return; // Exit gracefully
             }
 
             // Check for API-level errors
             if (data.status === 'gagal') {
-                console.warn('loadDashboardData: API returned error status, setting default values:', data.message);
+                console.warn('⚠️ loadDashboardData: API returned error status:', data.message);
+                console.log('🔍 loadDashboardData: Error data:', data);
                 setDashboardDefaults();
                 return; // Exit gracefully
             }
-            
+
             // Successfully got data - update dashboard
-            console.log('loadDashboardData: Updating dashboard with valid data');
+            console.log('🎉 loadDashboardData: Successfully received valid data, updating dashboard');
             updateDashboardWithData(data);
 
             // Success - break out of retry loop
+            console.log('✅ loadDashboardData: Dashboard update completed successfully');
             break;
 
         } catch (error) {
-            console.warn(`loadDashboardData: Attempt ${retryCount + 1} failed:`, error.message);
+            console.warn(`❌ loadDashboardData: Attempt ${retryCount + 1} failed:`, error.message);
+            console.error('🔍 loadDashboardData: Error details:', error);
             retryCount++;
 
             if (retryCount >= maxRetries) {
-                console.warn('loadDashboardData: All retry attempts failed, setting defaults');
+                console.warn('🚫 loadDashboardData: All retry attempts failed, setting defaults');
                 setDashboardDefaults();
                 break;
             }
 
             // Wait before retrying (exponential backoff)
             const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-            console.log(`loadDashboardData: Retrying in ${delay}ms...`);
+            console.log(`⏳ loadDashboardData: Retrying in ${delay}ms...`);
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }

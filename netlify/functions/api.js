@@ -191,21 +191,74 @@ exports.handler = async (event) => {
 // =================================================================
 
 async function handleGet() {
-    console.log('handleGet: Starting data fetch - TEST MODE WITHOUT DATABASE');
+    console.log('handleGet: Starting data fetch from database');
 
-    // Return empty data structure for testing
-    const result = {
-        wajibPajak: [],
-        wilayah: [],
-        masterPajak: [],
-        ketetapan: [],
-        pembayaran: [],
-        fiskal: [],
-        targetPajakRetribusi: [],
-    };
+    try {
+        // Fetch all data from Supabase with timeout protection
+        const [
+            { data: wajibPajak, error: wpError },
+            { data: wilayah, error: wilayahError },
+            { data: masterPajak, error: masterError },
+            { data: ketetapan, error: ketetapanError },
+            { data: pembayaran, error: pembayaranError },
+            { data: fiskal, error: fiskalError },
+            { data: targetPajakRetribusi, error: targetError }
+        ] = await Promise.all([
+            queryWithTimeout(supabase.from('datawp').select('*')),
+            queryWithTimeout(supabase.from('Wilayah').select('*')),
+            queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*')),
+            queryWithTimeout(supabase.from('KetetapanPajak').select('*')),
+            queryWithTimeout(supabase.from('RiwayatPembayaran').select('*')),
+            queryWithTimeout(supabase.from('Fiskal').select('*')),
+            queryWithTimeout(supabase.from('TargetPajakRetribusi').select('*'))
+        ]);
 
-    console.log('handleGet: Returning test data structure');
-    return result;
+        // Check for errors
+        if (wpError) console.error('Error fetching wajibPajak:', wpError);
+        if (wilayahError) console.error('Error fetching wilayah:', wilayahError);
+        if (masterError) console.error('Error fetching masterPajak:', masterError);
+        if (ketetapanError) console.error('Error fetching ketetapan:', ketetapanError);
+        if (pembayaranError) console.error('Error fetching pembayaran:', pembayaranError);
+        if (fiskalError) console.error('Error fetching fiskal:', fiskalError);
+        if (targetError) console.error('Error fetching target:', targetError);
+
+        const result = {
+            wajibPajak: wajibPajak || [],
+            wilayah: wilayah || [],
+            masterPajak: masterPajak || [],
+            ketetapan: ketetapan || [],
+            pembayaran: pembayaran || [],
+            fiskal: fiskal || [],
+            targetPajakRetribusi: targetPajakRetribusi || [],
+        };
+
+        console.log('handleGet: Successfully fetched data from database');
+        console.log('Data counts:', {
+            wajibPajak: result.wajibPajak.length,
+            wilayah: result.wilayah.length,
+            masterPajak: result.masterPajak.length,
+            ketetapan: result.ketetapan.length,
+            pembayaran: result.pembayaran.length,
+            fiskal: result.fiskal.length,
+            targetPajakRetribusi: result.targetPajakRetribusi.length
+        });
+
+        return result;
+
+    } catch (error) {
+        console.error('handleGet: Error fetching data from database:', error);
+
+        // Return empty data structure as fallback
+        return {
+            wajibPajak: [],
+            wilayah: [],
+            masterPajak: [],
+            ketetapan: [],
+            pembayaran: [],
+            fiskal: [],
+            targetPajakRetribusi: [],
+        };
+    }
 }
 
 // FUNGSI INI TELAH DIPERBAIKI
