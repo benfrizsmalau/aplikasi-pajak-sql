@@ -599,12 +599,325 @@ function formatTanggalCetak(date) {
   return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
 }
 
+// Export PDF untuk kertas kerja potensi pajak
+window.exportPotensiToPDF = async function() {
+  try {
+    // Ambil parameter dari halaman potensi pajak
+    const tahun = document.getElementById('tahunPotensi')?.value || new Date().getFullYear();
+    const tingkatKepatuhan = parseFloat(document.getElementById('tingkatKepatuhan')?.value || 85) / 100;
+    const faktorPertumbuhan = parseFloat(document.getElementById('faktorPertumbuhan')?.value || 5) / 100;
+    const bulanAnalisis = parseInt(document.getElementById('bulanAnalisis')?.value || 12);
+
+    // Ambil data dari API
+    const response = await fetch('/.netlify/functions/api');
+    const data = await response.json();
+
+    // Hitung potensi
+    const masterPajakData = data.masterPajak || [];
+    const potensiPerJenis = calculatePotensiForPDF(data, masterPajakData, tahun, tingkatKepatuhan, faktorPertumbuhan, bulanAnalisis);
+
+    // Setup PDF
+    const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageWidth = 297;
+    let y = 18;
+
+    // Kop dinas
+    try {
+      const img = new Image();
+      img.src = 'images/logo.png';
+      await img.decode();
+      pdf.addImage(img, 'PNG', 15, y - 3, 20, 20);
+    } catch (e) { /* logo gagal dimuat */ }
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('PEMERINTAH KABUPATEN MAMBERAMO RAYA', pageWidth / 2, y, { align: 'center' });
+    y += 6;
+    pdf.setFontSize(12);
+    pdf.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    pdf.text('DAN ASET DAERAH', pageWidth / 2, y, { align: 'center' });
+    y += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.text('KANTOR OTONOM PEMDA KABUPATEN MAMBERAMO RAYA JL. LINGKAR BURMESO', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    pdf.text('DISTRIK MAMBERAMO TENGAH KABUPATEN MAMBERAMO RAYA PROVINSI PAPUA', pageWidth / 2, y, { align: 'center' });
+    y += 3;
+    pdf.setLineWidth(1.2);
+    pdf.line(15, y, pageWidth - 15, y);
+    y += 8;
+
+    // Judul laporan
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('KERTAS KERJA PERHITUNGAN POTENSI PAJAK', pageWidth / 2, y, { align: 'center' });
+    y += 8;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.text(`TAHUN ${tahun}`, pageWidth / 2, y, { align: 'center' });
+    y += 6;
+    pdf.text(`Periode Analisis: ${getBulanName(bulanAnalisis)} ${tahun}`, pageWidth / 2, y, { align: 'center' });
+    y += 10;
+
+    // Parameter perhitungan
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('PARAMETER PERHITUNGAN:', 15, y);
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.text(`• Tingkat Kepatuhan: ${(tingkatKepatuhan * 100).toFixed(1)}%`, 20, y);
+    y += 5;
+    pdf.text(`• Faktor Pertumbuhan: ${(faktorPertumbuhan * 100).toFixed(1)}%`, 20, y);
+    y += 5;
+    pdf.text(`• Periode Analisis: ${bulanAnalisis === 12 ? 'Full Year' : getBulanName(bulanAnalisis)}`, 20, y);
+    y += 8;
+
+    // Tabel hasil perhitungan
+    const colX = [15, 45, 75, 105, 135, 165, 195, 225, 255];
+    const colW = [25, 25, 25, 25, 25, 25, 25, 25, 25];
+    const rowHeight = 8;
+
+    // Header tabel
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setFillColor(240, 240, 240);
+    pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+
+    const headers = ['Jenis Pajak', 'Jml WP', 'Rata-rata', 'Tarif', 'Potensi/WP', 'Total', 'Realisasi', 'Gap', 'Pencapaian'];
+    headers.forEach((header, i) => {
+      pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
+      pdf.text(header, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+    });
+    y += rowHeight;
+
+    // Isi tabel
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+
+    potensiPerJenis.forEach((item, index) => {
+      if (y > 180) { // New page if needed
+        pdf.addPage();
+        y = 18;
+        // Redraw header
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+        headers.forEach((header, i) => {
+          pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
+          pdf.text(header, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+        });
+        y += rowHeight;
+      }
+
+      const bgColor = index % 2 === 0 ? [255, 255, 255] : [248, 249, 250];
+      pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+      pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+
+      const values = [
+        item.namaLayanan,
+        item.wpAktif.toString(),
+        formatNumber(item.rataRataObjek),
+        item.tarifPajak.toFixed(1) + '%',
+        formatNumber(item.potensiPerWP),
+        formatNumber(item.totalPotensi),
+        formatNumber(item.realisasiSaatIni),
+        formatNumber(item.gap),
+        item.pencapaian.toFixed(1) + '%'
+      ];
+
+      values.forEach((value, i) => {
+        pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
+        pdf.text(value, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+      });
+      y += rowHeight;
+    });
+
+    // Ringkasan total
+    y += 5;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    const totalPotensi = potensiPerJenis.reduce((sum, item) => sum + item.totalPotensi, 0);
+    const totalRealisasi = potensiPerJenis.reduce((sum, item) => sum + item.realisasiSaatIni, 0);
+    const totalGap = totalPotensi - totalRealisasi;
+    const persentase = totalPotensi > 0 ? (totalRealisasi / totalPotensi) * 100 : 0;
+
+    pdf.text(`TOTAL POTENSI: ${formatNumber(totalPotensi)}`, 15, y);
+    y += 5;
+    pdf.text(`TOTAL REALISASI: ${formatNumber(totalRealisasi)}`, 15, y);
+    y += 5;
+    pdf.text(`GAP: ${formatNumber(totalGap)}`, 15, y);
+    y += 5;
+    pdf.text(`PENCAPAIAN: ${persentase.toFixed(1)}%`, 15, y);
+    y += 10;
+
+    // Kesimpulan dan rekomendasi
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text('KESIMPULAN DAN REKOMENDASI:', 15, y);
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+
+    const rekomendasi = [
+      `1. Total potensi pajak tahun ${tahun} sebesar ${formatNumber(totalPotensi)}`,
+      `2. Realisasi saat ini mencapai ${persentase.toFixed(1)}% dari potensi`,
+      `3. Gap sebesar ${formatNumber(totalGap)} perlu menjadi fokus penggalian`,
+      `4. Jenis pajak dengan gap terbesar perlu perhatian khusus`,
+      `5. Tingkatkan sosialisasi dan pengawasan untuk meningkatkan kepatuhan`
+    ];
+
+    rekomendasi.forEach((rec, i) => {
+      if (y > 190) {
+        pdf.addPage();
+        y = 18;
+      }
+      pdf.text(rec, 20, y);
+      y += 5;
+    });
+
+    // Tanda tangan
+    y += 10;
+    if (y > 170) {
+      pdf.addPage();
+      y = 18;
+    }
+
+    pdf.text('Dibuat di: Burmeso', pageWidth - 80, y);
+    y += 5;
+    pdf.text(`Tanggal: ${formatTanggalCetak(new Date())}`, pageWidth - 80, y);
+    y += 10;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('An. KEPALA BADAN PENDAPATAN', pageWidth - 80, y);
+    y += 5;
+    pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', pageWidth - 80, y);
+    y += 5;
+    pdf.text('KEPALA BIDANG PENDAPATAN', pageWidth - 80, y);
+    y += 15;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Nama: _______________________________', pageWidth - 80, y);
+    y += 5;
+    pdf.text('NIP: _______________________________', pageWidth - 80, y);
+
+    // Simpan PDF
+    pdf.save(`Kertas_Kerja_Potensi_Pajak_${tahun}.pdf`);
+
+  } catch (error) {
+    console.error('Error exporting potensi to PDF:', error);
+    alert('Gagal export kertas kerja potensi pajak');
+  }
+}
+
+// Fungsi helper untuk perhitungan potensi (sama dengan di potensi-pajak.js)
+function calculatePotensiForPDF(data, masterPajakData, tahun, tingkatKepatuhan, faktorPertumbuhan, bulanAnalisis) {
+  const hasil = [];
+
+  masterPajakData.forEach(master => {
+    const kodeLayanan = master.KodeLayanan;
+    const namaLayanan = master.NamaLayanan;
+
+    // Cari target untuk tahun tersebut
+    const targetItem = data.targetPajakRetribusi?.find(t => t.KodeLayanan === kodeLayanan && String(t.Tahun) === String(tahun));
+    const targetTahunan = targetItem ? parseFloat(targetItem.Target) || 0 : 0;
+
+    // Hitung jumlah wajib pajak aktif untuk jenis pajak ini
+    const wpAktif = data.wajibPajak?.filter(wp => {
+      const hasKetetapan = data.ketetapan?.some(k =>
+        k.NPWPD === wp.NPWPD && k.KodeLayanan === kodeLayanan
+      );
+      return hasKetetapan;
+    }).length || 0;
+
+    // Hitung rata-rata objek pajak
+    const pembayaranJenis = data.pembayaran?.filter(p => {
+      const ketetapan = data.ketetapan?.find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+      return ketetapan && ketetapan.KodeLayanan === kodeLayanan && p.StatusPembayaran === 'Sukses';
+    }) || [];
+
+    const totalPembayaran = pembayaranJenis.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+    const rataRataObjek = pembayaranJenis.length > 0 ? totalPembayaran / pembayaranJenis.length : 0;
+
+    // Hitung tarif pajak
+    const tarifPajak = calculateTarifPajakForPDF(kodeLayanan, rataRataObjek);
+
+    // Hitung potensi per wajib pajak
+    const potensiPerWP = rataRataObjek * tarifPajak * tingkatKepatuhan * (1 + faktorPertumbuhan);
+
+    // Hitung total potensi
+    const totalPotensi = wpAktif * potensiPerWP;
+
+    // Hitung realisasi saat ini
+    const realisasiSaatIni = calculateRealisasiForPDF(data, kodeLayanan, bulanAnalisis, tahun);
+
+    // Hitung gap dan pencapaian
+    const gap = totalPotensi - realisasiSaatIni;
+    const pencapaian = totalPotensi > 0 ? (realisasiSaatIni / totalPotensi) * 100 : 0;
+
+    hasil.push({
+      kodeLayanan,
+      namaLayanan,
+      wpAktif,
+      rataRataObjek,
+      tarifPajak: tarifPajak * 100,
+      potensiPerWP,
+      totalPotensi,
+      realisasiSaatIni,
+      gap,
+      pencapaian
+    });
+  });
+
+  return hasil;
+}
+
+function calculateTarifPajakForPDF(kodeLayanan, rataRataObjek) {
+  const tarifDasar = {
+    'PHTB': 0.05, 'BPHTB': 0.05, 'HOTEL': 0.10, 'RESTORAN': 0.10,
+    'HIBURAN': 0.25, 'PARKIR': 0.20, 'AIR_TANAH': 0.05, 'MINERAL': 0.025
+  };
+  return tarifDasar[kodeLayanan] || 0.10;
+}
+
+function calculateRealisasiForPDF(data, kodeLayanan, bulanAnalisis, tahun) {
+  const pembayaranFiltered = data.pembayaran?.filter(p => {
+    if (p.StatusPembayaran !== 'Sukses') return false;
+    const ketetapan = data.ketetapan?.find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+    if (!ketetapan || ketetapan.KodeLayanan !== kodeLayanan) return false;
+
+    const tanggalBayar = new Date(p.TanggalBayar);
+    const tahunBayar = tanggalBayar.getFullYear();
+    const bulanBayar = tanggalBayar.getMonth() + 1;
+
+    if (bulanAnalisis === 12) {
+      return tahunBayar === parseInt(tahun);
+    } else {
+      return tahunBayar === parseInt(tahun) && bulanBayar <= bulanAnalisis;
+    }
+  }) || [];
+
+  return pembayaranFiltered.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+}
+
+function formatNumber(amount) {
+  if (!amount || isNaN(amount)) return '0';
+  return Number(amount).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+}
+
+function getBulanName(bulanNumber) {
+  const bulanNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return bulanNames[parseInt(bulanNumber) - 1] || 'Desember';
+}
+
 // Fungsi integrasi tombol export di report.html
 function setupExportPendapatanButton() {
   const btn = document.getElementById('btn-export-pdf');
   if (!btn) return;
   btn.addEventListener('click', () => {
-    // Ambil data periode dari report.js
     if (typeof window.getPendapatanExportContext === 'function') {
       const ctx = window.getPendapatanExportContext();
       exportPendapatanToPDF(ctx);
@@ -613,4 +926,4 @@ function setupExportPendapatanButton() {
     }
   });
 }
-document.addEventListener('DOMContentLoaded', setupExportPendapatanButton); 
+document.addEventListener('DOMContentLoaded', setupExportPendapatanButton);
