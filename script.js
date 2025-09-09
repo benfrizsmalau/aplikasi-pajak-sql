@@ -379,41 +379,161 @@ function replaceProblematicLoadDashboardData() {
     };
 }
 
-// Panggil fungsi debugging saat halaman dimuat
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Starting comprehensive debugging...');
+// FINAL CLEANUP - Hapus kode lama dan ganti dengan yang sudah bekerja
 
-    // Aktifkan network monitoring
-    monitorNetworkRequests();
+// 1. GANTI fungsi loadDashboardData lama dengan yang baru
+async function loadDashboardData() {
+    console.log('🔄 loadDashboardData: Starting with working method...');
 
-    // Test langsung dulu
-    console.log('\n=== DIRECT API TEST ===');
-    const directTestResult = await testDirectApiCall();
-
-    if (directTestResult) {
-        console.log('✅ Direct test berhasil! Dashboard sudah diupdate.');
-        return; // Skip loadDashboardData jika direct test berhasil
-    }
-
-    // Jika direct test gagal, lakukan step-by-step debugging
-    console.log('\n=== STEP-BY-STEP DEBUGGING ===');
-    const debugResult = await debugResponseStepByStep();
-
-    if (debugResult) {
-        console.log('✅ Step-by-step debugging berhasil');
-        const transformed = transformApiDataToDashboard(debugResult);
-        updateDashboardUI(transformed);
-        return;
-    }
-
-    // Fallback ke loadDashboardData yang sudah diperbaiki
-    console.log('\n=== FALLBACK TO LOAD DASHBOARD DATA ===');
     try {
-        await loadDashboardData();
+        const response = await fetch('/.netlify/functions/api', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('📊 Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('📦 Data received:', data);
+
+        if (data && data.status === 'sukses') {
+            const transformed = transformApiDataToDashboard(data);
+            updateDashboardUI(transformed);
+            console.log('✅ Dashboard loaded successfully');
+            return transformed;
+        } else {
+            throw new Error('Invalid data structure');
+        }
+
     } catch (error) {
-        console.error('💥 All methods failed:', error);
+        console.error('❌ loadDashboardData failed:', error);
+        setDashboardDefaults();
+        throw error;
+    }
+}
+
+// 2. PASTIKAN transformApiDataToDashboard sudah benar
+function transformApiDataToDashboard(apiData) {
+    console.log('🔄 Transforming API data to dashboard format...');
+
+    const stats = {
+        totalWp: apiData.wajibPajak ? apiData.wajibPajak.length : 0,
+        totalKetetapan: apiData.ketetapan ? apiData.ketetapan.length : 0,
+        totalPembayaran: apiData.pembayaran ? apiData.pembayaran.length : 0,
+        totalSkpdSkrd: 0, // Hitung dari data yang ada
+        totalSspdSsrd: 0, // Hitung dari data yang ada
+        totalFiskal: apiData.fiskal ? apiData.fiskal.length : 0,
+        totalNilaiKetetapan: 0,
+        totalNilaiSetoran: 0,
+        lastUpdated: new Date().toISOString(),
+        dataStatus: apiData.status
+    };
+
+    // Hitung total nilai ketetapan
+    if (apiData.ketetapan && apiData.ketetapan.length > 0) {
+        stats.totalNilaiKetetapan = apiData.ketetapan.reduce((total, item) => {
+            const nilai = parseFloat(item.jumlah_ketetapan || item.nilai || 0);
+            return total + nilai;
+        }, 0);
+    }
+
+    // Hitung total nilai pembayaran/setoran
+    if (apiData.pembayaran && apiData.pembayaran.length > 0) {
+        stats.totalNilaiSetoran = apiData.pembayaran.reduce((total, item) => {
+            const nilai = parseFloat(item.jumlah_bayar || item.nilai || 0);
+            return total + nilai;
+        }, 0);
+    }
+
+    console.log('📊 Calculated dashboard stats:', stats);
+    return stats;
+}
+
+// 3. PASTIKAN updateDashboardUI sudah benar
+function updateDashboardUI(stats) {
+    console.log('🎨 Updating dashboard UI with stats:', stats);
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(amount || 0);
+    };
+
+    const formatNumber = (num) => {
+        return new Intl.NumberFormat('id-ID').format(num || 0);
+    };
+
+    const updateElement = (id, value, formatter = null) => {
+        const element = document.getElementById(id);
+        if (element) {
+            const displayValue = formatter ? formatter(value) : (value || 'N/A');
+            element.textContent = displayValue;
+            console.log(`✅ Updated ${id}:`, displayValue);
+        }
+    };
+
+    // Update semua elemen dashboard
+    updateElement('totalWp', stats.totalWp, formatNumber);
+    updateElement('totalKetetapan', stats.totalKetetapan, formatNumber);
+    updateElement('totalPembayaran', stats.totalPembayaran, formatNumber);
+    updateElement('totalSkpdSkrd', stats.totalSkpdSkrd, formatNumber);
+    updateElement('totalSspdSsrd', stats.totalSspdSsrd, formatNumber);
+    updateElement('totalFiskal', stats.totalFiskal, formatNumber);
+    updateElement('totalNilaiKetetapan', stats.totalNilaiKetetapan, formatCurrency);
+    updateElement('totalNilaiSetoran', stats.totalNilaiSetoran, formatCurrency);
+
+    if (stats.lastUpdated) {
+        updateElement('lastUpdated', new Date(stats.lastUpdated).toLocaleString('id-ID'));
+    }
+
+    console.log('🎉 Dashboard UI updated successfully');
+}
+
+// 4. BERSIHKAN event listener - hanya gunakan satu method
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Dashboard initialization...');
+
+    try {
+        // Langsung gunakan loadDashboardData yang sudah diperbaiki
+        await loadDashboardData();
+        console.log('✅ Dashboard initialization complete');
+
+    } catch (error) {
+        console.error('❌ Dashboard initialization failed:', error);
         setDashboardDefaults();
     }
+});
+
+// 5. OPTIONAL: Tambahkan favicon untuk menghilangkan 404
+function addFavicon() {
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/x-icon';
+    link.href = 'data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+    document.head.appendChild(link);
+}
+
+// 6. HILANGKAN network monitoring jika tidak diperlukan lagi
+function removeNetworkMonitoring() {
+    // Restore original fetch jika sudah di-override
+    if (window.originalFetch) {
+        window.fetch = window.originalFetch;
+    }
+}
+
+// Jalankan cleanup
+document.addEventListener('DOMContentLoaded', () => {
+    addFavicon(); // Hilangkan favicon 404
+    // removeNetworkMonitoring(); // Uncomment jika mau hilangkan network debug
 });
 
 // Variabel global untuk menyimpan data
