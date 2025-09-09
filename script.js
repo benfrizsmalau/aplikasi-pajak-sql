@@ -202,6 +202,183 @@ function monitorNetworkRequests() {
     };
 }
 
+// Test langsung dengan endpoint yang bekerja
+async function testDirectApiCall() {
+    console.log('🧪 Testing direct API call...');
+
+    try {
+        // Gunakan endpoint yang sama dengan health check yang berhasil
+        const response = await fetch('/.netlify/functions/api', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('📊 Direct test - Status:', response.status);
+        console.log('📊 Direct test - Headers:', Object.fromEntries(response.headers.entries()));
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('📦 Direct test - JSON data:', data);
+            console.log('📏 Direct test - Data type:', typeof data);
+            console.log('📏 Direct test - Data keys:', Object.keys(data));
+
+            // Test transform function
+            if (data.status === 'sukses') {
+                const transformed = transformApiDataToDashboard(data);
+                console.log('🔄 Transformed data:', transformed);
+
+                // Update UI langsung untuk testing
+                updateDashboardUI(transformed);
+
+                return true;
+            }
+        }
+
+        return false;
+
+    } catch (error) {
+        console.error('❌ Direct test failed:', error);
+        return false;
+    }
+}
+
+// Fungsi untuk debugging response step by step
+async function debugResponseStepByStep() {
+    console.log('🔍 Starting step-by-step response debugging...');
+
+    try {
+        // Step 1: Basic fetch
+        console.log('Step 1: Making fetch request...');
+        const response = await fetch('/.netlify/functions/api');
+        console.log('✅ Fetch successful, status:', response.status);
+
+        // Step 2: Check response object
+        console.log('Step 2: Response object properties:');
+        console.log('- ok:', response.ok);
+        console.log('- status:', response.status);
+        console.log('- statusText:', response.statusText);
+        console.log('- headers:', Object.fromEntries(response.headers.entries()));
+
+        // Step 3: Clone response for multiple reads
+        console.log('Step 3: Cloning response...');
+        const responseClone1 = response.clone();
+        const responseClone2 = response.clone();
+
+        // Step 4: Read as text first
+        console.log('Step 4: Reading as text...');
+        const textData = await responseClone1.text();
+        console.log('✅ Text length:', textData.length);
+        console.log('✅ Text preview:', textData.substring(0, 200));
+
+        // Step 5: Parse as JSON
+        console.log('Step 5: Parsing as JSON...');
+        const jsonData = JSON.parse(textData);
+        console.log('✅ JSON parsed successfully');
+        console.log('✅ JSON type:', typeof jsonData);
+        console.log('✅ JSON keys:', Object.keys(jsonData));
+
+        // Step 6: Alternative - direct JSON parsing
+        console.log('Step 6: Direct JSON parsing...');
+        const directJson = await responseClone2.json();
+        console.log('✅ Direct JSON successful');
+        console.log('✅ Data matches:', JSON.stringify(jsonData) === JSON.stringify(directJson));
+
+        return directJson;
+
+    } catch (error) {
+        console.error('❌ Step-by-step debugging failed at:', error.message);
+        console.error('❌ Full error:', error);
+        return null;
+    }
+}
+
+// Fungsi transform data API ke format dashboard
+function transformApiDataToDashboard(apiData) {
+    console.log('🔄 Transforming API data to dashboard format...');
+
+    try {
+        // Extract data dari response API
+        const { wajibPajak = [], wilayah = [], masterPajak = [], ketetapan = [], pembayaran = [], fiskal = [], targetPajakRetribusi = [] } = apiData;
+
+        // Hitung statistik dashboard
+        const stats = {
+            totalWp: wajibPajak.length,
+            totalKetetapan: ketetapan.length,
+            totalPembayaran: pembayaran.length,
+            totalSkpdSkrd: ketetapan.filter(k => pembayaran.some(p => p.ID_Ketetapan === k.ID_Ketetapan)).length,
+            totalSspdSsrd: pembayaran.filter(p => p.StatusPembayaran === 'Sukses').length,
+            totalFiskal: fiskal.length,
+            totalNilaiKetetapan: ketetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0),
+            totalNilaiSetoran: pembayaran.filter(p => p.StatusPembayaran === 'Sukses').reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0)
+        };
+
+        console.log('📊 Calculated dashboard stats:', stats);
+        return stats;
+
+    } catch (error) {
+        console.error('❌ Transform failed:', error);
+        return {
+            totalWp: 0,
+            totalKetetapan: 0,
+            totalPembayaran: 0,
+            totalSkpdSkrd: 0,
+            totalSspdSsrd: 0,
+            totalFiskal: 0,
+            totalNilaiKetetapan: 0,
+            totalNilaiSetoran: 0
+        };
+    }
+}
+
+// Fungsi update dashboard UI
+function updateDashboardUI(stats) {
+    console.log('🎨 Updating dashboard UI with stats:', stats);
+
+    try {
+        // Update setiap element dashboard
+        const elements = {
+            'totalWp': stats.totalWp,
+            'totalKetetapan': stats.totalKetetapan,
+            'totalPembayaran': stats.totalPembayaran,
+            'totalSkpdSkrd': stats.totalSkpdSkrd,
+            'totalSspdSsrd': stats.totalSspdSsrd,
+            'totalFiskal': stats.totalFiskal,
+            'totalNilaiKetetapan': `Rp ${stats.totalNilaiKetetapan.toLocaleString('id-ID')}`,
+            'totalNilaiSetoran': `Rp ${stats.totalNilaiSetoran.toLocaleString('id-ID')}`
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                element.style.color = ''; // Reset error styling
+                console.log(`✅ Updated ${id}: ${value}`);
+            } else {
+                console.warn(`⚠️ Element ${id} not found`);
+            }
+        });
+
+        console.log('🎉 Dashboard UI updated successfully');
+
+    } catch (error) {
+        console.error('❌ UI update failed:', error);
+    }
+}
+
+// Quick fix untuk replace loadDashboardData yang bermasalah
+function replaceProblematicLoadDashboardData() {
+    // Override fungsi yang bermasalah
+    window.originalLoadDashboardData = window.loadDashboardData;
+
+    window.loadDashboardData = async function() {
+        console.log('🔄 Using fixed loadDashboardData...');
+        return await testDirectApiCall();
+    };
+}
+
 // Panggil fungsi debugging saat halaman dimuat
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Starting comprehensive debugging...');
@@ -209,14 +386,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Aktifkan network monitoring
     monitorNetworkRequests();
 
-    // Cek status server
-    await checkServerStatus();
+    // Test langsung dulu
+    console.log('\n=== DIRECT API TEST ===');
+    const directTestResult = await testDirectApiCall();
 
-    // Test API endpoint
-    await testApiEndpoint();
+    if (directTestResult) {
+        console.log('✅ Direct test berhasil! Dashboard sudah diupdate.');
+        return; // Skip loadDashboardData jika direct test berhasil
+    }
 
-    // Load dashboard data dengan debugging
-    await loadDashboardData();
+    // Jika direct test gagal, lakukan step-by-step debugging
+    console.log('\n=== STEP-BY-STEP DEBUGGING ===');
+    const debugResult = await debugResponseStepByStep();
+
+    if (debugResult) {
+        console.log('✅ Step-by-step debugging berhasil');
+        const transformed = transformApiDataToDashboard(debugResult);
+        updateDashboardUI(transformed);
+        return;
+    }
+
+    // Fallback ke loadDashboardData yang sudah diperbaiki
+    console.log('\n=== FALLBACK TO LOAD DASHBOARD DATA ===');
+    try {
+        await loadDashboardData();
+    } catch (error) {
+        console.error('💥 All methods failed:', error);
+        setDashboardDefaults();
+    }
 });
 
 // Variabel global untuk menyimpan data
