@@ -86,12 +86,44 @@ async function exportReportToPDF({
   const imgWidth = pageWidth - 30;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
   
-  // Pastikan ada ruang untuk penandatanganan
-  const maxContentHeight = 200; // Sisakan ruang untuk penandatanganan
-  const finalImgHeight = Math.min(imgHeight, maxContentHeight);
+  // Cek apakah perlu halaman baru untuk penandatanganan
+  const spaceNeeded = 80; // Ruang yang dibutuhkan untuk penandatanganan
+  const maxY = 250; // Batas maksimal sebelum perlu halaman baru
   
-  pdf.addImage(imgData, 'PNG', 15, y, imgWidth, finalImgHeight);
-  y += finalImgHeight + 15;
+  if (y + imgHeight + spaceNeeded > maxY) {
+    // Jika tabel terlalu panjang, bagi menjadi dua halaman
+    const availableHeight = maxY - y - 20;
+    pdf.addImage(imgData, 'PNG', 15, y, imgWidth, availableHeight);
+    
+    // Tambah halaman baru untuk sisa tabel dan penandatanganan
+    pdf.addPage();
+    y = 15;
+    
+    // Tambahkan sisa gambar jika ada
+    const remainingHeight = imgHeight - availableHeight;
+    if (remainingHeight > 0) {
+      const remainingCanvas = document.createElement('canvas');
+      const remainingCtx = remainingCanvas.getContext('2d');
+      remainingCanvas.width = canvas.width;
+      remainingCanvas.height = canvas.height - (availableHeight * canvas.width / imgWidth);
+      
+      remainingCtx.drawImage(canvas, 0, -(availableHeight * canvas.width / imgWidth));
+      const remainingImgData = remainingCanvas.toDataURL('image/png');
+      
+      pdf.addImage(remainingImgData, 'PNG', 15, y, imgWidth, remainingHeight);
+      y += remainingHeight + 15;
+    }
+  } else {
+    // Jika muat dalam satu halaman
+    pdf.addImage(imgData, 'PNG', 15, y, imgWidth, imgHeight);
+    y += imgHeight + 15;
+  }
+
+  // Pastikan ada ruang untuk penandatanganan
+  if (y > 220) {
+    pdf.addPage();
+    y = 15;
+  }
 
   // Penutup
   pdf.setFont('helvetica', 'normal');
