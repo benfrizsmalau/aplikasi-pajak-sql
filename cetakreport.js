@@ -27,53 +27,190 @@ async function exportReportToPDF({
   if (reportType === 'pembayaranReport') {
     // Buat container sementara yang hanya berisi statistik dan tabel
     const tempContainer = document.createElement('div');
-    tempContainer.style.width = '800px'; // Lebar tetap untuk konsistensi PDF
+    tempContainer.style.width = '900px'; // Lebar lebih besar untuk tabel yang lebih lebar
     tempContainer.style.backgroundColor = '#fff';
-    tempContainer.style.padding = '20px';
+    tempContainer.style.padding = '25px';
     tempContainer.style.fontFamily = 'Arial, sans-serif';
+    tempContainer.style.fontSize = '14px'; // Font size lebih besar
+    tempContainer.style.lineHeight = '1.4';
 
-    // Salin statistik pembayaran dengan styling
+    // Salin statistik pembayaran dengan styling yang lebih besar
     const pembayaranStats = reportSection.querySelector('.pembayaran-stats');
     if (pembayaranStats) {
       const statsClone = pembayaranStats.cloneNode(true);
       statsClone.style.display = 'flex';
-      statsClone.style.gap = '20px';
-      statsClone.style.marginBottom = '30px';
+      statsClone.style.gap = '25px';
+      statsClone.style.marginBottom = '35px';
       statsClone.style.flexWrap = 'wrap';
+      statsClone.style.fontSize = '16px'; // Font statistik lebih besar
 
-      // Pastikan styling statistik terbawa
+      // Pastikan styling statistik terbawa dengan ukuran yang lebih besar
       const statItems = statsClone.querySelectorAll('.pembayaran-stat');
       statItems.forEach(item => {
         item.style.flex = '1';
-        item.style.minWidth = '150px';
+        item.style.minWidth = '180px';
         item.style.textAlign = 'center';
-        item.style.padding = '15px';
-        item.style.border = '1px solid #ddd';
-        item.style.borderRadius = '8px';
+        item.style.padding = '20px';
+        item.style.border = '2px solid #ddd';
+        item.style.borderRadius = '10px';
         item.style.backgroundColor = '#f8f9fa';
+        item.style.fontSize = '16px';
+        item.style.fontWeight = 'bold';
+
+        // Styling untuk judul statistik
+        const h4 = item.querySelector('h4');
+        if (h4) {
+          h4.style.margin = '0 0 8px 0';
+          h4.style.fontSize = '14px';
+          h4.style.fontWeight = 'bold';
+          h4.style.color = '#333';
+        }
+
+        // Styling untuk nilai statistik
+        const div = item.querySelector('.pembayaran-value');
+        if (div) {
+          div.style.fontSize = '18px';
+          div.style.fontWeight = 'bold';
+          div.style.color = '#007bff';
+        }
       });
 
       tempContainer.appendChild(statsClone);
     }
 
-    // Salin tabel pembayaran dengan styling
+    // Salin tabel pembayaran dengan styling yang lebih baik
     const tableContainer = reportSection.querySelector('.table-container');
     if (tableContainer) {
       const tableClone = tableContainer.cloneNode(true);
-      tableClone.style.marginTop = '20px';
+      tableClone.style.marginTop = '25px';
+
+      // Styling untuk judul tabel
+      const h4 = tableClone.querySelector('h4');
+      if (h4) {
+        h4.style.fontSize = '16px';
+        h4.style.fontWeight = 'bold';
+        h4.style.marginBottom = '15px';
+        h4.style.color = '#333';
+      }
 
       // Pastikan tabel responsive dan rapi
       const tableResponsive = tableClone.querySelector('.table-responsive');
       if (tableResponsive) {
-        tableResponsive.style.overflowX = 'auto';
+        tableResponsive.style.overflowX = 'visible'; // Biarkan tabel penuh
       }
 
-      // Pastikan styling tabel terbawa
+      // Pastikan styling tabel terbawa dengan ukuran yang lebih besar
       const table = tableClone.querySelector('table');
       if (table) {
         table.style.width = '100%';
         table.style.borderCollapse = 'collapse';
-        table.style.marginTop = '10px';
+        table.style.marginTop = '15px';
+        table.style.fontSize = '12px'; // Font tabel lebih besar
+        table.style.border = '1px solid #ddd';
+
+        // Styling untuk header tabel dengan lebar kolom yang lebih proporsional
+        const thead = table.querySelector('thead');
+        if (thead) {
+          thead.style.backgroundColor = '#f8f9fa';
+          const ths = thead.querySelectorAll('th');
+          ths.forEach((th, index) => {
+            th.style.border = '1px solid #ddd';
+            th.style.padding = '12px 8px';
+            th.style.fontWeight = 'bold';
+            th.style.fontSize = '11px';
+            th.style.backgroundColor = '#e9ecef';
+            th.style.color = '#333';
+
+            // Atur lebar kolom yang lebih proporsional
+            switch(index) {
+              case 0: // ID Pembayaran
+                th.style.width = '80px';
+                th.style.textAlign = 'center';
+                break;
+              case 1: // ID Ketetapan
+                th.style.width = '90px';
+                th.style.textAlign = 'center';
+                break;
+              case 2: // NPWPD
+                th.style.width = '100px';
+                th.style.textAlign = 'center';
+                break;
+              case 3: // Nama Wajib Pajak
+                th.style.width = '150px';
+                th.style.textAlign = 'left';
+                break;
+              case 4: // Jenis Pajak
+                th.style.width = '120px';
+                th.style.textAlign = 'left';
+                break;
+              case 5: // Jumlah Bayar
+                th.style.width = '100px';
+                th.style.textAlign = 'right';
+                break;
+              case 6: // Status
+                th.style.width = '70px';
+                th.style.textAlign = 'center';
+                break;
+              case 7: // Tanggal Bayar
+                th.style.width = '90px';
+                th.style.textAlign = 'center';
+                break;
+            }
+          });
+        }
+
+        // Styling untuk body tabel dengan lebar kolom yang konsisten
+        const tbody = table.querySelector('tbody');
+        if (tbody) {
+          const trs = tbody.querySelectorAll('tr');
+          trs.forEach((tr, index) => {
+            tr.style.backgroundColor = index % 2 === 0 ? '#fff' : '#f8f9fa';
+            const tds = tr.querySelectorAll('td');
+            tds.forEach((td, tdIndex) => {
+              td.style.border = '1px solid #ddd';
+              td.style.padding = '10px 8px';
+              td.style.fontSize = '10px';
+              td.style.verticalAlign = 'top';
+
+              // Atur lebar kolom yang konsisten dengan header
+              switch(tdIndex) {
+                case 0: // ID Pembayaran
+                  td.style.width = '80px';
+                  td.style.textAlign = 'center';
+                  break;
+                case 1: // ID Ketetapan
+                  td.style.width = '90px';
+                  td.style.textAlign = 'center';
+                  break;
+                case 2: // NPWPD
+                  td.style.width = '100px';
+                  td.style.textAlign = 'center';
+                  break;
+                case 3: // Nama Wajib Pajak
+                  td.style.width = '150px';
+                  td.style.textAlign = 'left';
+                  td.style.wordWrap = 'break-word';
+                  break;
+                case 4: // Jenis Pajak
+                  td.style.width = '120px';
+                  td.style.textAlign = 'left';
+                  break;
+                case 5: // Jumlah Bayar
+                  td.style.width = '100px';
+                  td.style.textAlign = 'right';
+                  break;
+                case 6: // Status
+                  td.style.width = '70px';
+                  td.style.textAlign = 'center';
+                  break;
+                case 7: // Tanggal Bayar
+                  td.style.width = '90px';
+                  td.style.textAlign = 'center';
+                  break;
+              }
+            });
+          });
+        }
       }
 
       tempContainer.appendChild(tableClone);
