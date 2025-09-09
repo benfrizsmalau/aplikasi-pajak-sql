@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Ketetapan - Aplikasi Pajak Daerah</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="page-tambah-ketetapan">
+
+    <div class="instansi-header">
+        <img src="images/logo.png" alt="Logo" class="instansi-logo">
+        <div class="instansi-text">
+            <div class="instansi-title">APLIKASI SISTEM INFORMASI PENDAPATAN DAERAH</div>
+            <div class="instansi-sub">BIDANG PENDAPATAN DAERAH</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <nav>
+            <a href="index.html">Dasbor</a>
+            <a href="tambah-data.html">Tambah Data WP</a>
+            <a href="lihat-data.html">Lihat Data WP</a>
+            <a href="tambah-ketetapan.html" class="active">Buat Ketetapan</a>
+            <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
+            <a href="setoran-pajak.html">Setoran Pajak</a>
+            <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="daftar-fiskal.html">Daftar Fiskal</a>
+            <a href="review-wajib-pajak.html">Review Data WP</a>
+            <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <main class="container">
+            <div class="wp-form-card">
+                <h2 class="form-title">📋 Form Buat Ketetapan Pajak/Retribusi</h2>
+                <p style="margin-bottom: 20px; color: #666; font-size: 0.95rem;">Formulir untuk membuat ketetapan pajak atau retribusi baru bagi wajib pajak yang sudah terdaftar.</p>
+                
+                <form id="ketetapanForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="ketetapanNpwpd">NPWPD</label>
+                            <input type="text" id="ketetapanNpwpd" required placeholder="Masukkan NPWPD">
+                            <div class="form-helper">Nomor Pokok Wajib Pajak Daerah yang sudah terdaftar</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ketetapanLayanan">Jenis Pajak/Retribusi</label>
+                            <select id="ketetapanLayanan" required>
+                                <option value="">-- Pilih Jenis Pajak --</option>
+                            </select>
+                            <div class="form-helper">Pilih jenis pajak atau retribusi yang akan dikenakan</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ketetapanMasaPajak">Masa Pajak</label>
+                            <input type="text" id="ketetapanMasaPajak" required placeholder="Contoh: Juli 2025">
+                            <div class="form-helper">Periode masa pajak yang dikenakan ketetapan</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ketetapanJumlahPokok">Jumlah Pokok (Rp)</label>
+                            <input type="number" id="ketetapanJumlahPokok" required placeholder="Hanya angka">
+                            <div class="form-helper">Jumlah pokok pajak yang harus dibayar</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="tglTunggakan">Tanggal Mulai Tunggakan</label>
+                            <input type="date" id="tglTunggakan">
+                            <div class="form-helper">Isi hanya jika ada tunggakan dari masa lalu</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="catatan">Catatan</label>
+                            <input type="text" id="catatan" placeholder="Keterangan tambahan...">
+                            <div class="form-helper">Catatan atau keterangan tambahan untuk ketetapan ini</div>
+                        </div>
+                    </div>
+                    <button type="submit" id="submitKetetapanButton">📋 Buat Ketetapan</button>
+                    <div id="status"></div>
+                </form>
+            </div>
+        </main>
+    </div>
+    
+    <script src="script.js"></script>
+    <div class="watermark-footer">MADE BY REYNOLDS</div>
+</body>
+</html>
