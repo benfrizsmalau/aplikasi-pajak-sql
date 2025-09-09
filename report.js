@@ -56,14 +56,21 @@ function changeReportType() {
         selectedSection.style.display = 'block';
     }
 
-    // Show filter periode untuk semua laporan
+    // Show/hide filters based on report type
+    const revenueYearFilter = document.getElementById('revenueYearFilter');
     const dateRangeFilter = document.getElementById('dateRangeFilter');
     const customDateGroup = document.getElementById('customDateGroup');
-    dateRangeFilter.style.display = 'flex';
-    if (document.getElementById('dateRange').value === 'custom') {
-        customDateGroup.style.display = 'flex';
-    } else {
+
+    if (reportType === 'revenue') {
+        revenueYearFilter.style.display = 'flex';
+        dateRangeFilter.style.display = 'none';
         customDateGroup.style.display = 'none';
+    } else {
+        revenueYearFilter.style.display = 'none';
+        dateRangeFilter.style.display = 'flex';
+        if (document.getElementById('dateRange').value === 'custom') {
+            customDateGroup.style.display = 'flex';
+        }
     }
 
     loadReportData();
@@ -109,38 +116,46 @@ async function loadReportData() {
 }
 
 function getDateRange() {
-    const dateRange = document.getElementById('dateRange').value;
+    const reportType = document.getElementById('reportType').value;
     const today = new Date();
     let startDate, endDate;
-    switch (dateRange) {
-        case 'today':
-            startDate = new Date(today);
-            endDate = new Date(today);
-            break;
-        case 'week':
-            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-            endDate = new Date(today);
-            break;
-        case 'month':
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-            endDate = new Date(today);
-            break;
-        case 'quarter':
-            const quarter = Math.floor(today.getMonth() / 3);
-            startDate = new Date(today.getFullYear(), quarter * 3, 1);
-            endDate = new Date(today);
-            break;
-        case 'year':
-            startDate = new Date(today.getFullYear(), 0, 1);
-            endDate = new Date(today);
-            break;
-        case 'custom':
-            startDate = new Date(document.getElementById('startDate').value);
-            endDate = new Date(document.getElementById('endDate').value);
-            break;
-        default:
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-            endDate = new Date(today);
+
+    if (reportType === 'revenue') {
+        const year = document.getElementById('dateRangeTahun').value;
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31, 23, 59, 59);
+    } else {
+        const dateRange = document.getElementById('dateRange').value;
+        switch (dateRange) {
+            case 'today':
+                startDate = new Date(today);
+                endDate = new Date(today);
+                break;
+            case 'week':
+                startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                endDate = new Date(today);
+                break;
+            case 'month':
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today);
+                break;
+            case 'quarter':
+                const quarter = Math.floor(today.getMonth() / 3);
+                startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                endDate = new Date(today);
+                break;
+            case 'year':
+                startDate = new Date(today.getFullYear(), 0, 1);
+                endDate = new Date(today);
+                break;
+            case 'custom':
+                startDate = new Date(document.getElementById('startDate').value);
+                endDate = new Date(document.getElementById('endDate').value);
+                break;
+            default:
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today);
+        }
     }
     return {
         startDate,
@@ -261,45 +276,6 @@ function updateRevenueReport(data) {
     const breakdownContainer = document.getElementById('revenueBreakdown');
     breakdownContainer.innerHTML = '';
 
-    // --- Perhitungan total tetap dipertahankan ---
-    let totalKetetapan = 0;
-    let totalRealisasi = 0;
-    let totalKontribusi = 0;
-    let totalCapaian = 0;
-    let countCapaian = 0;
-    const realisasiByKode = {};
-    pembayaranList.forEach(p => {
-        if (p.StatusPembayaran !== 'Sukses') return;
-        const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
-        if (!ketetapan) return;
-        const kode = ketetapan.KodeLayanan;
-        if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
-        const amount = parseFloat(p.JumlahBayar) || 0;
-        realisasiByKode[kode] += amount;
-        totalRealisasi += amount;
-    });
-    masterList.forEach(row => {
-        const kode = row.KodeLayanan;
-        const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
-        const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
-        totalKetetapan += target;
-    });
-    masterList.forEach(row => {
-        const kode = row.KodeLayanan;
-        const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == tahunDipilih);
-        const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
-        const realisasi = realisasiByKode[kode] || 0;
-        if (target > 0) {
-            totalCapaian += (realisasi / target * 100);
-            countCapaian++;
-        }
-    });
-    const rataCapaian = countCapaian > 0 ? (totalCapaian / countCapaian).toFixed(1) : 0;
-
-    // --- KARTU STATISTIK DIHILANGKAN ---
-    // (Bagian statCard dihapus, hanya tabel dan baris total yang tampil)
-
-    // --- HEADER TABEL ---
     const header = document.createElement('div');
     header.className = 'revenue-header';
     header.style.cssText = 'display: flex; font-weight: bold; gap: 16px; margin-bottom: 8px; padding: 8px; background-color: #f4f6f8; border-radius: 4px;';
@@ -312,10 +288,20 @@ function updateRevenueReport(data) {
     `;
     breakdownContainer.appendChild(header);
 
-    // --- ISI TABEL ---
-    let totalKontribusiTabel = 0;
-    let totalCapaianTabel = 0;
-    let countCapaianTabel = 0;
+    let totalRealisasi = 0;
+    const realisasiByKode = {};
+    pembayaranList.forEach(p => {
+        if (p.StatusPembayaran !== 'Sukses') return;
+        const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+        if (!ketetapan) return;
+        const kode = ketetapan.KodeLayanan;
+        if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
+        const amount = parseFloat(p.JumlahBayar) || 0;
+        realisasiByKode[kode] += amount;
+        totalRealisasi += amount;
+    });
+
+    const revenueForChart = {};
     masterList.forEach(row => {
         const kode = row.KodeLayanan;
         const nama = row.NamaLayanan;
@@ -324,11 +310,11 @@ function updateRevenueReport(data) {
         const realisasi = realisasiByKode[kode] || 0;
         const kontribusi = totalRealisasi > 0 ? (realisasi / totalRealisasi * 100).toFixed(1) : 0;
         const capaian = target > 0 ? (realisasi / target * 100).toFixed(1) : 0;
-        totalKontribusiTabel += parseFloat(kontribusi);
-        if (target > 0) {
-            totalCapaianTabel += parseFloat(capaian);
-            countCapaianTabel++;
+
+        if (realisasi > 0) {
+            revenueForChart[nama] = realisasi;
         }
+
         const item = document.createElement('div');
         item.className = 'revenue-item';
         item.style.cssText = 'display: flex; gap: 16px; padding: 8px; border-bottom: 1px solid #e0e0e0; align-items: center;';
@@ -342,29 +328,6 @@ function updateRevenueReport(data) {
         breakdownContainer.appendChild(item);
     });
 
-    // --- BARIS TOTAL DI BAWAH TABEL ---
-    const totalRow = document.createElement('div');
-    totalRow.className = 'revenue-total-row';
-    totalRow.style.cssText = 'display: flex; gap: 16px; padding: 10px 8px; font-weight: bold; background: #e9ecef; border-radius: 4px; margin-top: 4px;';
-    totalRow.innerHTML = `
-        <span style="flex: 3; text-align: right;">TOTAL</span>
-        <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalRealisasi)}</span>
-        <span style="flex: 2; text-align: right;">${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalKetetapan)}</span>
-        <span style="flex: 1; text-align: center;">100%</span>
-        <span style="flex: 1; text-align: center; color: #007bff;">${countCapaianTabel > 0 ? (totalCapaianTabel / countCapaianTabel).toFixed(1) : 0}%</span>
-    `;
-    breakdownContainer.appendChild(totalRow);
-
-    // Update chart
-    const revenueForChart = {};
-    masterList.forEach(row => {
-        const kode = row.KodeLayanan;
-        const nama = row.NamaLayanan;
-        const realisasi = realisasiByKode[kode] || 0;
-        if (realisasi > 0) {
-            revenueForChart[nama] = realisasi;
-        }
-    });
     updateRevenueChart(revenueForChart);
 }
 
@@ -628,65 +591,60 @@ function updatePerformanceChart(data) {
 }
 
 function exportReport() {
-    // Hanya aktif untuk reportType 'revenue'
     const reportType = document.getElementById('reportType').value;
-    if (reportType !== 'revenue') {
-        alert('Export PDF hanya tersedia untuk Laporan Pendapatan!');
+    const reportSection = document.getElementById(reportType + 'Report');
+    
+    if (!reportSection) {
+        alert('Bagian laporan tidak ditemukan!');
         return;
     }
-    const tahun = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
-    const periodeLabel = getPeriodeLabel();
-    const { startDate, endDate } = getDateRange();
-    if (typeof window.exportPendapatanToPDF === 'function') {
-        window.exportPendapatanToPDF({
-            reportData,
-            periodeLabel,
-            tahun,
-            startDate,
-            endDate
-        });
+    
+    const reportNames = {
+        'summary': 'Laporan Ringkasan Umum',
+        'revenue': 'Laporan Pendapatan',
+        'wp': 'Laporan Wajib Pajak',
+        'ketetapan': 'Laporan Ketetapan',
+        'pembayaran': 'Laporan Pembayaran',
+        'fiskal': 'Laporan Fiskal',
+        'performance': 'Laporan Kinerja'
+    };
+    
+    const namaLaporan = reportNames[reportType] || 'Laporan';
+    
+    if (reportType === 'revenue' && typeof exportPendapatanToPDF === 'function') {
+        // Gunakan fungsi khusus untuk laporan pendapatan
+        const ctx = window.getPendapatanExportContext ? window.getPendapatanExportContext() : {
+            reportData: reportData,
+            periodeLabel: `Tahun ${new Date().getFullYear()}`,
+            tahun: new Date().getFullYear(),
+            startDate: new Date(new Date().getFullYear(), 0, 1),
+            endDate: new Date()
+        };
+        exportPendapatanToPDF(ctx);
     } else {
-        alert('Fungsi export PDF belum tersedia!');
+        // Gunakan fungsi umum untuk laporan lainnya
+        exportReportToPDF({
+            reportType: reportType + 'Report',
+            namaLaporan: namaLaporan,
+            namaDinas: 'PEMERINTAH KABUPATEN MAMBERAMO RAYA'
+        });
     }
-}
-
-// Helper label periode dinamis
-function getPeriodeLabel() {
-    const tahun = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
-    const dateRange = document.getElementById('dateRange')?.value;
-    if (dateRange === undefined) return `Tahun ${tahun}`;
-    if (dateRange === 'custom') {
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        if (start && end) {
-            const s = new Date(start);
-            const e = new Date(end);
-            return `${s.getDate()} ${getNamaBulan(s.getMonth())} ${s.getFullYear()} – ${e.getDate()} ${getNamaBulan(e.getMonth())} ${e.getFullYear()}`;
-        }
-    }
-    if (dateRange === 'month') {
-        const now = new Date();
-        return `${getNamaBulan(now.getMonth())} ${tahun}`;
-    }
-    if (dateRange === 'quarter') {
-        const now = new Date();
-        const q = Math.floor(now.getMonth() / 3) + 1;
-        return `Triwulan ${q} ${tahun}`;
-    }
-    if (dateRange === 'year') {
-        return `Tahun ${tahun}`;
-    }
-    // Default: tampilkan bulan berjalan
-    const now = new Date();
-    return `${getNamaBulan(now.getMonth())} ${tahun}`;
-}
-function getNamaBulan(idx) {
-    return [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ][idx] || '';
 }
 
 function exportExcel() {
     alert('Fitur export Excel akan segera tersedia');
 }
+
+// Context function untuk laporan pendapatan
+window.getPendapatanExportContext = function() {
+    const tahun = document.getElementById('dateRangeTahun')?.value || new Date().getFullYear();
+    const dateRange = getDateRange();
+    
+    return {
+        reportData: reportData,
+        periodeLabel: `Tahun ${tahun}`,
+        tahun: tahun,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+    };
+};
