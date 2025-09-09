@@ -611,11 +611,51 @@ function exportReport() {
     
     const namaLaporan = reportNames[reportType] || 'Laporan';
     
+    // Dapatkan periode laporan berdasarkan jenis laporan
+    let periodeLabel = '';
+    if (reportType === 'revenue') {
+        const tahun = document.getElementById('dateRangeTahun')?.value || new Date().getFullYear();
+        periodeLabel = `Tahun ${tahun}`;
+    } else {
+        const dateRangeValue = document.getElementById('dateRange').value;
+        const today = new Date();
+        
+        switch (dateRangeValue) {
+            case 'today':
+                periodeLabel = `Tanggal ${today.toLocaleDateString('id-ID')}`;
+                break;
+            case 'week':
+                periodeLabel = 'Minggu Ini';
+                break;
+            case 'month':
+                periodeLabel = `Bulan ${today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+                break;
+            case 'quarter':
+                const quarter = Math.floor(today.getMonth() / 3) + 1;
+                periodeLabel = `Triwulan ${quarter} Tahun ${today.getFullYear()}`;
+                break;
+            case 'year':
+                periodeLabel = `Tahun ${today.getFullYear()}`;
+                break;
+            case 'custom':
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                if (startDate && endDate) {
+                    periodeLabel = `${new Date(startDate).toLocaleDateString('id-ID')} s/d ${new Date(endDate).toLocaleDateString('id-ID')}`;
+                } else {
+                    periodeLabel = 'Periode Kustom';
+                }
+                break;
+            default:
+                periodeLabel = `Bulan ${today.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+        }
+    }
+    
     if (reportType === 'revenue' && typeof exportPendapatanToPDF === 'function') {
         // Gunakan fungsi khusus untuk laporan pendapatan
         const ctx = window.getPendapatanExportContext ? window.getPendapatanExportContext() : {
             reportData: reportData,
-            periodeLabel: `Tahun ${new Date().getFullYear()}`,
+            periodeLabel: periodeLabel,
             tahun: new Date().getFullYear(),
             startDate: new Date(new Date().getFullYear(), 0, 1),
             endDate: new Date()
@@ -626,7 +666,11 @@ function exportReport() {
         exportReportToPDF({
             reportType: reportType + 'Report',
             namaLaporan: namaLaporan,
-            namaDinas: 'PEMERINTAH KABUPATEN MAMBERAMO RAYA'
+            periodeLabel: periodeLabel,
+            namaDinas: 'PEMERINTAH KABUPATEN MAMBERAMO RAYA',
+            ttdNama: '',
+            ttdPangkat: '',
+            ttdNip: ''
         });
     }
 }

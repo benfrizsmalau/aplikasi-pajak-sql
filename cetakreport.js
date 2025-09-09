@@ -9,7 +9,9 @@ async function exportReportToPDF({
   kopDinasUrl = 'images/logo.png',
   namaDinas = 'PEMERINTAH KABUPATEN/KOTA',
   namaLaporan = 'Laporan Pendapatan',
+  periodeLabel = '',
   ttdNama = '',
+  ttdPangkat = '',
   ttdNip = ''
 } = {}) {
   // Ambil elemen laporan yang ingin di-export
@@ -68,7 +70,17 @@ async function exportReportToPDF({
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
   pdf.text(namaLaporan, pageWidth / 2, y + 8, { align: 'center' });
-  y += 15;
+  y += 7;
+  
+  // Periode laporan
+  if (periodeLabel) {
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(11);
+    pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y + 8, { align: 'center' });
+    y += 10;
+  } else {
+    y += 5;
+  }
 
   // Gambar isi laporan (tabel)
   const imgWidth = pageWidth - 30;
@@ -76,17 +88,17 @@ async function exportReportToPDF({
   pdf.addImage(imgData, 'PNG', 15, y, imgWidth, imgHeight);
   y += imgHeight + 10;
 
-  // Penutup dan tanda tangan
+  // Penutup
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
-  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y + 10, { align: 'left' });
-  y += 20;
+  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y, { align: 'left' });
+  y += 10;
   
   // Tanggal dan tempat
   const xTanggal = pageWidth - 80;
-  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
-  y += 7;
   pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
+  y += 7;
+  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
   y += 10;
   
   // Tanda tangan
@@ -98,9 +110,11 @@ async function exportReportToPDF({
   pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('Nama : ' + (ttdNama || '..........................................'), xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('Pangkat : ' + (ttdPangkat || '..........................................'), xTanggal, y, { align: 'left' });
+  y += 6;
+  pdf.text('NIP : ' + (ttdNip || '..........................................'), xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save(`${namaLaporan.replace(/\s+/g, '_')}.pdf`);
