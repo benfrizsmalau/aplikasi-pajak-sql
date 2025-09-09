@@ -376,7 +376,19 @@ async function handleDeleteKetetapanClick(idKetetapan) {
     try {
         const result = await postData({ action: 'deleteKetetapan', id_ketetapan: idKetetapan });
         alert(result.message || 'Ketetapan berhasil dihapus.');
-        location.reload();
+
+        // Check if we're on the daftar-ketetapan page and refresh data accordingly
+        if (window.location.pathname.includes('daftar-ketetapan.html')) {
+            // Use the local loadKetetapanData function if available
+            if (typeof loadKetetapanData === 'function') {
+                await loadKetetapanData();
+            } else {
+                location.reload();
+            }
+        } else {
+            // For other pages, reload the page
+            location.reload();
+        }
     } catch (error) {
         alert('Gagal menghapus ketetapan: ' + error.message);
     }
@@ -949,53 +961,6 @@ function performStandardSearch(data, displayFunction) {
     displayFunction(filteredData);
 }
 
-// Tambahkan/ubah fungsi loadKetetapanData agar selalu update dataKetetapanGlobal
-async function loadKetetapanData() {
-    try {
-        const data = await fetchAllData();
-        dataKetetapanGlobal = data.ketetapan || [];
-        wajibPajakDataGlobal = data.wajibPajak || [];
-        masterPajakDataGlobal = data.masterPajak || [];
-        pembayaranDataGlobal = data.pembayaran || [];
-        // Render tabel ketetapan
-        displayKetetapanHistory(dataKetetapanGlobal, masterPajakDataGlobal);
-    } catch (error) {
-        document.querySelector('#ketetapanTable tbody').innerHTML = 
-            '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data.</td></tr>';
-    }
-}
-// Pastikan loadKetetapanData dipanggil setelah edit/hapus/tambah
-async function handleUpdateKetetapanSubmit(event) {
-    event.preventDefault();
-    const updateButton = document.getElementById('updateKetetapanButton');
-    updateButton.disabled = true; updateButton.textContent = 'Menyimpan...';
-    try {
-        const updatedData = {
-            action: 'updateKetetapan', id_ketetapan: document.getElementById('editKetetapanId').value,
-            masaPajak: document.getElementById('editKetetapanMasaPajak').value,
-            jumlahPokok: document.getElementById('editKetetapanJumlahPokok').value,
-            catatan: document.getElementById('editKetetapanCatatan').value
-        };
-        const result = await postData(updatedData);
-        alert(result.message || 'Ketetapan berhasil diperbarui!');
-        document.getElementById('editKetetapanModal').style.display = 'none';
-        await loadKetetapanData(); // refresh data setelah edit
-    } catch (error) {
-        alert('Gagal memperbarui data: ' + error.message);
-    } finally {
-        updateButton.disabled = false; updateButton.textContent = 'Simpan Perubahan';
-    }
-}
-async function handleDeleteKetetapanClick(idKetetapan) {
-    if (!confirm(`Anda yakin ingin menghapus ketetapan dengan ID: ${idKetetapan}?`)) return;
-    try {
-        const result = await postData({ action: 'deleteKetetapan', id_ketetapan: idKetetapan });
-        alert(result.message || 'Ketetapan berhasil dihapus.');
-        await loadKetetapanData(); // refresh data setelah hapus
-    } catch (error) {
-        alert('Gagal menghapus ketetapan: ' + error.message);
-    }
-}
 
 async function loadDashboardData() {
     try {

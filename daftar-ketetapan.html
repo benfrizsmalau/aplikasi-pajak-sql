@@ -335,7 +335,7 @@
             }
         });
 
-        prosesBtn.addEventListener('click', function() {
+        prosesBtn.addEventListener('click', async function() {
             const aksi = aksiSelect.value;
             const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
             const ids = Array.from(checked).map(cb => cb.value);
@@ -350,15 +350,35 @@
                 }
             } else if (aksi === 'delete') {
                 if (confirm(`Anda yakin ingin menghapus ${ids.length} ketetapan?`)) {
-                    ids.forEach(async (id) => {
-                        try {
-                            await postData({ action: 'deleteKetetapan', id_ketetapan: id });
-                        } catch (error) {
-                            console.error('Gagal hapus ketetapan:', error);
+                    try {
+                        // Wait for all deletions to complete
+                        const deletePromises = ids.map(async (id) => {
+                            try {
+                                const result = await postData({ action: 'deleteKetetapan', id_ketetapan: id });
+                                return { id, success: true, message: result.message };
+                            } catch (error) {
+                                console.error('Gagal hapus ketetapan:', id, error);
+                                return { id, success: false, error: error.message };
+                            }
+                        });
+
+                        const results = await Promise.all(deletePromises);
+                        const successful = results.filter(r => r.success).length;
+                        const failed = results.filter(r => !r.success).length;
+
+                        if (failed === 0) {
+                            alert(`Semua ${successful} ketetapan berhasil dihapus!`);
+                        } else {
+                            alert(`${successful} ketetapan berhasil dihapus, ${failed} gagal dihapus.`);
                         }
-                    });
-                    alert('Ketetapan berhasil dihapus!');
-                    loadKetetapanData();
+
+                        // Refresh data after all operations complete
+                        await loadKetetapanData();
+                    } catch (error) {
+                        console.error('Error during bulk delete:', error);
+                        alert('Terjadi kesalahan saat menghapus data.');
+                        await loadKetetapanData();
+                    }
                 }
             } else if (aksi === 'edit') {
                 if (ids.length === 1) {
@@ -524,17 +544,42 @@
           updateProsesBtn();
         }
       });
-      prosesBtn.addEventListener('click', function() {
+      prosesBtn.addEventListener('click', async function() {
         const aksi = aksiSelect.value;
         const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
         const ids = Array.from(checked).map(cb => cb.value);
         if (!aksi || ids.length === 0) return;
         if (aksi === 'delete') {
           if (confirm('Yakin hapus data terpilih?')) {
-            ids.forEach(async id => {
-              await handleDeleteKetetapanClick(id);
-            });
-            setTimeout(() => loadKetetapanData(), 500);
+            try {
+              // Wait for all deletions to complete
+              const deletePromises = ids.map(async (id) => {
+                try {
+                  const result = await postData({ action: 'deleteKetetapan', id_ketetapan: id });
+                  return { id, success: true, message: result.message };
+                } catch (error) {
+                  console.error('Gagal hapus ketetapan:', id, error);
+                  return { id, success: false, error: error.message };
+                }
+              });
+
+              const results = await Promise.all(deletePromises);
+              const successful = results.filter(r => r.success).length;
+              const failed = results.filter(r => !r.success).length;
+
+              if (failed === 0) {
+                alert(`Semua ${successful} ketetapan berhasil dihapus!`);
+              } else {
+                alert(`${successful} ketetapan berhasil dihapus, ${failed} gagal dihapus.`);
+              }
+
+              // Refresh data after all operations complete
+              await loadKetetapanData();
+            } catch (error) {
+              console.error('Error during bulk delete:', error);
+              alert('Terjadi kesalahan saat menghapus data.');
+              await loadKetetapanData();
+            }
           }
         } else if (aksi === 'print') {
           // Print satu: buka cetak-skpd.html?id=ID, banyak: buka cetak-skpd-multi.html?ids=ID1,ID2,...
