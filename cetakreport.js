@@ -21,8 +21,83 @@ async function exportReportToPDF({
     return;
   }
 
-  // Buat canvas dari elemen laporan
-  const canvas = await html2canvas(reportSection, { scale: 2 });
+  let elementToCapture = reportSection;
+
+  // Khusus untuk laporan pembayaran: hanya ambil statistik dan tabel, bukan chart
+  if (reportType === 'pembayaranReport') {
+    // Buat container sementara yang hanya berisi statistik dan tabel
+    const tempContainer = document.createElement('div');
+    tempContainer.style.width = '800px'; // Lebar tetap untuk konsistensi PDF
+    tempContainer.style.backgroundColor = '#fff';
+    tempContainer.style.padding = '20px';
+    tempContainer.style.fontFamily = 'Arial, sans-serif';
+
+    // Salin statistik pembayaran dengan styling
+    const pembayaranStats = reportSection.querySelector('.pembayaran-stats');
+    if (pembayaranStats) {
+      const statsClone = pembayaranStats.cloneNode(true);
+      statsClone.style.display = 'flex';
+      statsClone.style.gap = '20px';
+      statsClone.style.marginBottom = '30px';
+      statsClone.style.flexWrap = 'wrap';
+
+      // Pastikan styling statistik terbawa
+      const statItems = statsClone.querySelectorAll('.pembayaran-stat');
+      statItems.forEach(item => {
+        item.style.flex = '1';
+        item.style.minWidth = '150px';
+        item.style.textAlign = 'center';
+        item.style.padding = '15px';
+        item.style.border = '1px solid #ddd';
+        item.style.borderRadius = '8px';
+        item.style.backgroundColor = '#f8f9fa';
+      });
+
+      tempContainer.appendChild(statsClone);
+    }
+
+    // Salin tabel pembayaran dengan styling
+    const tableContainer = reportSection.querySelector('.table-container');
+    if (tableContainer) {
+      const tableClone = tableContainer.cloneNode(true);
+      tableClone.style.marginTop = '20px';
+
+      // Pastikan tabel responsive dan rapi
+      const tableResponsive = tableClone.querySelector('.table-responsive');
+      if (tableResponsive) {
+        tableResponsive.style.overflowX = 'auto';
+      }
+
+      // Pastikan styling tabel terbawa
+      const table = tableClone.querySelector('table');
+      if (table) {
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '10px';
+      }
+
+      tempContainer.appendChild(tableClone);
+    }
+
+    // Sembunyikan sementara dari DOM utama
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '-9999px';
+    tempContainer.style.zIndex = '-1';
+    document.body.appendChild(tempContainer);
+
+    elementToCapture = tempContainer;
+
+    // Setelah capture, hapus container sementara
+    setTimeout(() => {
+      if (document.body.contains(tempContainer)) {
+        document.body.removeChild(tempContainer);
+      }
+    }, 100);
+  }
+
+  // Buat canvas dari elemen laporan (atau container sementara untuk pembayaran)
+  const canvas = await html2canvas(elementToCapture, { scale: 2 });
   const imgData = canvas.toDataURL('image/png');
 
   // Siapkan dokumen PDF
