@@ -47,6 +47,8 @@ async function getAuthClient() {
 
 // Handler utama Netlify Function
 exports.handler = async (event) => {
+    console.log('API Handler started for method:', event.httpMethod, 'path:', event.path);
+
     // Pastikan Content-Type adalah application/json
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -54,12 +56,13 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Content-Type': 'application/json', // Tambahkan ini untuk memastikan response JSON
     };
-    
+
     if (event.httpMethod === 'OPTIONS') {
-        return { 
-            statusCode: 200, 
+        console.log('API Handler: Handling OPTIONS request');
+        return {
+            statusCode: 200,
             headers,
-            body: '' 
+            body: ''
         };
     }
 
@@ -131,28 +134,46 @@ exports.handler = async (event) => {
         
         const successResponse = { status: 'sukses', ...responseData };
         console.log('API Success Response:', successResponse);
-        
+
+        let body;
+        try {
+            body = JSON.stringify(successResponse);
+            console.log('API Handler: Response serialized successfully, body length:', body.length);
+        } catch (stringifyError) {
+            console.error('API Error serializing success response:', stringifyError);
+            body = JSON.stringify({ status: 'gagal', message: 'Error serializing response data' });
+        }
+
+        console.log('API Handler finished successfully');
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify(successResponse),
+            body: body,
         };
 
     } catch (error) {
         console.error('API ERROR:', error);
-        
-        const errorResponse = { 
-            status: 'gagal', 
+
+        const errorResponse = {
+            status: 'gagal',
             message: error.message || 'Terjadi error pada server.',
             timestamp: new Date().toISOString()
         };
-        
+
         console.log('API Error Response:', errorResponse);
-        
-        return { 
-            statusCode: 500, 
-            headers, 
-            body: JSON.stringify(errorResponse)
+
+        let body;
+        try {
+            body = JSON.stringify(errorResponse);
+        } catch (stringifyError) {
+            console.error('API Error serializing error response:', stringifyError);
+            body = '{"status":"gagal","message":"Internal server error"}';
+        }
+
+        return {
+            statusCode: 500,
+            headers,
+            body: body
         };
     }
 };

@@ -1171,6 +1171,10 @@ async function loadDashboardData() {
                 timeout: 10000 // 10 second timeout
             });
 
+            // Debug logging for response details
+            console.log('loadDashboardData: Response status:', response.status, response.statusText);
+            console.log('loadDashboardData: Response headers:', Object.fromEntries(response.headers.entries()));
+
             // Check if response has content
             const contentLength = response.headers.get('content-length');
             const contentType = response.headers.get('content-type');
@@ -1195,6 +1199,7 @@ async function loadDashboardData() {
             try {
                 const responseText = await response.text();
                 console.log('loadDashboardData: Raw response text length:', responseText.length);
+                console.log('loadDashboardData: Response text (first 500 chars):', responseText.substring(0, 500));
 
                 if (!responseText || responseText.trim() === '') {
                     console.warn('loadDashboardData: Empty response text, setting default values');
@@ -1204,8 +1209,11 @@ async function loadDashboardData() {
 
                 data = JSON.parse(responseText);
                 console.log('loadDashboardData: Successfully parsed data');
+                console.log('loadDashboardData: Parsed data keys:', Object.keys(data));
             } catch (jsonError) {
-                console.warn('loadDashboardData: JSON parsing failed, setting default values:', jsonError.message);
+                console.error('loadDashboardData: JSON parsing failed:', jsonError);
+                console.error('loadDashboardData: Response text that failed to parse:', responseText);
+                console.warn('loadDashboardData: Setting default values due to JSON error');
                 setDashboardDefaults();
                 return; // Exit gracefully
             }
