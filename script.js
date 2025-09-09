@@ -31,6 +31,194 @@ window.addEventListener('error', function(event) {
     }
 });
 
+// Tambahkan debugging yang lebih detail pada fungsi loadDashboardData
+async function loadDashboardData() {
+    console.log('🔄 loadDashboardData: Starting dashboard data load process');
+
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`🔄 loadDashboardData: Attempt ${attempt}/${maxRetries} - Making API request`);
+
+            const startTime = performance.now();
+            const response = await fetch('/.netlify/functions/api', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            const endTime = performance.now();
+
+            console.log(`✅ loadDashboardData: Response received in ${Math.round(endTime - startTime)}ms`);
+            console.log('📊 loadDashboardData: Response status:', response.status);
+            console.log('📋 loadDashboardData: Response headers:', response.headers);
+
+            // Debug response headers
+            for (let [key, value] of response.headers.entries()) {
+                console.log(`📄 Header ${key}: ${value}`);
+            }
+
+            console.log('📏 loadDashboardData: Content-Length:', response.headers.get('content-length'), 'Content-Type:', response.headers.get('content-type'));
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Clone response untuk debugging
+            const responseClone = response.clone();
+
+            // Cek apakah response body kosong
+            const text = await responseClone.text();
+            console.log('📝 Raw response text:', text);
+            console.log('📏 Response text length:', text.length);
+
+            if (!text || text.length === 0) {
+                console.log('⚠️ loadDashboardData: Empty response body detected');
+                throw new Error('Empty response body');
+            }
+
+            // Parse JSON
+            let data;
+            try {
+                data = JSON.parse(text);
+                console.log('✅ JSON parsed successfully:', data);
+            } catch (jsonError) {
+                console.error('❌ JSON parsing error:', jsonError);
+                console.log('🔍 Problematic text:', text.substring(0, 200));
+                throw new Error(`Invalid JSON response: ${jsonError.message}`);
+            }
+
+            if (!data || typeof data !== 'object') {
+                console.log('⚠️ loadDashboardData: Empty or invalid response detected');
+                console.log('🔍 loadDashboardData: Response details:', data);
+                throw new Error('Invalid data structure received');
+            }
+
+            console.log('🎉 loadDashboardData: Valid data received, processing...');
+
+            // Update dashboard dengan data yang diterima
+            updateDashboardWithData(data);
+            return data;
+
+        } catch (error) {
+            lastError = error;
+            console.error(`❌ loadDashboardData: Attempt ${attempt} failed:`, error);
+
+            if (attempt === maxRetries) {
+                console.error('💥 loadDashboardData: All attempts failed, using fallback');
+                setDashboardDefaults();
+                throw new Error(`Failed to load dashboard data after ${maxRetries} attempts: ${error.message}`);
+            } else {
+                // Wait before retry
+                const delay = Math.pow(2, attempt - 1) * 1000; // Exponential backoff
+                console.log(`⏳ Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+}
+
+// Fungsi untuk mengecek status server
+async function checkServerStatus() {
+    try {
+        const response = await fetch('/.netlify/functions/api', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        console.log('🏥 Server health check:', response.status);
+
+        if (response.ok) {
+            const healthData = await response.text();
+            console.log('🏥 Server response:', healthData);
+        }
+
+        return response.ok;
+    } catch (error) {
+        console.error('🚨 Server health check failed:', error);
+        return false;
+    }
+}
+
+// Fungsi untuk test koneksi ke API endpoint
+async function testApiEndpoint() {
+    console.log('🧪 Testing API endpoint...');
+
+    try {
+        // Test dengan berbagai metode
+        const methods = ['GET', 'POST'];
+
+        for (const method of methods) {
+            console.log(`🧪 Testing ${method} /.netlify/functions/api`);
+
+            const options = {
+                method: method,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (method === 'POST') {
+                options.body = JSON.stringify({});
+            }
+
+            try {
+                const response = await fetch('/.netlify/functions/api', options);
+                console.log(`📊 ${method} response:`, response.status, response.statusText);
+
+                const text = await response.text();
+                console.log(`📄 ${method} body:`, text.substring(0, 100));
+
+            } catch (error) {
+                console.error(`❌ ${method} failed:`, error);
+            }
+        }
+    } catch (error) {
+        console.error('🚨 API endpoint test failed:', error);
+    }
+}
+
+// Fungsi untuk cek network requests di browser
+function monitorNetworkRequests() {
+    // Override fetch untuk monitoring
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(...args) {
+        const [url, options] = args;
+        console.log('🌐 Network Request:', url, options);
+
+        try {
+            const response = await originalFetch.apply(this, args);
+            console.log('🌐 Network Response:', response.status, response.headers);
+            return response;
+        } catch (error) {
+            console.error('🌐 Network Error:', error);
+            throw error;
+        }
+    };
+}
+
+// Panggil fungsi debugging saat halaman dimuat
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Starting comprehensive debugging...');
+
+    // Aktifkan network monitoring
+    monitorNetworkRequests();
+
+    // Cek status server
+    await checkServerStatus();
+
+    // Test API endpoint
+    await testApiEndpoint();
+
+    // Load dashboard data dengan debugging
+    await loadDashboardData();
+});
+
 // Variabel global untuk menyimpan data
 let dataWajibPajakGlobal = [];
 let dataWilayahGlobal = [];
