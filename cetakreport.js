@@ -621,98 +621,110 @@ window.exportPotensiToPDF = async function() {
     const pageWidth = 297;
     let y = 18;
 
-    // Kop dinas
+    // Kop dinas dengan layout yang lebih proporsional
     try {
       const img = new Image();
       img.src = 'images/logo.png';
       await img.decode();
-      pdf.addImage(img, 'PNG', 15, y - 3, 20, 20);
+      pdf.addImage(img, 'PNG', 15, y, 25, 25);
     } catch (e) { /* logo gagal dimuat */ }
 
+    // Header dengan spacing yang lebih baik
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.text('PEMERINTAH KABUPATEN MAMBERAMO RAYA', pageWidth / 2, y, { align: 'center' });
-    y += 6;
     pdf.setFontSize(12);
+    pdf.text('PEMERINTAH KABUPATEN MAMBERAMO RAYA', pageWidth / 2, y + 5, { align: 'center' });
+    y += 7;
+    pdf.setFontSize(10);
     pdf.text('BADAN PENDAPATAN PENGELOLAAN KEUANGAN', pageWidth / 2, y, { align: 'center' });
     y += 5;
     pdf.text('DAN ASET DAERAH', pageWidth / 2, y, { align: 'center' });
-    y += 5;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    pdf.text('KANTOR OTONOM PEMDA KABUPATEN MAMBERAMO RAYA JL. LINGKAR BURMESO', pageWidth / 2, y, { align: 'center' });
-    y += 4;
-    pdf.text('DISTRIK MAMBERAMO TENGAH KABUPATEN MAMBERAMO RAYA PROVINSI PAPUA', pageWidth / 2, y, { align: 'center' });
-    y += 3;
-    pdf.setLineWidth(1.2);
-    pdf.line(15, y, pageWidth - 15, y);
     y += 8;
 
-    // Judul laporan
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.text('KANTOR OTONOM PEMDA KABUPATEN MAMBERAMO RAYA', pageWidth / 2, y, { align: 'center' });
+    y += 4;
+    pdf.text('JL. LINGKAR BURMESO, DISTRIK MAMBERAMO TENGAH', pageWidth / 2, y, { align: 'center' });
+    y += 3;
+    pdf.text('KABUPATEN MAMBERAMO RAYA - PROVINSI PAPUA', pageWidth / 2, y, { align: 'center' });
+    y += 6;
+
+    // Garis pemisah yang lebih tebal
+    pdf.setLineWidth(1.5);
+    pdf.line(15, y, pageWidth - 15, y);
+    y += 12;
+
+    // Judul laporan dengan spacing yang lebih baik
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(14);
     pdf.text('KERTAS KERJA PERHITUNGAN POTENSI PAJAK', pageWidth / 2, y, { align: 'center' });
     y += 8;
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(11);
+    pdf.setFontSize(10);
     pdf.text(`TAHUN ${tahun}`, pageWidth / 2, y, { align: 'center' });
     y += 6;
     pdf.text(`Periode Analisis: ${getBulanName(bulanAnalisis)} ${tahun}`, pageWidth / 2, y, { align: 'center' });
-    y += 10;
+    y += 12;
 
-    // Parameter perhitungan
+    // Parameter perhitungan dengan layout yang lebih kompak
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text('PARAMETER PERHITUNGAN:', 15, y);
-    y += 6;
-    pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
+    pdf.text('PARAMETER PERHITUNGAN:', 15, y);
+    y += 5;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
     pdf.text(`• Tingkat Kepatuhan: ${(tingkatKepatuhan * 100).toFixed(1)}%`, 20, y);
-    y += 5;
+    y += 4;
     pdf.text(`• Faktor Pertumbuhan: ${(faktorPertumbuhan * 100).toFixed(1)}%`, 20, y);
-    y += 5;
+    y += 4;
     pdf.text(`• Periode Analisis: ${bulanAnalisis === 12 ? 'Full Year' : getBulanName(bulanAnalisis)}`, 20, y);
     y += 8;
 
-    // Tabel hasil perhitungan
-    const colX = [15, 45, 75, 105, 135, 165, 195, 225, 255];
-    const colW = [25, 25, 25, 25, 25, 25, 25, 25, 25];
+    // Tabel hasil perhitungan dengan layout yang lebih kompak
+    const colX = [15, 45, 70, 95, 120, 145, 170, 195, 220];
+    const colW = [25, 20, 20, 20, 20, 20, 20, 20, 20];
     const rowHeight = 8;
 
-    // Header tabel
+    // Header tabel dengan background yang lebih menarik
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    pdf.setFillColor(240, 240, 240);
-    pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+    pdf.setFontSize(7);
+    pdf.setFillColor(70, 130, 180); // Steel blue background
+    pdf.rect(15, y - 1, pageWidth - 30, rowHeight, 'F');
+    pdf.setTextColor(255, 255, 255); // White text
 
     const headers = ['Jenis Pajak', 'Jml WP', 'Rata-rata', 'Tarif', 'Potensi/WP', 'Total', 'Realisasi', 'Gap', 'Pencapaian'];
     headers.forEach((header, i) => {
-      pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
-      pdf.text(header, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+      pdf.rect(colX[i], y - 1, colW[i], rowHeight, 'S');
+      pdf.text(header, colX[i] + 1, y + 2, { maxWidth: colW[i] - 2 });
     });
     y += rowHeight;
+    pdf.setTextColor(0, 0, 0); // Reset to black text
 
-    // Isi tabel
+    // Isi tabel dengan layout yang lebih kompak
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
+    pdf.setFontSize(6);
 
     potensiPerJenis.forEach((item, index) => {
-      if (y > 180) { // New page if needed
+      if (y > 160) { // New page if needed
         pdf.addPage();
         y = 18;
-        // Redraw header
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+        // Redraw header dengan styling yang sama
+        pdf.setFillColor(70, 130, 180);
+        pdf.rect(15, y - 1, pageWidth - 30, rowHeight, 'F');
+        pdf.setTextColor(255, 255, 255);
         headers.forEach((header, i) => {
-          pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
-          pdf.text(header, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+          pdf.rect(colX[i], y - 1, colW[i], rowHeight, 'S');
+          pdf.text(header, colX[i] + 1, y + 2, { maxWidth: colW[i] - 2 });
         });
         y += rowHeight;
+        pdf.setTextColor(0, 0, 0);
       }
 
+      // Alternate row colors
       const bgColor = index % 2 === 0 ? [255, 255, 255] : [248, 249, 250];
       pdf.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
-      pdf.rect(15, y - 5, pageWidth - 30, rowHeight, 'F');
+      pdf.rect(15, y - 1, pageWidth - 30, rowHeight, 'F');
 
       const values = [
         item.namaLayanan,
@@ -727,79 +739,123 @@ window.exportPotensiToPDF = async function() {
       ];
 
       values.forEach((value, i) => {
-        pdf.rect(colX[i], y - 5, colW[i], rowHeight, 'S');
-        pdf.text(value, colX[i] + 2, y, { maxWidth: colW[i] - 4 });
+        pdf.rect(colX[i], y - 1, colW[i], rowHeight, 'S');
+        pdf.text(value, colX[i] + 1, y + 2, { maxWidth: colW[i] - 2 });
       });
       y += rowHeight;
     });
 
-    // Ringkasan total
-    y += 5;
+    // Ringkasan total dengan layout yang lebih kompak
+    y += 3;
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9);
+    pdf.text('RINGKASAN TOTAL:', 15, y);
+    y += 5;
+
     const totalPotensi = potensiPerJenis.reduce((sum, item) => sum + item.totalPotensi, 0);
     const totalRealisasi = potensiPerJenis.reduce((sum, item) => sum + item.realisasiSaatIni, 0);
     const totalGap = totalPotensi - totalRealisasi;
     const persentase = totalPotensi > 0 ? (totalRealisasi / totalPotensi) * 100 : 0;
 
-    pdf.text(`TOTAL POTENSI: ${formatNumber(totalPotensi)}`, 15, y);
-    y += 5;
-    pdf.text(`TOTAL REALISASI: ${formatNumber(totalRealisasi)}`, 15, y);
-    y += 5;
-    pdf.text(`GAP: ${formatNumber(totalGap)}`, 15, y);
-    y += 5;
-    pdf.text(`PENCAPAIAN: ${persentase.toFixed(1)}%`, 15, y);
-    y += 10;
-
-    // Kesimpulan dan rekomendasi
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text('KESIMPULAN DAN REKOMENDASI:', 15, y);
-    y += 6;
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
+    pdf.text(`• Total Potensi Pajak: ${formatNumber(totalPotensi)}`, 20, y);
+    y += 4;
+    pdf.text(`• Total Realisasi: ${formatNumber(totalRealisasi)}`, 20, y);
+    y += 4;
+    pdf.text(`• Gap: ${formatNumber(totalGap)}`, 20, y);
+    y += 4;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`• Pencapaian: ${persentase.toFixed(1)}%`, 20, y);
+    y += 8;
 
-    const rekomendasi = [
-      `1. Total potensi pajak tahun ${tahun} sebesar ${formatNumber(totalPotensi)}`,
-      `2. Realisasi saat ini mencapai ${persentase.toFixed(1)}% dari potensi`,
-      `3. Gap sebesar ${formatNumber(totalGap)} perlu menjadi fokus penggalian`,
-      `4. Jenis pajak dengan gap terbesar perlu perhatian khusus`,
-      `5. Tingkatkan sosialisasi dan pengawasan untuk meningkatkan kepatuhan`
-    ];
-
-    rekomendasi.forEach((rec, i) => {
-      if (y > 190) {
-        pdf.addPage();
-        y = 18;
-      }
-      pdf.text(rec, 20, y);
-      y += 5;
-    });
-
-    // Tanda tangan
-    y += 10;
-    if (y > 170) {
+    // Kesimpulan dan rekomendasi dengan layout yang lebih kompak
+    if (y > 100) {
       pdf.addPage();
       y = 18;
     }
 
-    pdf.text('Dibuat di: Burmeso', pageWidth - 80, y);
-    y += 5;
-    pdf.text(`Tanggal: ${formatTanggalCetak(new Date())}`, pageWidth - 80, y);
-    y += 10;
-
     pdf.setFont('helvetica', 'bold');
-    pdf.text('An. KEPALA BADAN PENDAPATAN', pageWidth - 80, y);
+    pdf.setFontSize(9);
+    pdf.text('KESIMPULAN DAN REKOMENDASI:', 15, y);
     y += 5;
-    pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', pageWidth - 80, y);
-    y += 5;
-    pdf.text('KEPALA BIDANG PENDAPATAN', pageWidth - 80, y);
-    y += 15;
 
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Nama: _______________________________', pageWidth - 80, y);
+    pdf.setFontSize(7);
+
+    const rekomendasi = [
+      `• Total potensi pajak tahun ${tahun} diperkirakan sebesar ${formatNumber(totalPotensi)}`,
+      `• Realisasi saat ini telah mencapai ${persentase.toFixed(1)}% dari potensi yang ada`,
+      `• Terdapat gap sebesar ${formatNumber(totalGap)} yang perlu menjadi fokus penggalian potensi`,
+      `• Jenis pajak dengan gap terbesar memerlukan perhatian dan strategi khusus`,
+      `• Perlu ditingkatkan sosialisasi, edukasi, dan pengawasan untuk meningkatkan kepatuhan`
+    ];
+
+    rekomendasi.forEach((rec, i) => {
+      if (y > 160) {
+        pdf.addPage();
+        y = 18;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.text('KESIMPULAN DAN REKOMENDASI (lanjutan):', 15, y);
+        y += 5;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+      }
+      pdf.text(rec, 20, y);
+      y += 4;
+    });
+    y += 6;
+
+    // Tanda tangan dengan layout yang lebih kompak
+    if (y > 110) {
+      pdf.addPage();
+      y = 18;
+    }
+
+    // Informasi tanggal dan tempat
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.text('Burmeso', pageWidth - 70, y);
+    pdf.text(`${formatTanggalCetak(new Date())}`, pageWidth - 70, y + 4);
+    y += 12;
+
+    // Blok tanda tangan
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text('An. KEPALA BADAN PENDAPATAN', pageWidth - 75, y);
+    y += 4;
+    pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', pageWidth - 75, y);
+    y += 4;
+    pdf.text('KEPALA BIDANG PENDAPATAN', pageWidth - 75, y);
+    y += 12;
+
+    // Garis tanda tangan
+    pdf.setLineWidth(0.3);
+    pdf.line(pageWidth - 75, y, pageWidth - 15, y);
     y += 5;
-    pdf.text('NIP: _______________________________', pageWidth - 80, y);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.text('Nama', pageWidth - 75, y);
+    y += 5;
+
+    // Garis untuk NIP
+    pdf.line(pageWidth - 75, y, pageWidth - 15, y);
+    y += 5;
+    pdf.text('NIP', pageWidth - 75, y);
+
+    // Footer dengan informasi tambahan
+    if (y > 160) {
+      pdf.addPage();
+      y = 18;
+    }
+
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(6);
+    pdf.text('Dokumen ini dibuat secara otomatis oleh Sistem Informasi Pendapatan Daerah (SIMPATDA)', 15, y);
+    y += 3;
+    pdf.text(`Tanggal pembuatan: ${formatTanggalCetak(new Date())}`, 15, y);
 
     // Simpan PDF
     pdf.save(`Kertas_Kerja_Potensi_Pajak_${tahun}.pdf`);
