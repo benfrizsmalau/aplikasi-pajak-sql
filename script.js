@@ -538,15 +538,21 @@ function setupKetetapanEditModal() {
 }
 
 async function fetchAllData() {
-    try {
-        const response = await fetch(apiUrl, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+        try {
+            console.log(`fetchAllData: Attempt ${retryCount + 1}/${maxRetries}`);
+
+            const response = await fetch(apiUrl, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
 
         // Periksa apakah respons adalah fallback HTML dari Service Worker
         const contentType = response.headers.get('content-type');
@@ -625,19 +631,29 @@ async function fetchAllData() {
 
         return result;
 
-    } catch (error) {
-        console.warn('Error mengambil data dari network:', error);
-        console.log('Returning empty data structure due to network error');
-        // Return empty data structure instead of throwing error
-        return {
-            wajibPajak: [],
-            wilayah: [],
-            masterPajak: [],
-            ketetapan: [],
-            pembayaran: [],
-            fiskal: [],
-            targetPajakRetribusi: []
-        };
+        } catch (error) {
+            console.warn(`fetchAllData: Attempt ${retryCount + 1} failed:`, error);
+            retryCount++;
+
+            if (retryCount >= maxRetries) {
+                console.error('fetchAllData: All retry attempts failed');
+                // Return empty data structure instead of throwing error
+                return {
+                    wajibPajak: [],
+                    wilayah: [],
+                    masterPajak: [],
+                    ketetapan: [],
+                    pembayaran: [],
+                    fiskal: [],
+                    targetPajakRetribusi: []
+                };
+            }
+
+            // Wait before retrying (exponential backoff)
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+            console.log(`fetchAllData: Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
 }
 
@@ -1045,16 +1061,34 @@ function performStandardSearch(data, displayFunction) {
 }
 
 
+function setDashboardDefaults() {
+    console.log('Setting dashboard default values');
+    document.getElementById('totalWp').textContent = '0';
+    document.getElementById('totalKetetapan').textContent = '0';
+    document.getElementById('totalPembayaran').textContent = '0';
+    document.getElementById('totalSkpdSkrd').textContent = '0';
+    document.getElementById('totalSspdSsrd').textContent = '0';
+    document.getElementById('totalFiskal').textContent = '0';
+    document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
+    document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+}
+
 async function loadDashboardData() {
-    try {
-        const response = await fetch('/.netlify/functions/api', {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+        try {
+            console.log(`loadDashboardData: Attempt ${retryCount + 1}/${maxRetries}`);
+
+            const response = await fetch('/.netlify/functions/api', {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
 
         // Check if response has content
         const contentLength = response.headers.get('content-length');
@@ -1064,14 +1098,7 @@ async function loadDashboardData() {
         if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
             console.warn('loadDashboardData: Empty or invalid response, setting default values');
             // Set default/empty values instead of throwing error
-            document.getElementById('totalWp').textContent = '0';
-            document.getElementById('totalKetetapan').textContent = '0';
-            document.getElementById('totalPembayaran').textContent = '0';
-            document.getElementById('totalSkpdSkrd').textContent = '0';
-            document.getElementById('totalSspdSsrd').textContent = '0';
-            document.getElementById('totalFiskal').textContent = '0';
-            document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
-            document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+            setDashboardDefaults();
             return;
         }
 
@@ -1084,14 +1111,7 @@ async function loadDashboardData() {
             if (!responseText || responseText.trim() === '') {
                 console.warn('loadDashboardData: Empty response text, setting default values');
                 // Set default values
-                document.getElementById('totalWp').textContent = '0';
-                document.getElementById('totalKetetapan').textContent = '0';
-                document.getElementById('totalPembayaran').textContent = '0';
-                document.getElementById('totalSkpdSkrd').textContent = '0';
-                document.getElementById('totalSspdSsrd').textContent = '0';
-                document.getElementById('totalFiskal').textContent = '0';
-                document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
-                document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+                setDashboardDefaults();
                 return;
             }
 
@@ -1100,28 +1120,14 @@ async function loadDashboardData() {
         } catch (jsonError) {
             console.error('loadDashboardData: JSON parsing failed:', jsonError);
             // Set default values instead of throwing error
-            document.getElementById('totalWp').textContent = '0';
-            document.getElementById('totalKetetapan').textContent = '0';
-            document.getElementById('totalPembayaran').textContent = '0';
-            document.getElementById('totalSkpdSkrd').textContent = '0';
-            document.getElementById('totalSspdSsrd').textContent = '0';
-            document.getElementById('totalFiskal').textContent = '0';
-            document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
-            document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+            setDashboardDefaults();
             return;
         }
 
         if (!response.ok) {
             console.error('loadDashboardData: HTTP error:', response.status);
             // Set default values instead of throwing error
-            document.getElementById('totalWp').textContent = '0';
-            document.getElementById('totalKetetapan').textContent = '0';
-            document.getElementById('totalPembayaran').textContent = '0';
-            document.getElementById('totalSkpdSkrd').textContent = '0';
-            document.getElementById('totalSspdSsrd').textContent = '0';
-            document.getElementById('totalFiskal').textContent = '0';
-            document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
-            document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+            setDashboardDefaults();
             return;
         }
         
@@ -1188,17 +1194,25 @@ async function loadDashboardData() {
         
         // Update grafik per bulan (tambahkan target bulanan)
         updateDashboardChart(ketetapan, pembayaran, totalTargetTahun);
-        
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        document.getElementById('totalWp').textContent = 'Error';
-        document.getElementById('totalKetetapan').textContent = 'Error';
-        document.getElementById('totalPembayaran').textContent = 'Error';
-        document.getElementById('totalSkpdSkrd').textContent = 'Error';
-        document.getElementById('totalSspdSsrd').textContent = 'Error';
-        document.getElementById('totalFiskal').textContent = 'Error';
-        document.getElementById('totalNilaiKetetapan').textContent = 'Error';
-        document.getElementById('totalNilaiSetoran').textContent = 'Error';
+
+        // Success - break out of retry loop
+        break;
+
+        } catch (error) {
+            console.error(`loadDashboardData: Attempt ${retryCount + 1} failed:`, error);
+            retryCount++;
+
+            if (retryCount >= maxRetries) {
+                console.error('loadDashboardData: All retry attempts failed');
+                setDashboardDefaults();
+                break;
+            }
+
+            // Wait before retrying (exponential backoff)
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+            console.log(`loadDashboardData: Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
 }
 
