@@ -26,6 +26,14 @@ const DATAWP_FIELDS = [
     'Foto KTP',
 ];
 
+// Helper function untuk query dengan timeout
+async function queryWithTimeout(queryPromise, timeoutMs = 8000) {
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), timeoutMs)
+    );
+    return Promise.race([queryPromise, timeoutPromise]);
+}
+
 // Fungsi validasi data wajib
 function validateDatawpInput(data, isAuto) {
     const required = [
@@ -197,7 +205,7 @@ async function handleGet() {
         let wilayah = [];
         
         try {
-            const wpResult = await supabase.from('datawp').select('*');
+            const wpResult = await queryWithTimeout(supabase.from('datawp').select('*'), 5000);
             if (wpResult.error) {
                 console.error('handleGet: Error fetching wajibPajak:', wpResult.error);
                 wajibPajak = [];
@@ -211,7 +219,7 @@ async function handleGet() {
         }
 
         try {
-            const wilayahResult = await supabase.from('Wilayah').select('*');
+            const wilayahResult = await queryWithTimeout(supabase.from('Wilayah').select('*'), 5000);
             if (wilayahResult.error) {
                 console.error('handleGet: Error fetching wilayah:', wilayahResult.error);
                 wilayah = [];
@@ -227,7 +235,7 @@ async function handleGet() {
         // Query masterPajak (MasterPajakRetribusi) dengan error handling terpisah
         let masterPajak = [];
         try {
-            const { data, error } = await supabase.from('MasterPajakRetribusi').select('*');
+            const { data, error } = await queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*'), 5000);
             if (!error && data) {
                 masterPajak = data;
                 console.log(`handleGet: Fetched ${masterPajak.length} masterPajak records`);
@@ -243,7 +251,7 @@ async function handleGet() {
         // Query ketetapan pajak
         let ketetapan = [];
         try {
-            const { data, error } = await supabase.from('KetetapanPajak').select('*');
+            const { data, error } = await queryWithTimeout(supabase.from('KetetapanPajak').select('*'), 5000);
             if (!error && data) {
                 ketetapan = data;
                 console.log(`handleGet: Fetched ${ketetapan.length} ketetapan records`);
@@ -259,7 +267,7 @@ async function handleGet() {
         // Query pembayaran (RiwayatPembayaran)
         let pembayaran = [];
         try {
-            const { data, error } = await supabase.from('RiwayatPembayaran').select('*');
+            const { data, error } = await queryWithTimeout(supabase.from('RiwayatPembayaran').select('*'), 5000);
             if (!error && data) {
                 pembayaran = data;
                 console.log(`handleGet: Fetched ${pembayaran.length} pembayaran records`);
@@ -275,7 +283,7 @@ async function handleGet() {
         // Query fiskal
         let fiskal = [];
         try {
-            const { data, error } = await supabase.from('Fiskal').select('*');
+            const { data, error } = await queryWithTimeout(supabase.from('Fiskal').select('*'), 5000);
             if (!error && data) {
                 fiskal = data;
                 console.log(`handleGet: Fetched ${fiskal.length} fiskal records`);
@@ -291,7 +299,7 @@ async function handleGet() {
         // Query target pajak retribusi
         let targetPajakRetribusi = [];
         try {
-            const { data, error } = await supabase.from('TargetPajakRetribusi').select('*');
+            const { data, error } = await queryWithTimeout(supabase.from('TargetPajakRetribusi').select('*'), 5000);
             if (!error && data) {
                 targetPajakRetribusi = data;
                 console.log(`handleGet: Fetched ${targetPajakRetribusi.length} target records`);
