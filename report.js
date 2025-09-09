@@ -433,7 +433,43 @@ function updatePembayaranReport(data) {
     document.getElementById('failedCount').textContent = failedCount;
     document.getElementById('totalNilaiPembayaran').textContent = `Rp ${totalNilai.toLocaleString('id-ID')}`;
 
+    // Update tabel pembayaran
+    updatePembayaranTable(data);
+
+    // Update chart pembayaran
     updatePembayaranChart(data);
+}
+
+function updatePembayaranTable(data) {
+    const tbody = document.getElementById('pembayaranTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (data.pembayaran.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #666; font-style: italic;">Tidak ada data pembayaran untuk periode ini.</td></tr>`;
+        return;
+    }
+
+    data.pembayaran.forEach(p => {
+        // Cari data ketetapan terkait untuk mendapatkan informasi tambahan
+        const ketetapan = (reportData.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+        const masterPajak = ketetapan ? (reportData.masterPajak || []).find(m => m.KodeLayanan === ketetapan.KodeLayanan) : null;
+        const wpData = ketetapan ? (reportData.wajibPajak || []).find(w => w.NPWPD === ketetapan.NPWPD) : null;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${p.ID_Pembayaran || '-'}</td>
+            <td>${ketetapan?.ID_Ketetapan || '-'}</td>
+            <td>${ketetapan?.NPWPD || '-'}</td>
+            <td>${wpData?.['Nama Usaha'] || wpData?.['Nama Pemilik'] || '-'}</td>
+            <td>${masterPajak?.NamaLayanan || ketetapan?.KodeLayanan || '-'}</td>
+            <td>Rp ${(parseFloat(p.JumlahBayar) || 0).toLocaleString('id-ID')}</td>
+            <td><span class="status-badge ${p.StatusPembayaran === 'Sukses' ? 'success' : 'warning'}">${p.StatusPembayaran || 'Pending'}</span></td>
+            <td>${p.TanggalBayar ? new Date(p.TanggalBayar).toLocaleDateString('id-ID') : '-'}</td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 function updatePembayaranChart(data) {

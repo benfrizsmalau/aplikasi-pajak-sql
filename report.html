@@ -231,6 +231,33 @@
                     </div>
                 </div>
                 
+                <!-- Tabel Pembayaran -->
+                <div class="table-container" style="margin: 20px 0;">
+                    <h4 style="margin-bottom: 10px; color: #333;">Detail Pembayaran</h4>
+                    <div class="table-responsive">
+                        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">ID Pembayaran</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">ID Ketetapan</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">NPWPD</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">Nama Wajib Pajak</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: left;">Jenis Pajak</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: right;">Jumlah Bayar</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Status</th>
+                                    <th style="border: 1px solid #dee2e6; padding: 8px; text-align: center;">Tanggal Bayar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pembayaranTableBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 20px; color: #666;">Memuat data pembayaran...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                
                 <div class="chart-container">
                     <canvas id="pembayaranChart" height="300"></canvas>
                 </div>
