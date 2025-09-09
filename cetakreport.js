@@ -85,21 +85,26 @@ async function exportReportToPDF({
   // Gambar isi laporan (tabel)
   const imgWidth = pageWidth - 30;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  pdf.addImage(imgData, 'PNG', 15, y, imgWidth, imgHeight);
-  y += imgHeight + 10;
+  
+  // Pastikan ada ruang untuk penandatanganan
+  const maxContentHeight = 200; // Sisakan ruang untuk penandatanganan
+  const finalImgHeight = Math.min(imgHeight, maxContentHeight);
+  
+  pdf.addImage(imgData, 'PNG', 15, y, imgWidth, finalImgHeight);
+  y += finalImgHeight + 15;
 
   // Penutup
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
   pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y, { align: 'left' });
-  y += 10;
+  y += 15;
   
-  // Tanggal dan tempat
+  // Bagian penandatanganan
   const xTanggal = pageWidth - 80;
   pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
   y += 7;
   pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
-  y += 10;
+  y += 12;
   
   // Tanda tangan
   pdf.setFont('helvetica', 'bold');
@@ -108,7 +113,9 @@ async function exportReportToPDF({
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
   pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
-  y += 18;
+  y += 20;
+  
+  // Detail penandatangan
   pdf.setFont('helvetica', 'normal');
   pdf.text('Nama : ' + (ttdNama || '..........................................'), xTanggal, y, { align: 'left' });
   y += 6;
