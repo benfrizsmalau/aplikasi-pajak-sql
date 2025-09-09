@@ -10,6 +10,15 @@ let dataMasterPajakGlobal = [];
 let dataKetetapanGlobal = [];
 let kelurahanChoices = null;
 
+// Error state management
+let dashboardLoadingState = {
+    isLoading: false,
+    lastAttempt: 0,
+    failureCount: 0,
+    maxRetries: 3,
+    cooldownPeriod: 30000 // 30 seconds
+};
+
 // Router utama yang berjalan setelah halaman HTML selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
     const pageId = document.body.id;
@@ -28,12 +37,54 @@ document.addEventListener('DOMContentLoaded', () => {
 // =================================================================
 
 async function initDashboardPage() {
+    // Check if already loading or in cooldown period
+    const now = Date.now();
+    if (dashboardLoadingState.isLoading) {
+        console.log('Dashboard already loading, skipping...');
+        return;
+    }
+    
+    if (dashboardLoadingState.failureCount >= dashboardLoadingState.maxRetries && 
+        (now - dashboardLoadingState.lastAttempt) < dashboardLoadingState.cooldownPeriod) {
+        console.log('Dashboard in cooldown period, setting defaults...');
+        setDashboardDefaults();
+        return;
+    }
+
+    // Set loading state
+    dashboardLoadingState.isLoading = true;
+    dashboardLoadingState.lastAttempt = now;
+
     try {
-        // Gunakan loadDashboardData() yang lengkap dengan fitur target
+        // Set default values first to ensure UI is in consistent state
+        setDashboardDefaults();
+        
+        // Attempt to load dashboard data
         await loadDashboardData();
+        
+        // Reset failure count on success
+        dashboardLoadingState.failureCount = 0;
+        
     } catch (error) {
-        document.getElementById('totalWp').textContent = 'Error';
         console.error("Error di Dasbor:", error);
+        dashboardLoadingState.failureCount++;
+        
+        // Ensure defaults are set on error
+        setDashboardDefaults();
+        
+        // Show user-friendly error message
+        const errorElements = ['totalWp', 'totalKetetapan', 'totalPembayaran'];
+        errorElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = 'Offline';
+                element.style.color = '#666';
+            }
+        });
+        
+    } finally {
+        // Always reset loading state
+        dashboardLoadingState.isLoading = false;
     }
 }
 
@@ -1063,14 +1114,43 @@ function performStandardSearch(data, displayFunction) {
 
 function setDashboardDefaults() {
     console.log('Setting dashboard default values');
-    document.getElementById('totalWp').textContent = '0';
-    document.getElementById('totalKetetapan').textContent = '0';
-    document.getElementById('totalPembayaran').textContent = '0';
-    document.getElementById('totalSkpdSkrd').textContent = '0';
-    document.getElementById('totalSspdSsrd').textContent = '0';
-    document.getElementById('totalFiskal').textContent = '0';
-    document.getElementById('totalNilaiKetetapan').textContent = 'Rp 0';
-    document.getElementById('totalNilaiSetoran').textContent = 'Rp 0';
+    
+    // List of dashboard elements to set defaults for
+    const dashboardElements = [
+        { id: 'totalWp', value: '0' },
+        { id: 'totalKetetapan', value: '0' },
+        { id: 'totalPembayaran', value: '0' },
+        { id: 'totalSkpdSkrd', value: '0' },
+        { id: 'totalSspdSsrd', value: '0' },
+        { id: 'totalFiskal', value: '0' },
+        { id: 'totalNilaiKetetapan', value: 'Rp 0' },
+        { id: 'totalNilaiSetoran', value: 'Rp 0' }
+    ];
+    
+    // Safely set default values for each element
+    dashboardElements.forEach(({ id, value }) => {
+        try {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                element.style.color = ''; // Reset any error styling
+            } else {
+                console.warn(`setDashboardDefaults: Element with id '${id}' not found`);
+            }
+        } catch (error) {
+            console.error(`setDashboardDefaults: Error setting ${id}:`, error);
+        }
+    });
+    
+    // Clear any existing chart
+    try {
+        if (window.dashboardChartInstance) {
+            window.dashboardChartInstance.destroy();
+            window.dashboardChartInstance = null;
+        }
+    } catch (error) {
+        console.warn('setDashboardDefaults: Error clearing chart:', error);
+    }
 }
 
 async function loadDashboardData() {
@@ -1087,50 +1167,84 @@ async function loadDashboardData() {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache',
                     'Expires': '0'
-                }
+                },
+                timeout: 10000 // 10 second timeout
             });
 
-        // Check if response has content
-        const contentLength = response.headers.get('content-length');
-        const contentType = response.headers.get('content-type');
-        console.log('loadDashboardData: Content-Length:', contentLength, 'Content-Type:', contentType);
+            // Check if response has content
+            const contentLength = response.headers.get('content-length');
+            const contentType = response.headers.get('content-type');
+            console.log('loadDashboardData: Content-Length:', contentLength, 'Content-Type:', contentType);
 
-        if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
-            console.warn('loadDashboardData: Empty or invalid response, setting default values');
-            // Set default/empty values instead of throwing error
-            setDashboardDefaults();
-            return;
-        }
-
-        // Try to parse JSON response
-        let data;
-        try {
-            const responseText = await response.text();
-            console.log('loadDashboardData: Raw response text:', responseText);
-
-            if (!responseText || responseText.trim() === '') {
-                console.warn('loadDashboardData: Empty response text, setting default values');
-                // Set default values
+            // Handle empty or invalid responses gracefully
+            if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
+                console.warn('loadDashboardData: Empty or invalid response, setting default values');
                 setDashboardDefaults();
-                return;
+                return; // Exit gracefully without throwing error
             }
 
-            data = JSON.parse(responseText);
-            console.log('loadDashboardData: Parsed data:', data);
-        } catch (jsonError) {
-            console.error('loadDashboardData: JSON parsing failed:', jsonError);
-            // Set default values instead of throwing error
-            setDashboardDefaults();
-            return;
-        }
+            // Handle non-OK HTTP responses
+            if (!response.ok) {
+                console.warn(`loadDashboardData: HTTP error ${response.status}, setting default values`);
+                setDashboardDefaults();
+                return; // Exit gracefully without throwing error
+            }
 
-        if (!response.ok) {
-            console.error('loadDashboardData: HTTP error:', response.status);
-            // Set default values instead of throwing error
-            setDashboardDefaults();
-            return;
+            // Try to parse JSON response
+            let data;
+            try {
+                const responseText = await response.text();
+                console.log('loadDashboardData: Raw response text length:', responseText.length);
+
+                if (!responseText || responseText.trim() === '') {
+                    console.warn('loadDashboardData: Empty response text, setting default values');
+                    setDashboardDefaults();
+                    return; // Exit gracefully
+                }
+
+                data = JSON.parse(responseText);
+                console.log('loadDashboardData: Successfully parsed data');
+            } catch (jsonError) {
+                console.warn('loadDashboardData: JSON parsing failed, setting default values:', jsonError.message);
+                setDashboardDefaults();
+                return; // Exit gracefully
+            }
+
+            // Check for API-level errors
+            if (data.status === 'gagal') {
+                console.warn('loadDashboardData: API returned error status, setting default values:', data.message);
+                setDashboardDefaults();
+                return; // Exit gracefully
+            }
+            
+            // Successfully got data - update dashboard
+            console.log('loadDashboardData: Updating dashboard with valid data');
+            updateDashboardWithData(data);
+
+            // Success - break out of retry loop
+            break;
+
+        } catch (error) {
+            console.warn(`loadDashboardData: Attempt ${retryCount + 1} failed:`, error.message);
+            retryCount++;
+
+            if (retryCount >= maxRetries) {
+                console.warn('loadDashboardData: All retry attempts failed, setting defaults');
+                setDashboardDefaults();
+                break;
+            }
+
+            // Wait before retrying (exponential backoff)
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
+            console.log(`loadDashboardData: Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
-        
+    }
+}
+
+// Separate function to update dashboard with valid data
+function updateDashboardWithData(data) {
+    try {
         // Update statistik
         const wajibPajak = data.wajibPajak || [];
         const ketetapan = data.ketetapan || [];
@@ -1142,20 +1256,26 @@ async function loadDashboardData() {
         const totalTargetTahun = targetList.filter(t => t.Tahun == tahunBerjalan).reduce((sum, t) => sum + (parseFloat(t.Target) || 0), 0);
         
         // Hitung statistik lama
-        document.getElementById('totalWp').textContent = wajibPajak.length;
-        document.getElementById('totalKetetapan').textContent = ketetapan.length;
-        document.getElementById('totalPembayaran').textContent = pembayaran.length;
+        const totalWpElement = document.getElementById('totalWp');
+        const totalKetetapanElement = document.getElementById('totalKetetapan');
+        const totalPembayaranElement = document.getElementById('totalPembayaran');
+        
+        if (totalWpElement) totalWpElement.textContent = wajibPajak.length;
+        if (totalKetetapanElement) totalKetetapanElement.textContent = ketetapan.length;
+        if (totalPembayaranElement) totalPembayaranElement.textContent = pembayaran.length;
         
         // Hitung SKPD/SKRD (ketetapan yang sudah lunas)
         const ketetapanLunas = ketetapan.filter(k => {
             const pembayaranKetetapan = pembayaran.filter(p => p.ID_Ketetapan === k.ID_Ketetapan);
             return pembayaranKetetapan.some(p => p.StatusPembayaran === 'Sukses');
         });
-        document.getElementById('totalSkpdSkrd').textContent = ketetapanLunas.length;
+        const totalSkpdSkrdElement = document.getElementById('totalSkpdSkrd');
+        if (totalSkpdSkrdElement) totalSkpdSkrdElement.textContent = ketetapanLunas.length;
         
         // Hitung SSPD/SSRD (pembayaran sukses)
         const pembayaranSukses = pembayaran.filter(p => p.StatusPembayaran === 'Sukses');
-        document.getElementById('totalSspdSsrd').textContent = pembayaranSukses.length;
+        const totalSspdSsrdElement = document.getElementById('totalSspdSsrd');
+        if (totalSspdSsrdElement) totalSspdSsrdElement.textContent = pembayaranSukses.length;
         
         // Hitung Fiskal (NPWPD yang sudah lunas reklame dan sampah)
         const npwpdMap = {};
@@ -1178,41 +1298,33 @@ async function loadDashboardData() {
             });
             if (lunasReklame && lunasSampah) totalFiskal++;
         });
-        document.getElementById('totalFiskal').textContent = totalFiskal;
+        const totalFiskalElement = document.getElementById('totalFiskal');
+        if (totalFiskalElement) totalFiskalElement.textContent = totalFiskal;
         
         // Hitung total nilai ketetapan
         const totalNilaiKetetapan = ketetapan.reduce((sum, k) => {
             return sum + (parseFloat(k.TotalTagihan) || 0);
         }, 0);
-        document.getElementById('totalNilaiKetetapan').textContent = `Rp ${totalNilaiKetetapan.toLocaleString('id-ID')}`;
+        const totalNilaiKetetapanElement = document.getElementById('totalNilaiKetetapan');
+        if (totalNilaiKetetapanElement) totalNilaiKetetapanElement.textContent = `Rp ${totalNilaiKetetapan.toLocaleString('id-ID')}`;
         
         // Hitung total nilai setoran
         const totalNilaiSetoran = pembayaranSukses.reduce((sum, p) => {
             return sum + (parseFloat(p.JumlahBayar) || 0);
         }, 0);
-        document.getElementById('totalNilaiSetoran').textContent = `Rp ${totalNilaiSetoran.toLocaleString('id-ID')}`;
+        const totalNilaiSetoranElement = document.getElementById('totalNilaiSetoran');
+        if (totalNilaiSetoranElement) totalNilaiSetoranElement.textContent = `Rp ${totalNilaiSetoran.toLocaleString('id-ID')}`;
         
         // Update grafik per bulan (tambahkan target bulanan)
-        updateDashboardChart(ketetapan, pembayaran, totalTargetTahun);
-
-        // Success - break out of retry loop
-        break;
-
-        } catch (error) {
-            console.error(`loadDashboardData: Attempt ${retryCount + 1} failed:`, error);
-            retryCount++;
-
-            if (retryCount >= maxRetries) {
-                console.error('loadDashboardData: All retry attempts failed');
-                setDashboardDefaults();
-                break;
-            }
-
-            // Wait before retrying (exponential backoff)
-            const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-            console.log(`loadDashboardData: Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+        if (typeof updateDashboardChart === 'function') {
+            updateDashboardChart(ketetapan, pembayaran, totalTargetTahun);
         }
+        
+        console.log('loadDashboardData: Dashboard updated successfully');
+        
+    } catch (error) {
+        console.error('updateDashboardWithData: Error updating dashboard:', error);
+        setDashboardDefaults();
     }
 }
 
