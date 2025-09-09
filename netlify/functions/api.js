@@ -47,18 +47,37 @@ async function getAuthClient() {
 
 // Handler utama Netlify Function
 exports.handler = async (event) => {
+    // Pastikan Content-Type adalah application/json
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Content-Type': 'application/json', // Tambahkan ini untuk memastikan response JSON
     };
-    if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
+    
+    if (event.httpMethod === 'OPTIONS') {
+        return { 
+            statusCode: 200, 
+            headers,
+            body: '' 
+        };
+    }
 
     try {
+        console.log('API Request:', {
+            method: event.httpMethod,
+            path: event.path,
+            body: event.body ? JSON.parse(event.body) : null
+        });
+
         let responseData;
         if (event.httpMethod === 'GET') {
             responseData = await handleGet();
         } else if (event.httpMethod === 'POST') {
+            if (!event.body) {
+                throw new Error('Request body is required for POST requests');
+            }
+            
             const body = JSON.parse(event.body);
             switch (body.action) {
                 case 'createWp':
@@ -103,7 +122,6 @@ exports.handler = async (event) => {
                 case 'deleteTarget':
                     responseData = await handleDeleteTarget(body);
                     break;
-                // Tambahkan case untuk ketetapan dan lainnya di sini
                 default:
                     throw new Error(`Aksi '${body.action}' tidak dikenali`);
             }
@@ -111,15 +129,31 @@ exports.handler = async (event) => {
             throw new Error(`Metode HTTP ${event.httpMethod} tidak didukung.`);
         }
         
+        const successResponse = { status: 'sukses', ...responseData };
+        console.log('API Success Response:', successResponse);
+        
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ status: 'sukses', ...responseData }),
+            body: JSON.stringify(successResponse),
         };
 
     } catch (error) {
-        console.error('API ERROR:', error); // Logging error ke Netlify log
-        return { statusCode: 500, headers, body: JSON.stringify({ status: 'gagal', message: error.message || 'Terjadi error pada server.' }) };
+        console.error('API ERROR:', error);
+        
+        const errorResponse = { 
+            status: 'gagal', 
+            message: error.message || 'Terjadi error pada server.',
+            timestamp: new Date().toISOString()
+        };
+        
+        console.log('API Error Response:', errorResponse);
+        
+        return { 
+            statusCode: 500, 
+            headers, 
+            body: JSON.stringify(errorResponse)
+        };
     }
 };
 
@@ -128,71 +162,162 @@ exports.handler = async (event) => {
 // =================================================================
 
 async function handleGet() {
-    // Query datawp dan Wilayah tetap seperti biasa
-    const [
-        { data: wajibPajak, error: wpError },
-        { data: wilayah, error: wilayahError }
-    ] = await Promise.all([
-        supabase.from('datawp').select('*'),
-        supabase.from('Wilayah').select('*'),
-    ]);
-
-    // Query masterPajak (MasterPajakRetribusi) dengan error handling terpisah
-    let masterPajak = [];
+    console.log('handleGet: Starting data fetch from Supabase');
+    
     try {
-        const { data, error } = await supabase.from('MasterPajakRetribusi').select('*');
-        if (!error) masterPajak = data || [];
-    } catch (e) {
-        masterPajak = [];
+        // Cek koneksi Supabase terlebih dahulu
+        if (!supabaseUrl || !supabaseKey) {
+            console.error('handleGet: Missing Supabase credentials');
+            throw new Error('Konfigurasi database tidak lengkap');
+        }
+
+        // Query datawp dan Wilayah dengan error handling yang lebih baik
+        let wajibPajak = [];
+        let wilayah = [];
+        
+        try {
+            const wpResult = await supabase.from('datawp').select('*');
+            if (wpResult.error) {
+                console.error('handleGet: Error fetching wajibPajak:', wpResult.error);
+                wajibPajak = [];
+            } else {
+                wajibPajak = wpResult.data || [];
+                console.log(`handleGet: Fetched ${wajibPajak.length} wajibPajak records`);
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching wajibPajak:', e);
+            wajibPajak = [];
+        }
+
+        try {
+            const wilayahResult = await supabase.from('Wilayah').select('*');
+            if (wilayahResult.error) {
+                console.error('handleGet: Error fetching wilayah:', wilayahResult.error);
+                wilayah = [];
+            } else {
+                wilayah = wilayahResult.data || [];
+                console.log(`handleGet: Fetched ${wilayah.length} wilayah records`);
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching wilayah:', e);
+            wilayah = [];
+        }
+
+        // Query masterPajak (MasterPajakRetribusi) dengan error handling terpisah
+        let masterPajak = [];
+        try {
+            const { data, error } = await supabase.from('MasterPajakRetribusi').select('*');
+            if (!error && data) {
+                masterPajak = data;
+                console.log(`handleGet: Fetched ${masterPajak.length} masterPajak records`);
+            } else {
+                console.warn('handleGet: No masterPajak data or error:', error);
+                masterPajak = [];
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching masterPajak:', e);
+            masterPajak = [];
+        }
+
+        // Query ketetapan pajak
+        let ketetapan = [];
+        try {
+            const { data, error } = await supabase.from('KetetapanPajak').select('*');
+            if (!error && data) {
+                ketetapan = data;
+                console.log(`handleGet: Fetched ${ketetapan.length} ketetapan records`);
+            } else {
+                console.warn('handleGet: No ketetapan data or error:', error);
+                ketetapan = [];
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching ketetapan:', e);
+            ketetapan = [];
+        }
+
+        // Query pembayaran (RiwayatPembayaran)
+        let pembayaran = [];
+        try {
+            const { data, error } = await supabase.from('RiwayatPembayaran').select('*');
+            if (!error && data) {
+                pembayaran = data;
+                console.log(`handleGet: Fetched ${pembayaran.length} pembayaran records`);
+            } else {
+                console.warn('handleGet: No pembayaran data or error:', error);
+                pembayaran = [];
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching pembayaran:', e);
+            pembayaran = [];
+        }
+
+        // Query fiskal
+        let fiskal = [];
+        try {
+            const { data, error } = await supabase.from('Fiskal').select('*');
+            if (!error && data) {
+                fiskal = data;
+                console.log(`handleGet: Fetched ${fiskal.length} fiskal records`);
+            } else {
+                console.warn('handleGet: No fiskal data or error:', error);
+                fiskal = [];
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching fiskal:', e);
+            fiskal = [];
+        }
+
+        // Query target pajak retribusi
+        let targetPajakRetribusi = [];
+        try {
+            const { data, error } = await supabase.from('TargetPajakRetribusi').select('*');
+            if (!error && data) {
+                targetPajakRetribusi = data;
+                console.log(`handleGet: Fetched ${targetPajakRetribusi.length} target records`);
+            } else {
+                console.warn('handleGet: No target data or error:', error);
+                targetPajakRetribusi = [];
+            }
+        } catch (e) {
+            console.error('handleGet: Exception fetching target:', e);
+            targetPajakRetribusi = [];
+        }
+
+        const result = {
+            wajibPajak: wajibPajak,
+            wilayah: wilayah,
+            masterPajak: masterPajak,
+            ketetapan: ketetapan,
+            pembayaran: pembayaran,
+            fiskal: fiskal,
+            targetPajakRetribusi: targetPajakRetribusi,
+        };
+
+        console.log('handleGet: Successfully prepared response with data counts:', {
+            wajibPajak: result.wajibPajak.length,
+            wilayah: result.wilayah.length,
+            masterPajak: result.masterPajak.length,
+            ketetapan: result.ketetapan.length,
+            pembayaran: result.pembayaran.length,
+            fiskal: result.fiskal.length,
+            targetPajakRetribusi: result.targetPajakRetribusi.length
+        });
+
+        return result;
+
+    } catch (error) {
+        console.error('handleGet: Fatal error:', error);
+        // Return empty data structure instead of throwing
+        return {
+            wajibPajak: [],
+            wilayah: [],
+            masterPajak: [],
+            ketetapan: [],
+            pembayaran: [],
+            fiskal: [],
+            targetPajakRetribusi: [],
+        };
     }
-
-    // Query ketetapan pajak
-    let ketetapan = [];
-    try {
-        const { data, error } = await supabase.from('KetetapanPajak').select('*');
-        if (!error) ketetapan = data || [];
-    } catch (e) {
-        ketetapan = [];
-    }
-
-    // Query pembayaran (RiwayatPembayaran)
-    let pembayaran = [];
-    try {
-        const { data, error } = await supabase.from('RiwayatPembayaran').select('*');
-        if (!error) pembayaran = data || [];
-    } catch (e) {
-        pembayaran = [];
-    }
-
-    // Query fiskal
-    let fiskal = [];
-    try {
-        const { data, error } = await supabase.from('Fiskal').select('*');
-        if (!error) fiskal = data || [];
-    } catch (e) {
-        fiskal = [];
-    }
-
-    let targetPajakRetribusi = [];
-    try {
-        const { data, error } = await supabase.from('TargetPajakRetribusi').select('*');
-        if (!error) targetPajakRetribusi = data || [];
-    } catch (e) {
-        targetPajakRetribusi = [];
-    }
-
-    if (wpError) throw new Error(`Error mengambil data WP: ${wpError.message}`);
-    if (wilayahError) throw new Error(`Error mengambil data Wilayah: ${wilayahError.message}`);
-
-    return {
-        wajibPajak: wajibPajak || [],
-        wilayah: wilayah || [],
-        masterPajak: masterPajak,
-        ketetapan: ketetapan,
-        pembayaran: pembayaran,
-        fiskal: fiskal,
-        targetPajakRetribusi: targetPajakRetribusi, // <-- tambahkan ini
-    };
 }
 
 // FUNGSI INI TELAH DIPERBAIKI
