@@ -439,11 +439,55 @@ async function handleUpdateKetetapan(data) {
 
 // Handler hapus ketetapan
 async function handleDeleteKetetapan(data) {
+    console.log('DELETE REQUEST:', data); // Debug log
+
+    if (!data.id_ketetapan) {
+        throw new Error('ID ketetapan tidak ditemukan dalam request');
+    }
+
+    // First, check if the record exists
+    const { data: existingRecord, error: findError } = await supabase
+        .from('KetetapanPajak')
+        .select('*')
+        .eq('ID_Ketetapan', data.id_ketetapan)
+        .single();
+
+    if (findError && findError.code !== 'PGRST116') { // PGRST116 = not found
+        console.error('Error checking record existence:', findError);
+        throw new Error('Gagal memeriksa data ketetapan: ' + findError.message);
+    }
+
+    if (!existingRecord) {
+        console.warn('Record not found for deletion:', data.id_ketetapan);
+        return { message: 'Data ketetapan tidak ditemukan atau sudah dihapus' };
+    }
+
+    console.log('Found record to delete:', existingRecord);
+
+    // Perform the deletion
     const { error } = await supabase
         .from('KetetapanPajak')
         .delete()
         .eq('ID_Ketetapan', data.id_ketetapan);
-    if (error) throw new Error('Gagal hapus ketetapan: ' + error.message);
+
+    if (error) {
+        console.error('Delete error:', error);
+        throw new Error('Gagal hapus ketetapan: ' + error.message);
+    }
+
+    // Verify deletion
+    const { data: verifyDeleted, error: verifyError } = await supabase
+        .from('KetetapanPajak')
+        .select('*')
+        .eq('ID_Ketetapan', data.id_ketetapan)
+        .single();
+
+    if (verifyDeleted) {
+        console.error('Record still exists after deletion attempt');
+        throw new Error('Data gagal dihapus dari database');
+    }
+
+    console.log('Successfully deleted ketetapan:', data.id_ketetapan);
     return { message: 'Ketetapan berhasil dihapus!' };
 }
 

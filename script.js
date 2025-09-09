@@ -373,23 +373,35 @@ async function handleKetetapanFormSubmit(event) {
 
 async function handleDeleteKetetapanClick(idKetetapan) {
     if (!confirm(`Anda yakin ingin menghapus ketetapan dengan ID: ${idKetetapan}?`)) return;
+
+    console.log('Frontend: Attempting to delete ketetapan:', idKetetapan);
+
     try {
-        const result = await postData({ action: 'deleteKetetapan', id_ketetapan: idKetetapan });
+        const requestData = { action: 'deleteKetetapan', id_ketetapan: idKetetapan };
+        console.log('Frontend: Sending request data:', requestData);
+
+        const result = await postData(requestData);
+        console.log('Frontend: Received response:', result);
+
         alert(result.message || 'Ketetapan berhasil dihapus.');
 
         // Check if we're on the daftar-ketetapan page and refresh data accordingly
         if (window.location.pathname.includes('daftar-ketetapan.html')) {
             // Use the local loadKetetapanData function if available
             if (typeof loadKetetapanData === 'function') {
+                console.log('Frontend: Refreshing data using local loadKetetapanData');
                 await loadKetetapanData();
             } else {
+                console.log('Frontend: Reloading page');
                 location.reload();
             }
         } else {
             // For other pages, reload the page
+            console.log('Frontend: Reloading page (not on daftar-ketetapan)');
             location.reload();
         }
     } catch (error) {
+        console.error('Frontend: Delete failed:', error);
         alert('Gagal menghapus ketetapan: ' + error.message);
     }
 }
@@ -446,6 +458,8 @@ function showStatus(message, isSuccess, elementId = 'status') {
 }
 
 async function postData(data) {
+    console.log('PostData: Sending request:', data);
+
     try {
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -453,17 +467,26 @@ async function postData(data) {
             body: JSON.stringify(data)
         });
 
+        console.log('PostData: Response status:', response.status);
+        console.log('PostData: Response headers:', Object.fromEntries(response.headers.entries()));
+
         // Check if response has content
         const contentLength = response.headers.get('content-length');
         const contentType = response.headers.get('content-type');
 
+        console.log('PostData: Content-Length:', contentLength);
+        console.log('PostData: Content-Type:', contentType);
+
         // If response is empty or not JSON, handle gracefully
         if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
+            console.log('PostData: Empty or non-JSON response detected');
             if (response.ok) {
                 // If response is OK but empty, assume success
+                console.log('PostData: Returning success for empty OK response');
                 return { status: 'sukses', message: 'Operation completed successfully' };
             } else {
                 // If response is not OK and empty, throw error with status
+                console.log('PostData: Throwing error for non-OK empty response');
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
         }
@@ -471,26 +494,35 @@ async function postData(data) {
         // Try to parse JSON response
         let result;
         try {
-            result = await response.json();
+            const responseText = await response.text();
+            console.log('PostData: Raw response text:', responseText);
+
+            result = JSON.parse(responseText);
+            console.log('PostData: Parsed JSON result:', result);
         } catch (jsonError) {
+            console.error('PostData: JSON parsing failed:', jsonError);
             // If JSON parsing fails, check if response is actually OK
             if (response.ok) {
+                console.log('PostData: Response OK but JSON parsing failed, returning success');
                 return { status: 'sukses', message: 'Operation completed successfully' };
             } else {
                 // Get text content for better error message
                 const textContent = await response.text().catch(() => '');
+                console.error('PostData: Server error with text content:', textContent);
                 throw new Error(`Server error (${response.status}): ${textContent || response.statusText}`);
             }
         }
 
         // Check for API-level errors
         if (result.status === 'gagal' || !response.ok) {
+            console.error('PostData: API-level error detected:', result);
             throw new Error(result.message || `HTTP error! status: ${response.status}`);
         }
 
+        console.log('PostData: Returning successful result:', result);
         return result;
     } catch (error) {
-        console.error('Post error:', error);
+        console.error('PostData: Final error:', error);
         throw error;
     }
 }
