@@ -28,7 +28,6 @@
             <a href="setoran-pajak.html">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
             <a href="daftar-fiskal.html" class="active">Daftar Fiskal</a>
-            <a href="review-wajib-pajak.html">Review Data WP</a>
             <a href="report.html">Laporan</a>
             <a href="target.html">Target Pajak & Retribusi</a>
         </nav>
@@ -101,18 +100,38 @@
                 let lunasReklame = false;
                 let lunasSampah = false;
                 npwpdMap[npwpd].forEach(bayar => {
+                    // Hanya proses pembayaran yang sukses
+                    if (bayar.StatusPembayaran !== 'Sukses') return;
+                    
                     // Temukan ketetapan terkait
                     const ket = ketetapan.find(k => k.ID_Ketetapan === bayar.ID_Ketetapan);
                     if (!ket) return;
+                    
                     // Temukan master pajak terkait
                     const m = master.find(m => m.KodeLayanan === ket.KodeLayanan);
                     if (!m) return;
-                    if (m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') lunasReklame = true;
-                    if (m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') lunasSampah = true;
+                    
+                    // Cek apakah ini pembayaran untuk reklame atau sampah
+                    // Menggunakan pendekatan yang lebih robust dengan memeriksa tipe layanan dan nama layanan
+                    if (m.Tipe === 'Pajak' && m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('reklame')) {
+                        lunasReklame = true;
+                    }
+                    if (m.Tipe === 'Retribusi' && m.NamaLayanan && m.NamaLayanan.toLowerCase().includes('sampah')) {
+                        lunasSampah = true;
+                    }
                 });
+                
+                // Jika kedua syarat terpenuhi, tambahkan ke daftar fiskal
                 if (lunasReklame && lunasSampah) {
                     const wp = wajibPajak.find(wp => wp.NPWPD === npwpd) || {};
-                    hasil.push({ npwpd, namaUsaha: wp['Nama Usaha'] || '-', namaPemilik: wp['Nama Pemilik'] || '-', alamat: wp['Alamat'] || '-' });
+                    hasil.push({ 
+                        npwpd, 
+                        namaUsaha: wp['Nama Usaha'] || '-', 
+                        namaPemilik: wp['Nama Pemilik'] || '-', 
+                        alamat: wp['Alamat'] || '-',
+                        lunasReklame: true,
+                        lunasSampah: true
+                    });
                 }
             });
             fiskalDataGlobal = hasil;
@@ -255,4 +274,4 @@
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
-</html> 
+</html>

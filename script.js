@@ -3,15 +3,56 @@
 const apiUrl = '/.netlify/functions/api';
 // --------------------
 
-// Variabel global untuk menyimpan data
-let dataWajibPajakGlobal = [];
-let dataWilayahGlobal = [];
-let dataMasterPajakGlobal = [];
-let dataKetetapanGlobal = [];
-let kelurahanChoices = null;
+// Logging service - menggunakan non-module loading
+// import Logger from './loggingService.js';
+// import dataBackup from './backupService.js';
+
+// Inisialisasi logger dan backup service secara manual
+window.Logger = {
+    error: function(message, data) {
+        console.error('[ERROR]', message, data);
+    },
+    warn: function(message, data) {
+        console.warn('[WARN]', message, data);
+    },
+    info: function(message, data) {
+        console.info('[INFO]', message, data);
+    }
+};
+
+window.dataBackup = {
+    backupData: function(data, key) {
+        try {
+            localStorage.setItem('backup_' + key, JSON.stringify(data));
+        } catch (e) {
+            console.warn('Failed to backup data:', e);
+        }
+    },
+    restoreData: function(key) {
+        try {
+            const data = localStorage.getItem('backup_' + key);
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.warn('Failed to restore data:', e);
+            return null;
+        }
+    }
+};
 
 // Router utama yang berjalan setelah halaman HTML selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered! Scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+        });
+    }
     const pageId = document.body.id;
     switch (pageId) {
         case 'page-dashboard': initDashboardPage(); break;
@@ -39,45 +80,11 @@ async function initDashboardPage() {
 
 async function initTambahWpPage() {
     const form = document.getElementById('pajakForm');
-    const kelurahanSelect = document.getElementById('kelurahan');
-    const kecamatanSelect = document.getElementById('kecamatan');
     const generateCheckbox = document.getElementById('generateNpwpd');
     const npwpdInput = document.getElementById('npwpd');
     const jenisWpGroup = document.getElementById('jenisWpGroup');
 
-    try {
-        const data = await fetchAllData();
-        dataWilayahGlobal = data.wilayah || [];
-        // Isi dropdown kecamatan unik
-        const kecamatanUnik = [...new Set(dataWilayahGlobal.map(item => item.Kecamatan))];
-        kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-        kecamatanUnik.forEach(kec => {
-            const option = document.createElement('option');
-            option.value = kec;
-            option.textContent = kec;
-            kecamatanSelect.appendChild(option);
-        });
-        // Reset kelurahan
-        kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
-        // Saat kecamatan dipilih, isi kelurahan sesuai kecamatan
-        kecamatanSelect.addEventListener('change', function() {
-            kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
-            if (!this.value) return;
-            const kelurahanFiltered = dataWilayahGlobal.filter(item => item.Kecamatan === this.value);
-            kelurahanFiltered.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.Kelurahan;
-                option.textContent = item.Kelurahan;
-                option.dataset.kodekel = item.KodeKelurahan;
-                option.dataset.kodekec = item.KodeKecamatan;
-                kelurahanSelect.appendChild(option);
-            });
-        });
-    } catch (error) {
-        kecamatanSelect.innerHTML = '<option value="">Gagal memuat data</option>';
-        kelurahanSelect.innerHTML = '<option value="">Gagal memuat data</option>';
-    }
-
+    // Setup event listener untuk checkbox NPWPD otomatis
     generateCheckbox.addEventListener('change', (e) => {
         if (e.target.checked) {
             npwpdInput.readOnly = true;
@@ -95,16 +102,30 @@ async function initTambahWpPage() {
         }
     });
 
-    kelurahanSelect.addEventListener('change', (e) => {
-        const wilayahCocok = dataWilayahGlobal.find(w => w.Kelurahan === e.target.value);
-        kecamatanSelect.value = wilayahCocok ? wilayahCocok.Kecamatan : '';
-    });
-    
-    form.addEventListener('submit', handleWpFormSubmit);
+    try {
+        const data = await fetchAllData();
+        dataWilayahGlobal = data.wilayah || [];
+
+        // Inisialisasi semua dropdown
+        setupDomisiliDropdowns();   // Untuk alamat usaha di Mamberamo Raya
+        setupWilayahAsalDropdowns(); // Untuk alamat KTP dari seluruh Indonesia
+        
+        // Setup event listener untuk submit form
+        form.addEventListener('submit', handleWpFormSubmit);
+    } catch (error) {
+        console.error("Gagal inisialisasi halaman Tambah WP:", error);
+        showStatus("Gagal memuat data awal. Coba muat ulang halaman.", false);
+    }
 }
 
 async function initLihatWpPage() {
     try {
+        // Tampilkan loading state di tabel
+        const tableBody = document.querySelector("#dataTable tbody");
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Memuat data...</td></tr>';
+        }
+        
         const data = await fetchAllData();
         dataWajibPajakGlobal = data.wajibPajak || [];
         dataWilayahGlobal = data.wilayah || [];
@@ -203,44 +224,56 @@ async function handleWpFormSubmit(event) {
     submitButton.disabled = true; submitButton.textContent = 'Mengirim...'; statusDiv.style.display = 'none';
     
     const generateMode = document.getElementById('generateNpwpd').checked;
-    const kelurahanSelect = document.getElementById('kelurahan');
-    const kecamatanSelect = document.getElementById('kecamatan');
-    const selectedKelurahanOption = kelurahanSelect.options[kelurahanSelect.selectedIndex];
 
-    // --- VALIDASI INPUT ---
-    const namaUsaha = document.getElementById('namaUsaha').value.trim();
-    const namaPemilik = document.getElementById('namaPemilik').value.trim();
-    const nikKtp = document.getElementById('nikKtp').value.trim();
-    const alamat = document.getElementById('alamat').value.trim();
-    const telephone = document.getElementById('telephone').value.trim();
-    const kelurahan = kelurahanSelect.value;
-    const kecamatan = kecamatanSelect.value;
+    // --- AMBIL DATA & VALIDASI ---
+    // Data Usaha & Domisili
     const npwpd = document.getElementById('npwpd').value.trim();
+    const namaUsaha = document.getElementById('namaUsaha').value.trim();
+    const alamatUsaha = document.getElementById('alamatUsaha').value.trim();
+    const kecamatanDomisili = document.getElementById('kecamatanDomisili').selectedOptions[0]?.textContent || '';
+    const kelurahanDomisili = document.getElementById('kelurahanDomisili').selectedOptions[0]?.textContent || '';
     const jenisWp = document.getElementById('jenisWp').value;
 
-    if (!namaUsaha || !namaPemilik || !nikKtp || !alamat || !telephone || !kelurahan || !kecamatan) {
-        showStatus('Semua field wajib diisi!', false);
+    // Data Pemilik (KTP)
+    const namaPemilik = document.getElementById('namaPemilik').value.trim();
+    const nikKtp = document.getElementById('nikKtp').value.trim();
+    const telephone = document.getElementById('telephone').value.trim();
+    const alamatKtp = document.getElementById('alamatKtp').value.trim();
+    const provinsiAsal = document.getElementById('provinsiAsal').selectedOptions[0]?.textContent || '';
+    const kabupatenAsal = document.getElementById('kabupatenAsal').selectedOptions[0]?.textContent || '';
+    const kecamatanAsal = document.getElementById('kecamatanAsal').selectedOptions[0]?.textContent || '';
+    const kelurahanAsal = document.getElementById('kelurahanAsal').selectedOptions[0]?.textContent || '';
+
+    // Validasi
+    if (!namaUsaha || !alamatUsaha || !kecamatanDomisili || !kelurahanDomisili || !namaPemilik || !nikKtp || !telephone || !alamatKtp || !provinsiAsal || !kabupatenAsal || !kecamatanAsal || !kelurahanAsal) {
+        showStatus('Semua field wajib diisi, baik data usaha maupun data pemilik!', false);
         submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
         return;
     }
-    if (!/^\d{16}$/.test(nikKtp)) {
-        showStatus('NIK harus 16 digit angka!', false);
+    
+    // Validasi format NIK dan telepon
+    if (!validateNIK(nikKtp)) {
+        showStatus('Format NIK tidak valid! NIK harus 16 digit dengan format yang sesuai standar KTP elektronik.', false);
         submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
         return;
     }
-    if (!/^\d{8,}$/.test(telephone)) {
-        showStatus('Nomor telepon harus minimal 8 digit angka!', false);
+    
+    if (!validatePhoneNumber(telephone)) {
+        showStatus('Format nomor telepon tidak valid! Gunakan format 08xxxxxxxx atau 628xxxxxxxx', false);
         submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
         return;
     }
+    
     if (generateMode) {
+        const kelurahanDomisiliSelect = document.getElementById('kelurahanDomisili');
+        const selectedKelurahanOption = kelurahanDomisiliSelect.options[kelurahanDomisiliSelect.selectedIndex];
         if (!selectedKelurahanOption || !selectedKelurahanOption.dataset.kodekel || !selectedKelurahanOption.dataset.kodekec) {
-            showStatus('Pilih kelurahan dan kecamatan yang valid!', false);
+            showStatus('Untuk NPWPD otomatis, wajib memilih Kecamatan & Kelurahan Domisili dari daftar Mamberamo Raya!', false);
             submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
             return;
         }
         if (!jenisWp) {
-            showStatus('Jenis WP wajib dipilih!', false);
+            showStatus('Jenis WP wajib dipilih untuk NPWPD otomatis!', false);
             submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
             return;
         }
@@ -249,6 +282,23 @@ async function handleWpFormSubmit(event) {
             showStatus('NPWPD wajib diisi untuk mode manual!', false);
             submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
             return;
+        }
+        
+        // Cek duplikasi NPWPD untuk mode manual
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'checkNpwpdDuplication', npwpd: npwpd })
+            });
+            const result = await response.json();
+            if (result.status === 'exists') {
+                showStatus('NPWPD sudah terdaftar! Silakan gunakan NPWPD lain.', false);
+                submitButton.disabled = false; submitButton.textContent = 'Kirim Data';
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking NPWPD duplication:', error);
         }
     }
     // --- END VALIDASI ---
@@ -263,10 +313,26 @@ async function handleWpFormSubmit(event) {
         let dataToSend = {
             action: 'createWp',
             generate_mode: generateMode,
-            namaUsaha, namaPemilik, nikKtp, alamat, telephone, kelurahan, kecamatan, fotoPemilik, fotoTempatUsaha, fotoKtp
+            namaUsaha: namaUsaha,
+            alamat: alamatUsaha, // Mengirim alamatUsaha sebagai 'alamat' untuk backward compatibility
+            kecamatan: kecamatanDomisili,
+            kelurahan: kelurahanDomisili,
+            namaPemilik: namaPemilik,
+            nikKtp: nikKtp,
+            telephone: telephone,
+            alamatKtp: alamatKtp,
+            provinsiAsal: provinsiAsal,
+            kabupatenAsal: kabupatenAsal,
+            kecamatanAsal: kecamatanAsal,
+            kelurahanAsal: kelurahanAsal,
+            fotoPemilik: fotoPemilik,
+            fotoTempatUsaha: fotoTempatUsaha,
+            fotoKtp: fotoKtp
         };
 
         if (generateMode) {
+            const kelurahanDomisiliSelect = document.getElementById('kelurahanDomisili');
+            const selectedKelurahanOption = kelurahanDomisiliSelect.options[kelurahanDomisiliSelect.selectedIndex];
             dataToSend.jenisWp = jenisWp;
             dataToSend.kodeKelurahan = selectedKelurahanOption.dataset.kodekel;
             dataToSend.kodeKecamatan = selectedKelurahanOption.dataset.kodekec;
@@ -277,8 +343,16 @@ async function handleWpFormSubmit(event) {
         
         const result = await postData(dataToSend);
         showStatus(result.message || 'Data WP berhasil dibuat!', true);
-        event.target.reset(); 
-        document.getElementById('kecamatan').value = '';
+        event.target.reset(); // Reset semua field form
+        
+        // Reset manual untuk dropdown dan state
+        document.getElementById('provinsiAsal').value = '';
+        resetAndDisableSelect(document.getElementById('kabupatenAsal'));
+        resetAndDisableSelect(document.getElementById('kecamatanAsal'));
+        resetAndDisableSelect(document.getElementById('kelurahanAsal'));
+        document.getElementById('kecamatanDomisili').value = '';
+        resetAndDisableSelect(document.getElementById('kelurahanDomisili'));
+        
         document.getElementById('generateNpwpd').checked = false;
         document.getElementById('npwpd').readOnly = false;
         document.getElementById('npwpd').style.backgroundColor = 'white';
@@ -431,6 +505,19 @@ function showStatus(message, isSuccess, elementId = 'status') {
     statusDiv.textContent = message;
     statusDiv.className = isSuccess ? 'status-sukses' : 'status-gagal';
     statusDiv.style.display = 'block';
+    
+    // Auto hide status setelah 5 detik
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
+}
+
+// Fungsi untuk logging error
+function logError(error, context) {
+    window.Logger.error(`Error in ${context}: ${error.message}`, {
+        stack: error.stack,
+        context: context
+    });
 }
 
 async function postData(data) {
@@ -446,7 +533,7 @@ async function postData(data) {
         }
         return result;
     } catch (error) {
-        console.error('Post error:', error);
+        logError(error, 'postData');
         throw error;
     }
 }
@@ -471,30 +558,110 @@ function setupKetetapanEditModal() {
     editForm.addEventListener('submit', handleUpdateKetetapanSubmit);
 }
 
+// Fungsi untuk mengecek koneksi internet
+function isOnline() {
+    return navigator.onLine;
+}
+
+// Fungsi untuk menampilkan notifikasi offline
+function showOfflineNotification() {
+    // Buat element notifikasi offline
+    const notification = document.createElement('div');
+    notification.id = 'offline-notification';
+    notification.className = 'notification notification-warning';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span class="notification-message">⚠️ Tidak ada koneksi internet. Menampilkan data dari cache.</span>
+            <button class="notification-close">&times;</button>
+        </div>
+    `;
+    
+    // Tambahkan ke body
+    document.body.appendChild(notification);
+    
+    // Event listener untuk tombol close
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.addEventListener('click', () => {
+        notification.remove();
+    });
+    
+    return notification;
+}
+
+// Fungsi untuk menyembunyikan notifikasi offline
+function hideOfflineNotification() {
+    const notification = document.getElementById('offline-notification');
+    if (notification) {
+        notification.remove();
+    }
+}
+
 async function fetchAllData() {
+    // Cek koneksi internet terlebih dahulu
+    if (!isOnline()) {
+        window.Logger.warn('Tidak ada koneksi internet, mencoba restore dari backup');
+        const backupData = window.dataBackup.restoreData('latest_fetch');
+        if (backupData) {
+            showOfflineNotification();
+            window.Logger.info('Data berhasil direstore dari backup');
+            return backupData;
+        } else {
+            throw new Error('Tidak ada koneksi internet dan tidak ada data backup tersedia.');
+        }
+    }
+    
     try {
-    const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl);
 
         // Periksa apakah respons adalah fallback HTML dari Service Worker
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('text/html')) {
-            console.warn('Menerima respons HTML dari Service Worker (fallback offline).');
+            window.Logger.warn('Menerima respons HTML dari Service Worker (fallback offline).');
             throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
         }
 
         // Jika bukan fallback HTML, lanjutkan seperti biasa (mengharapkan JSON)
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
-    }
-    const result = await response.json();
-    if (result.status === 'gagal') throw new Error(result.message);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gagal mengambil data dari server. Status: ${response.status}. Pesan: ${errorText}`);
+        }
+        const result = await response.json();
+        if (result.status === 'gagal') throw new Error(result.message);
 
-    return result;
+        // Backup data yang berhasil diambil
+        window.dataBackup.backupData(result, 'latest_fetch');
+        
+        // Sembunyikan notifikasi offline jika ada
+        hideOfflineNotification();
+        
+        return result;
 
     } catch (error) {
-        console.warn('Error mengambil data dari network, mencoba dari IndexedDB:', error);
-        throw new Error('Tidak ada koneksi internet dan tidak ada data tersimpan secara offline.');
+        // Coba restore dari backup jika ada
+        window.Logger.warn('Gagal mengambil data dari server, mencoba restore dari backup', { error: error.message });
+        const backupData = window.dataBackup.restoreData('latest_fetch');
+        if (backupData) {
+            showOfflineNotification();
+            window.Logger.info('Data berhasil direstore dari backup');
+            return backupData;
+        }
+
+        // Terakhir, coba gunakan data mock lokal saat pengembangan
+        try {
+            window.Logger.warn('Backup tidak tersedia. Mencoba memuat data mock lokal (mock-data.json).');
+            const mockResp = await fetch('/mock-data.json', { cache: 'no-store' });
+            if (mockResp.ok) {
+                const mockData = await mockResp.json();
+                window.dataBackup.backupData(mockData, 'latest_fetch');
+                window.Logger.info('Berhasil memuat data mock lokal.');
+                return mockData;
+            }
+        } catch (mockErr) {
+            window.Logger.warn('Gagal memuat data mock lokal.', { error: mockErr.message });
+        }
+        
+        logError(error, 'fetchAllData');
+        throw new Error('Gagal mengambil data: ' + error.message);
     }
 }
 
@@ -581,48 +748,12 @@ function displayPhotos(item) {
     fotoData.forEach(foto => { if (foto.url) fotoContent.innerHTML += `<div class="foto-card"><img src="${foto.url}" alt="${foto.label}"><p>${foto.label}</p></div>`; });
 }
 
-function displayKetetapanHistory(riwayatData) {
-    const tableHead = document.querySelector("#ketetapanTable thead");
-    const tableBody = document.querySelector("#ketetapanTable tbody");
-    if (!tableHead || !tableBody) return;
-    tableHead.innerHTML = ''; tableBody.innerHTML = '';
-    if (riwayatData.length > 0) {
-        const headers = Object.keys(riwayatData[0]);
-        const headerRow = document.createElement('tr');
-        headers.forEach(h => { headerRow.innerHTML += `<th>${h}</th>`; });
-        headerRow.innerHTML += `<th>Aksi</th>`;
-        tableHead.appendChild(headerRow);
-        riwayatData.forEach(rowData => {
-            const row = document.createElement('tr');
-            headers.forEach(header => {
-                const cell = document.createElement('td');
-                let cellData = rowData[header];
-                if (header === 'TanggalKetetapan' && cellData) {
-                    cellData = new Date(cellData).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                }
-                if (['JumlahPokok', 'Denda', 'TotalTagihan'].includes(header)) {
-                    cellData = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(cellData);
-                }
-                cell.textContent = cellData || '';
-                row.appendChild(cell);
-            });
-            const idKetetapan = rowData['ID_Ketetapan'];
-            const aksiCell = document.createElement('td');
-            aksiCell.innerHTML = `
-                <a href="cetak-skpd.html?id=${idKetetapan}" target="_blank" class="btn-aksi" style="background-color: #0d6efd; text-decoration: none; display: inline-block; margin-right: 5px;">Cetak</a>
-                <button class="btn-aksi btn-edit" onclick="handleEditKetetapanClick('${idKetetapan}')">Edit</button> <button class="btn-aksi btn-hapus" onclick="handleDeleteKetetapanClick('${idKetetapan}')">Hapus</button>
-            `;
-            row.appendChild(aksiCell);
-            tableBody.appendChild(row);
-        });
-    } else {
-        tableBody.innerHTML = `<tr><td colspan="11">Belum ada riwayat ketetapan.</td></tr>`;
-    }
-}
-
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
-        if (!file) { resolve(""); return; }
+        if (!file) {
+            resolve("");
+            return;
+        }
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result);
@@ -715,10 +846,11 @@ function displayFiskalStatus(npwpd, data) {
         const master = masterPajak.find(m => m.KodeLayanan === ket.KodeLayanan);
         if (!master) return;
         
-        if (master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') {
+        // Menggunakan pendekatan yang lebih robust dengan memeriksa tipe layanan dan nama layanan
+        if (master.Tipe === 'Pajak' && master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') {
             lunasReklame = true;
         }
-        if (master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') {
+        if (master.Tipe === 'Retribusi' && master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') {
             lunasSampah = true;
         }
     });
@@ -751,6 +883,26 @@ function displayFiskalStatus(npwpd, data) {
     } else {
         document.getElementById('jatuhTempoFiskal').textContent = '-';
     }
+}
+
+// Fungsi validasi NIK KTP
+function validateNIK(nik) {
+    // Format NIK sesuai standar KTP elektronik: 2 digit provinsi, 2 digit kabupaten, 2 digit kecamatan, 4 digit tahun lahir, 6 digit unik
+    const nikPattern = /^[1-9]{2}[0-9]{2}[0-9]{2}[0-9]{4}[0-9]{6}$/;
+    return nikPattern.test(nik) && nik.length === 16;
+}
+
+// Fungsi validasi nomor telepon
+function validatePhoneNumber(phone) {
+    // Format nomor telepon Indonesia: 08xxxxxxxx atau 628xxxxxxxx
+    const phonePattern = /^(0|62)[2-9][0-9]{7,10}$/;
+    return phonePattern.test(phone.replace(/\s+/g, ''));
+}
+
+// Fungsi validasi email (jika diperlukan di masa depan)
+function validateEmail(email) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(email);
 }
 
 // Fungsi helper untuk format rupiah
@@ -917,42 +1069,24 @@ async function loadKetetapanData() {
     }
 }
 // Pastikan loadKetetapanData dipanggil setelah edit/hapus/tambah
-async function handleUpdateKetetapanSubmit(event) {
-    event.preventDefault();
-    const updateButton = document.getElementById('updateKetetapanButton');
-    updateButton.disabled = true; updateButton.textContent = 'Menyimpan...';
-    try {
-        const updatedData = {
-            action: 'updateKetetapan', id_ketetapan: document.getElementById('editKetetapanId').value,
-            masaPajak: document.getElementById('editKetetapanMasaPajak').value,
-            jumlahPokok: document.getElementById('editKetetapanJumlahPokok').value,
-            catatan: document.getElementById('editKetetapanCatatan').value
-        };
-        const result = await postData(updatedData);
-        alert(result.message || 'Ketetapan berhasil diperbarui!');
-        document.getElementById('editKetetapanModal').style.display = 'none';
-        await loadKetetapanData(); // refresh data setelah edit
-    } catch (error) {
-        alert('Gagal memperbarui data: ' + error.message);
-    } finally {
-        updateButton.disabled = false; updateButton.textContent = 'Simpan Perubahan';
-    }
-}
-async function handleDeleteKetetapanClick(idKetetapan) {
-    if (!confirm(`Anda yakin ingin menghapus ketetapan dengan ID: ${idKetetapan}?`)) return;
-    try {
-        const result = await postData({ action: 'deleteKetetapan', id_ketetapan: idKetetapan });
-        alert(result.message || 'Ketetapan berhasil dihapus.');
-        await loadKetetapanData(); // refresh data setelah hapus
-    } catch (error) {
-        alert('Gagal menghapus ketetapan: ' + error.message);
-    }
-}
 
 async function loadDashboardData() {
     try {
-        const response = await fetch('/.netlify/functions/api');
-        const data = await response.json();
+        // Tampilkan loading state
+        const statElements = [
+            'totalWp', 'totalKetetapan', 'totalPembayaran', 'totalSkpdSkrd',
+            'totalSspdSsrd', 'totalFiskal', 'totalNilaiKetetapan', 'totalNilaiSetoran'
+        ];
+        
+        statElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = 'Loading...';
+            }
+        });
+        
+        // Gunakan fetchAllData agar fallback (backup/mock) juga berlaku di dashboard
+        const data = await fetchAllData();
         
         // Update statistik
         const wajibPajak = data.wajibPajak || [];
@@ -996,8 +1130,9 @@ async function loadDashboardData() {
                 if (!ket) return;
                 const master = data.masterPajak?.find(m => m.KodeLayanan === ket.KodeLayanan);
                 if (!master) return;
-                if (master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') lunasReklame = true;
-                if (master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') lunasSampah = true;
+                // Menggunakan pendekatan yang lebih robust dengan memeriksa tipe layanan dan nama layanan
+                if (master.Tipe === 'Pajak' && master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') lunasReklame = true;
+                if (master.Tipe === 'Retribusi' && master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('sampah') && bayar.StatusPembayaran === 'Sukses') lunasSampah = true;
             });
             if (lunasReklame && lunasSampah) totalFiskal++;
         });
@@ -1020,15 +1155,142 @@ async function loadDashboardData() {
         
     } catch (error) {
         console.error('Error loading dashboard data:', error);
-        document.getElementById('totalWp').textContent = 'Error';
-        document.getElementById('totalKetetapan').textContent = 'Error';
-        document.getElementById('totalPembayaran').textContent = 'Error';
-        document.getElementById('totalSkpdSkrd').textContent = 'Error';
-        document.getElementById('totalSspdSsrd').textContent = 'Error';
-        document.getElementById('totalFiskal').textContent = 'Error';
-        document.getElementById('totalNilaiKetetapan').textContent = 'Error';
-        document.getElementById('totalNilaiSetoran').textContent = 'Error';
+        // Tampilkan error di semua elemen statistik
+        const statElements = [
+            'totalWp', 'totalKetetapan', 'totalPembayaran', 'totalSkpdSkrd',
+            'totalSspdSsrd', 'totalFiskal', 'totalNilaiKetetapan', 'totalNilaiSetoran'
+        ];
+        
+        statElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = 'Error';
+            }
+        });
     }
+}
+
+// --- FUNGSI-FUNGSI BARU UNTUK WILAYAH DINAMIS ---
+
+// Mengisi dropdown untuk alamat domisili di Mamberamo Raya
+function setupDomisiliDropdowns() {
+    const kecamatanSelect = document.getElementById('kecamatanDomisili');
+    const kelurahanSelect = document.getElementById('kelurahanDomisili');
+
+    if (dataWilayahGlobal.length === 0) {
+        console.warn("Data wilayah global Mamberamo Raya belum terisi.");
+        return;
+    }
+    
+    const kecamatanList = [...new Map(dataWilayahGlobal.map(item => 
+        [item.Kecamatan, { id: item.KodeKecamatan, name: item.Kecamatan }])
+    ).values()].sort((a,b) => a.name.localeCompare(b.name));
+    
+    kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
+    kecamatanList.forEach(kec => {
+        const option = document.createElement('option');
+        option.value = kec.name;
+        option.dataset.kodekec = kec.id;
+        option.textContent = kec.name;
+        kecamatanSelect.appendChild(option);
+    });
+
+    kecamatanSelect.addEventListener('change', function() {
+        const selectedKecamatanName = this.value;
+        const selectedKecamatanOption = this.options[this.selectedIndex];
+        const kodeKecamatan = selectedKecamatanOption.dataset.kodekec;
+
+        resetAndDisableSelect(kelurahanSelect, 'Pilih Kelurahan/Desa');
+        kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan/Desa --</option>';
+
+        if (selectedKecamatanName) {
+            const kelurahanList = dataWilayahGlobal.filter(w => w.Kecamatan === selectedKecamatanName)
+                                                .sort((a,b) => a.Kelurahan.localeCompare(b.Kelurahan));
+            
+            kelurahanList.forEach(kel => {
+                const option = document.createElement('option');
+                option.value = kel.Kelurahan;
+                option.textContent = kel.Kelurahan;
+                option.dataset.kodekel = kel.KodeKelurahan;
+                option.dataset.kodekec = kodeKecamatan;
+                kelurahanSelect.appendChild(option);
+            });
+            kelurahanSelect.disabled = false;
+        }
+    });
+}
+
+// Mengisi dropdown untuk alamat asal (seluruh Indonesia)
+function setupWilayahAsalDropdowns() {
+    const provinsiSelect = document.getElementById('provinsiAsal');
+    const kabupatenSelect = document.getElementById('kabupatenAsal');
+    const kecamatanSelect = document.getElementById('kecamatanAsal');
+    const kelurahanSelect = document.getElementById('kelurahanAsal');
+
+    // 1. Muat Provinsi saat halaman dibuka
+    fetchAndPopulateWilayah('provinces', null, provinsiSelect, 'Pilih Provinsi');
+
+    // 2. Event listener untuk Provinsi
+    provinsiSelect.addEventListener('change', function() {
+        resetAndDisableSelect(kabupatenSelect, 'Pilih Kabupaten/Kota');
+        resetAndDisableSelect(kecamatanSelect, 'Pilih Kecamatan');
+        resetAndDisableSelect(kelurahanSelect, 'Pilih Kelurahan/Desa');
+
+        if (this.value) {
+            fetchAndPopulateWilayah('regencies', this.value, kabupatenSelect, 'Pilih Kabupaten/Kota', false);
+            kabupatenSelect.disabled = false;
+        }
+    });
+
+    // 3. Event listener untuk Kabupaten/Kota
+    kabupatenSelect.addEventListener('change', function() {
+        resetAndDisableSelect(kecamatanSelect, 'Pilih Kecamatan');
+        resetAndDisableSelect(kelurahanSelect, 'Pilih Kelurahan/Desa');
+        
+        if (this.value) {
+            fetchAndPopulateWilayah('districts', this.value, kecamatanSelect, 'Pilih Kecamatan');
+            kecamatanSelect.disabled = false;
+        }
+    });
+
+    // 4. Event listener untuk Kecamatan
+    kecamatanSelect.addEventListener('change', function() {
+        resetAndDisableSelect(kelurahanSelect, 'Pilih Kelurahan/Desa');
+        if (this.value) {
+            fetchAndPopulateWilayah('villages', this.value, kelurahanSelect, 'Pilih Kelurahan/Desa');
+            kelurahanSelect.disabled = false;
+        }
+    });
+}
+
+async function fetchAndPopulateWilayah(type, id, selectElement, placeholder, addLainnya = false) {
+    try {
+        selectElement.innerHTML = `<option value="">Memuat...</option>`;
+        const result = await postData({ action: 'getWilayah', type, id });
+        
+        selectElement.innerHTML = `<option value="">-- ${placeholder} --</option>`;
+        if (addLainnya) {
+            const lainnyaOption = document.createElement('option');
+            lainnyaOption.value = 'lainnya';
+            lainnyaOption.textContent = '-- Lainnya (Input Manual) --';
+            selectElement.appendChild(lainnyaOption);
+        }
+
+        result.wilayah.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.name;
+            selectElement.appendChild(option);
+        });
+    } catch (error) {
+        selectElement.innerHTML = `<option value="">Gagal memuat data</option>`;
+        console.error(`Gagal memuat ${type}:`, error);
+    }
+}
+
+function resetAndDisableSelect(selectElement, placeholder = '') {
+    selectElement.innerHTML = `<option value="">-- ${placeholder} --</option>`;
+    selectElement.disabled = true;
 }
 
 function updateRevenueReport(data) {

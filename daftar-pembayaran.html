@@ -27,7 +27,6 @@
             <a href="setoran-pajak.html">Setoran Pajak</a>
             <a href="daftar-pembayaran.html" class="active">Daftar Pembayaran</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
-            <a href="review-wajib-pajak.html">Review Data WP</a>
             <a href="report.html">Laporan</a>
             <a href="target.html">Target Pajak & Retribusi</a>
         </nav>
@@ -83,7 +82,6 @@
     <div id="printArea" style="display:none;"></div>
     <script src="script.js"></script>
     <script>
-(function() {
     // Script khusus untuk halaman daftar pembayaran
     let pembayaranDataGlobal = [];
     let wajibPajakDataGlobal = [];
@@ -92,12 +90,12 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         await loadPembayaranData();
+        setupAksiPembayaran();
     });
 
     async function loadPembayaranData() {
         try {
-        const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
-        if (!response.ok) { alert('Gagal fetch API: ' + response.status + ' ' + response.statusText); return; }
+            const response = await fetch('/.netlify/functions/api');
             const data = await response.json();
             pembayaranDataGlobal = data.pembayaran || [];
             wajibPajakDataGlobal = data.wajibPajak || [];
@@ -105,7 +103,6 @@
             ketetapanDataGlobal = data.ketetapan || [];
             displayPembayaranData(pembayaranDataGlobal);
         } catch (error) {
-        alert('Gagal fetch API: ' + error.message);
             document.querySelector('#pembayaranTable tbody').innerHTML = 
                 '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">Gagal memuat data pembayaran.</td></tr>';
         }
@@ -129,7 +126,7 @@
         function renderTable(pageData) {
             const tableConfig = {
                 showCheckbox: true,
-            idKey: 'ID_Pembayaran',
+                idKey: 'ID_Pembayaran', // Tambahkan idKey untuk menentukan nilai checkbox
                 columns: [
                     { key: 'index', label: 'No', type: 'text' },
                     { key: 'ID_Pembayaran', label: 'ID Pembayaran', type: 'text' },
@@ -289,53 +286,74 @@
             alert('Gagal menghapus pembayaran.');
         }
     }
-    // Aksi terpusat pembayaran
-    document.addEventListener('DOMContentLoaded', function() {
+    // Perbaikan: Aksi terpusat pembayaran
+    function setupAksiPembayaran() {
       const aksiSelect = document.getElementById('aksiPembayaran');
       const prosesBtn = document.getElementById('prosesAksiPembayaran');
-      const checkAll = document.getElementById('checkAllPembayaran');
       const table = document.getElementById('pembayaranTable');
+
+      if (!aksiSelect || !prosesBtn || !table) return;
+
+      // Enable tombol proses jika ada yang dicentang
       function updateProsesBtn() {
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
-        prosesBtn.disabled = checked.length === 0 || !aksiSelect.value;
+        const checked = table.querySelectorAll('input[type="checkbox"]:checked');
+        // Kecualikan checkbox "check all"
+        const rowCheckboxes = Array.from(checked).filter(cb => cb.id !== 'checkAllPembayaran');
+        prosesBtn.disabled = rowCheckboxes.length === 0 || !aksiSelect.value;
       }
+
       aksiSelect.addEventListener('change', updateProsesBtn);
+      
+      // Event listener untuk checkbox
       table.addEventListener('change', function(e) {
-        if (e.target.classList.contains('rowCheckKetetapan')) updateProsesBtn();
-        if (e.target.id === 'checkAllPembayaran') {
-          const all = table.querySelectorAll('.rowCheckKetetapan');
-          all.forEach(cb => cb.checked = e.target.checked);
+        if (e.target.type === 'checkbox') {
+          if (e.target.id === 'checkAllPembayaran') {
+            // Centang/lepaskan semua checkbox baris
+            const allRowCheckboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            allRowCheckboxes.forEach(cb => cb.checked = e.target.checked);
+          }
           updateProsesBtn();
         }
       });
+
       prosesBtn.addEventListener('click', function() {
         const aksi = aksiSelect.value;
-        const checked = table.querySelectorAll('.rowCheckKetetapan:checked');
-        const ids = Array.from(checked).map(cb => cb.value); // Directly get value from checkbox
-        if (!aksi || ids.length === 0) return;
+        const checked = table.querySelectorAll('tbody input[type="checkbox"]:checked');
+        const ids = Array.from(checked).map(cb => cb.value);
+
+        if (!aksi || ids.length === 0) {
+          alert('Silakan pilih aksi dan centang minimal satu data.');
+          return;
+        }
+
         if (aksi === 'delete') {
-          if (confirm('Yakin hapus data terpilih?')) {
-            // Use Promise.all to wait for all deletions to complete
-            Promise.all(ids.map(id => handleDeletePembayaranClick(id)))
+          if (confirm(`Yakin hapus ${ids.length} data terpilih?`)) {
+            // Hapus satu per satu
+            Promise.all(ids.map(id => postData({ action: 'deletePembayaran', id_pembayaran: id })))
               .then(() => {
-                alert('Pembayaran terpilih berhasil dihapus.');
-                loadPembayaranData(); // Reload data after all deletions are done
+                alert('Data berhasil dihapus!');
+                loadPembayaranData(); // Refresh data
               })
-              .catch(err => {
-                alert('Gagal menghapus beberapa pembayaran: ' + err.message);
+              .catch(error => {
+                console.error('Gagal menghapus data:', error);
+                alert('Gagal menghapus beberapa data: ' + error.message);
               });
           }
         } else if (aksi === 'print') {
+          // Print satu: buka cetak-bukti.html?id=ID, banyak: buka cetak-bukti-multi.html?ids=ID1,ID2,...
           if (ids.length === 1) {
             window.open(`cetak-bukti.html?id=${ids[0]}`, '_blank');
           } else if (ids.length > 1) {
             window.open(`cetak-bukti-multi.html?ids=${ids.join(',')}`, '_blank');
           }
         }
+        
+        // Reset setelah proses
+        aksiSelect.value = '';
+        updateProsesBtn();
       });
-    });
-})();
+    }
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
-</html> 
+</html>
