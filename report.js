@@ -470,6 +470,24 @@ function updatePembayaranReport(data) {
     document.getElementById('failedCount').textContent = failedCount;
     document.getElementById('totalNilaiPembayaran').textContent = `Rp ${totalNilai.toLocaleString('id-ID')}`;
 
+    // Isi tabel detail pembayaran
+    const tbody = document.getElementById('pembayaranTableBody');
+    tbody.innerHTML = '';
+    data.pembayaran.forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${p.ID_Pembayaran || '-'}</td>
+            <td>${p.NPWPD || '-'}</td>
+            <td>${p.ID_Ketetapan || '-'}</td>
+            <td>${p.TanggalBayar ? new Date(p.TanggalBayar).toLocaleDateString('id-ID') : '-'}</td>
+            <td>Rp ${(parseFloat(p.JumlahBayar) || 0).toLocaleString('id-ID')}</td>
+            <td>${p.MetodeBayar || '-'}</td>
+            <td>${p.Operator || '-'}</td>
+            <td><span class="status-badge ${p.StatusPembayaran === 'Sukses' ? 'success' : 'danger'}">${p.StatusPembayaran || '-'}</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+
     updatePembayaranChart(data);
 }
 

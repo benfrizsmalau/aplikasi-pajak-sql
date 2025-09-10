@@ -228,7 +228,27 @@
                         <div class="pembayaran-value" id="totalNilaiPembayaran">Rp 0</div>
                     </div>
                 </div>
-                
+
+                <div class="table-container">
+                    <table id="pembayaranTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pembayaran</th>
+                                <th>NPWPD</th>
+                                <th>ID Ketetapan</th>
+                                <th>Tanggal Bayar</th>
+                                <th>Jumlah Bayar</th>
+                                <th>Metode Bayar</th>
+                                <th>Operator</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pembayaranTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
                 <div class="chart-container">
                     <canvas id="pembayaranChart" height="300"></canvas>
                 </div>
