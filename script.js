@@ -355,11 +355,7 @@ function removeNetworkMonitoring() {
     }
 }
 
-// Jalankan cleanup
-document.addEventListener('DOMContentLoaded', () => {
-    addFavicon(); // Hilangkan favicon 404
-    // removeNetworkMonitoring(); // Uncomment jika mau hilangkan network debug
-});
+// 🗑️ REMOVED: Merged into main DOMContentLoaded listener below
 
 // Variabel global untuk menyimpan data
 let dataWajibPajakGlobal = [];
@@ -377,15 +373,35 @@ let dashboardLoadingState = {
     cooldownPeriod: 30000 // 30 seconds
 };
 
-// Router utama yang berjalan setelah halaman HTML selesai dimuat
+// 🔧 MAIN DOMContentLoaded - Consolidated all initialization
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Main initialization: Starting application...');
+    
+    // 1. Setup favicon and cleanup
+    addFavicon();
+    
+    // 2. Page routing
     const pageId = document.body.id;
+    console.log('📄 Detected page ID:', pageId || 'none (assuming dashboard)');
+    
     switch (pageId) {
-        case 'page-dashboard': initDashboardPage(); break;
+        case 'page-dashboard':
+            console.log('🏠 Initializing dashboard page...');
+            initDashboardPage();
+            break;
         case 'page-tambah-wp': initTambahWpPage(); break;
         case 'page-lihat-wp': initLihatWpPage(); break;
         case 'page-tambah-ketetapan': initKetetapanPage(); break;
         case 'page-detail-wp': initDetailPage(); break;
+        default:
+            console.log('🏠 No specific page ID, assuming dashboard...');
+            initDashboardPage();
+            break;
+    }
+    
+    // 3. Run deployment diagnostics if in production
+    if (window.location.hostname.includes('netlify') || window.location.hostname !== 'localhost') {
+        setTimeout(runDeploymentDiagnostics, 2000);
     }
 });
 
@@ -1602,9 +1618,9 @@ async function loadDashboardData() {
             const contentType = response.headers.get('content-type');
             console.log('📏 loadDashboardData: Content-Length:', contentLength, 'Content-Type:', contentType);
 
-            // Handle empty or invalid responses gracefully
-            if (!contentLength || contentLength === '0' || !contentType || !contentType.includes('application/json')) {
-                console.warn('⚠️ loadDashboardData: Empty or invalid response detected');
+            // Handle invalid responses gracefully - FIXED: Don't check Content-Length
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('⚠️ loadDashboardData: Non-JSON response detected');
                 console.log('🔍 loadDashboardData: Response details:', {
                     hasContentLength: !!contentLength,
                     contentLength,
@@ -1615,6 +1631,8 @@ async function loadDashboardData() {
                 setDashboardDefaults();
                 return; // Exit gracefully without throwing error
             }
+            
+            console.log('✅ loadDashboardData: Valid JSON response detected, proceeding to parse...');
 
             // Handle non-OK HTTP responses
             if (!response.ok) {
@@ -2032,8 +2050,4 @@ function runDeploymentDiagnostics() {
 }
 
 // Run diagnostics on page load for debugging
-if (window.location.hostname.includes('netlify') || window.location.hostname !== 'localhost') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(runDeploymentDiagnostics, 2000);
-    });
-}
+// 🗑️ REMOVED: Merged into main DOMContentLoaded listener above
