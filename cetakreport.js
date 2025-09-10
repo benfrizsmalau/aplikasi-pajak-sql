@@ -210,12 +210,6 @@ async function exportPendapatanToPDF({
     pdf.text(r.capaian.toFixed(1), colX[6] + colW[6] - 2 - 10, yPos, { align: 'right', maxWidth: colW[6] - 4 });
   }
 
-  // Format angka pendek tanpa koma desimal jika tidak perlu, tanpa 'Rp'
-  function formatRupiahPdfShort(angka) {
-    if (!angka || isNaN(angka)) return '0';
-    let str = Number(angka).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-    return str;
-  }
 
   drawTableHeader(y);
   y += rowHeight;
@@ -295,6 +289,13 @@ function formatTanggalCetak(date) {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
   return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Helper format rupiah untuk PDF (global)
+function formatRupiahPdfShort(angka) {
+  if (!angka || isNaN(angka)) return '0';
+  let str = Number(angka).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+  return str;
 }
 
 // Fungsi export PDF untuk Laporan Wajib Pajak
