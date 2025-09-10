@@ -474,10 +474,15 @@ function updatePembayaranReport(data) {
     const tbody = document.getElementById('pembayaranTableBody');
     tbody.innerHTML = '';
     data.pembayaran.forEach(p => {
+        // Cari data wajib pajak untuk mendapatkan nama usaha
+        const wpData = (reportData.wajibPajak || []).find(wp => wp.NPWPD === p.NPWPD);
+        const namaUsaha = wpData ? (wpData['Nama Usaha'] || '-') : '-';
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${p.ID_Pembayaran || '-'}</td>
             <td>${p.NPWPD || '-'}</td>
+            <td>${namaUsaha}</td>
             <td>${p.ID_Ketetapan || '-'}</td>
             <td>${p.TanggalBayar ? new Date(p.TanggalBayar).toLocaleDateString('id-ID') : '-'}</td>
             <td>Rp ${(parseFloat(p.JumlahBayar) || 0).toLocaleString('id-ID')}</td>
