@@ -305,11 +305,15 @@ async function handleGet() {
         // Specific logging for wilayah data
         console.log('🔍 DEBUG: handleGet - Wilayah data details:');
         console.log('- Wilayah array length:', data.wilayah.length);
+        console.log('- Raw wilayah data from query:', wilayah);
+        console.log('- Wilayah error details:', wilayahError);
+        
         if (data.wilayah.length > 0) {
             console.log('- First 3 wilayah records:', data.wilayah.slice(0, 3));
             console.log('- Unique kecamatan:', [...new Set(data.wilayah.map(item => item.Kecamatan))]);
         } else {
             console.warn('⚠️ DEBUG: handleGet - No wilayah data found in database!');
+            console.log('🔍 DEBUG: handleGet - Checking if wilayah query returned null/undefined:', wilayah === null, wilayah === undefined);
         }
 
         return data;
