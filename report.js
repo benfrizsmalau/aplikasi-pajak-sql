@@ -816,25 +816,85 @@ function updatePerformanceChart(data) {
 }
 
 function exportReport() {
-    // Hanya aktif untuk reportType 'revenue'
     const reportType = document.getElementById('reportType').value;
-    if (reportType !== 'revenue') {
-        alert('Export PDF hanya tersedia untuk Laporan Pendapatan!');
-        return;
-    }
     const tahun = (document.getElementById('dateRangeTahun')?.value || new Date().getFullYear()).toString();
     const periodeLabel = getPeriodeLabel();
     const { startDate, endDate } = getDateRange();
-    if (typeof window.exportPendapatanToPDF === 'function') {
-        window.exportPendapatanToPDF({
-            reportData,
-            periodeLabel,
-            tahun,
-            startDate,
-            endDate
-        });
-    } else {
-        alert('Fungsi export PDF belum tersedia!');
+
+    const dateRange = getDateRange();
+    const filteredData = filterDataByDateRange(reportData, dateRange);
+
+    switch (reportType) {
+        case 'revenue':
+            if (typeof window.exportPendapatanToPDF === 'function') {
+                window.exportPendapatanToPDF({
+                    reportData,
+                    periodeLabel,
+                    tahun,
+                    startDate,
+                    endDate
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        case 'wp':
+            if (typeof window.exportWpToPDF === 'function') {
+                window.exportWpToPDF({
+                    data: filteredData,
+                    reportData,
+                    periodeLabel
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        case 'ketetapan':
+            if (typeof window.exportKetetapanToPDF === 'function') {
+                window.exportKetetapanToPDF({
+                    data: filteredData,
+                    reportData,
+                    periodeLabel
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        case 'pembayaran':
+            if (typeof window.exportPembayaranToPDF === 'function') {
+                window.exportPembayaranToPDF({
+                    data: filteredData,
+                    reportData,
+                    periodeLabel
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        case 'fiskal':
+            if (typeof window.exportFiskalToPDF === 'function') {
+                window.exportFiskalToPDF({
+                    data: filteredData,
+                    reportData,
+                    periodeLabel
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        case 'performance':
+            if (typeof window.exportPerformanceToPDF === 'function') {
+                window.exportPerformanceToPDF({
+                    data: filteredData,
+                    reportData,
+                    periodeLabel
+                });
+            } else {
+                alert('Fungsi export PDF belum tersedia!');
+            }
+            break;
+        default:
+            alert('Jenis laporan tidak dikenali!');
     }
 }
 
