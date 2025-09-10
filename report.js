@@ -574,16 +574,102 @@ function updatePerformanceReport(data) {
     const lunasKetetapan = data.ketetapan.filter(k => k.Status === 'Lunas').length;
     const complianceRate = totalKetetapan > 0 ? (lunasKetetapan / totalKetetapan * 100).toFixed(1) : 0;
 
-    document.getElementById('targetRealisasi').textContent = '85%';
-    document.getElementById('avgProcessTime').textContent = '2.5 hari';
+    // Hitung Target vs Realisasi (Real Data)
+    const totalRealisasi = data.pembayaran
+        .filter(p => p.StatusPembayaran === 'Sukses')
+        .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+
+    const currentYear = new Date().getFullYear();
+    const totalTarget = (reportData.targetPajakRetribusi || [])
+        .filter(t => t.Tahun == currentYear)
+        .reduce((sum, t) => sum + (parseFloat(t.Target) || 0), 0);
+
+    const targetRealisasi = totalTarget > 0 ? (totalRealisasi / totalTarget * 100).toFixed(1) : 0;
+
+    // Hitung Rata-rata Waktu Proses (Real Data)
+    const processTimes = data.pembayaran
+        .filter(p => p.StatusPembayaran === 'Sukses')
+        .map(p => {
+            const ketetapan = data.ketetapan.find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+            if (ketetapan && ketetapan.TanggalKetetapan && p.TanggalBayar) {
+                const start = new Date(ketetapan.TanggalKetetapan);
+                const end = new Date(p.TanggalBayar);
+                const diffTime = end - start;
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                return diffDays > 0 ? diffDays : 0; // Pastikan positif
+            }
+            return 0;
+        })
+        .filter(time => time > 0);
+
+    const avgProcessTime = processTimes.length > 0
+        ? (processTimes.reduce((sum, time) => sum + time, 0) / processTimes.length).toFixed(1) + ' hari'
+        : 'N/A';
+
+    document.getElementById('targetRealisasi').textContent = `${targetRealisasi}%`;
+    document.getElementById('avgProcessTime').textContent = avgProcessTime;
     document.getElementById('wpCompliance').textContent = `${complianceRate}%`;
     
-    // Perbaikan: Menggunakan ID unik untuk elemen 'fill'
+    // Update progress bar dengan data real
     const targetFill = document.getElementById('targetRealisasi-fill');
-    if(targetFill) targetFill.style.width = '85%';
-    
+    if(targetFill) targetFill.style.width = `${Math.min(targetRealisasi, 100)}%`;
+
     const complianceFill = document.getElementById('wpCompliance-fill');
     if(complianceFill) complianceFill.style.width = `${complianceRate}%`;
+
+    // Isi tabel detail kinerja per wajib pajak
+    const tbody = document.getElementById('performanceTableBody');
+    tbody.innerHTML = '';
+
+    // Hitung kinerja per wajib pajak
+    const wpPerformance = {};
+    (data.wajibPajak || []).forEach(wp => {
+        const npwpd = wp.NPWPD;
+        const wpKetetapan = data.ketetapan.filter(k => k.NPWPD === npwpd);
+        const wpPembayaran = data.pembayaran.filter(p => p.NPWPD === npwpd);
+
+        const totalKetetapan = wpKetetapan.length;
+        const ketetapanLunas = wpKetetapan.filter(k => k.Status === 'Lunas').length;
+        const totalTagihan = wpKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
+        const totalBayar = wpPembayaran
+            .filter(p => p.StatusPembayaran === 'Sukses')
+            .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+
+        const kepatuhan = totalKetetapan > 0 ? ((ketetapanLunas / totalKetetapan) * 100).toFixed(1) : 0;
+        const status = kepatuhan >= 80 ? 'Baik' : kepatuhan >= 50 ? 'Sedang' : 'Buruk';
+
+        wpPerformance[npwpd] = {
+            namaUsaha: wp['Nama Usaha'] || '-',
+            namaPemilik: wp['Nama Pemilik'] || '-',
+            totalKetetapan,
+            ketetapanLunas,
+            totalTagihan,
+            totalBayar,
+            kepatuhan: parseFloat(kepatuhan),
+            status
+        };
+    });
+
+    // Urutkan berdasarkan kepatuhan (tertinggi ke terendah)
+    const sortedWp = Object.entries(wpPerformance)
+        .sort(([,a], [,b]) => b.kepatuhan - a.kepatuhan);
+
+    // Isi tabel
+    sortedWp.forEach(([npwpd, perf]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${npwpd}</td>
+            <td>${perf.namaUsaha}</td>
+            <td>${perf.namaPemilik}</td>
+            <td>${perf.totalKetetapan}</td>
+            <td>${perf.ketetapanLunas}</td>
+            <td>Rp ${perf.totalTagihan.toLocaleString('id-ID')}</td>
+            <td>Rp ${perf.totalBayar.toLocaleString('id-ID')}</td>
+            <td>${perf.kepatuhan}%</td>
+            <td><span class="status-badge ${perf.status === 'Baik' ? 'success' : perf.status === 'Sedang' ? 'warning' : 'danger'}">${perf.status}</span></td>
+        `;
+        tbody.appendChild(row);
+    });
 
     updatePerformanceChart(data);
 }
@@ -596,7 +682,7 @@ function updatePerformanceChart(data) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
     const currentYear = new Date().getFullYear();
     const complianceData = new Array(12).fill(0);
-    const targetData = new Array(12).fill(85);
+    const targetData = new Array(12).fill(parseFloat(targetRealisasi));
 
     for (let month = 0; month < 12; month++) {
         const monthKetetapan = data.ketetapan.filter(k => {
@@ -613,7 +699,7 @@ function updatePerformanceChart(data) {
         data: {
             labels: months,
             datasets: [{
-                label: 'Target Kepatuhan',
+                label: `Target Realisasi (${targetRealisasi}%)`,
                 data: targetData,
                 borderColor: '#FF6384',
                 backgroundColor: 'rgba(255, 99, 132, 0.1)',
