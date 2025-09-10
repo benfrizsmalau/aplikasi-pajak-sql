@@ -259,7 +259,7 @@ async function handleGet() {
             { data: targetPajakRetribusi, error: targetError }
         ] = await Promise.all([
             queryWithTimeout(supabase.from('datawp').select('*')),
-            queryWithTimeout(supabase.from('wilayah').select('*')),
+            queryWithTimeout(supabase.from('Wilayah').select('*')),
             queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*')),
             queryWithTimeout(supabase.from('KetetapanPajak').select('*')),
             queryWithTimeout(supabase.from('RiwayatPembayaran').select('*')),
