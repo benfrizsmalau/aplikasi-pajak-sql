@@ -470,11 +470,28 @@ async function initTambahWpPage() {
     const npwpdInput = document.getElementById('npwpd');
     const jenisWpGroup = document.getElementById('jenisWpGroup');
 
+    console.log('🔍 DEBUG: initTambahWpPage - Starting initialization');
+
     try {
+        console.log('🔍 DEBUG: initTambahWpPage - Calling fetchAllData()');
         const data = await fetchAllData();
+        console.log('🔍 DEBUG: initTambahWpPage - fetchAllData() returned:', data);
+
         dataWilayahGlobal = data.wilayah || [];
+        console.log('🔍 DEBUG: initTambahWpPage - dataWilayahGlobal:', dataWilayahGlobal);
+        console.log('🔍 DEBUG: initTambahWpPage - dataWilayahGlobal length:', dataWilayahGlobal.length);
+
+        if (dataWilayahGlobal.length === 0) {
+            console.warn('⚠️ DEBUG: initTambahWpPage - No wilayah data received! Dropdowns will be empty.');
+            kecamatanSelect.innerHTML = '<option value="">Tidak ada data wilayah</option>';
+            kelurahanSelect.innerHTML = '<option value="">Tidak ada data wilayah</option>';
+            return;
+        }
+
         // Isi dropdown kecamatan unik
         const kecamatanUnik = [...new Set(dataWilayahGlobal.map(item => item.Kecamatan))];
+        console.log('🔍 DEBUG: initTambahWpPage - Unique kecamatan:', kecamatanUnik);
+
         kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
         kecamatanUnik.forEach(kec => {
             const option = document.createElement('option');
@@ -482,13 +499,19 @@ async function initTambahWpPage() {
             option.textContent = kec;
             kecamatanSelect.appendChild(option);
         });
+
         // Reset kelurahan
         kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+
         // Saat kecamatan dipilih, isi kelurahan sesuai kecamatan
         kecamatanSelect.addEventListener('change', function() {
+            console.log('🔍 DEBUG: initTambahWpPage - Kecamatan changed to:', this.value);
             kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
             if (!this.value) return;
+
             const kelurahanFiltered = dataWilayahGlobal.filter(item => item.Kecamatan === this.value);
+            console.log('🔍 DEBUG: initTambahWpPage - Filtered kelurahan for kecamatan:', this.value, kelurahanFiltered);
+
             kelurahanFiltered.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.Kelurahan;
@@ -497,8 +520,14 @@ async function initTambahWpPage() {
                 option.dataset.kodekec = item.KodeKecamatan;
                 kelurahanSelect.appendChild(option);
             });
+
+            console.log('🔍 DEBUG: initTambahWpPage - Added', kelurahanFiltered.length, 'kelurahan options');
         });
+
+        console.log('✅ DEBUG: initTambahWpPage - Dropdown initialization completed successfully');
+
     } catch (error) {
+        console.error('❌ DEBUG: initTambahWpPage - Error during initialization:', error);
         kecamatanSelect.innerHTML = '<option value="">Gagal memuat data</option>';
         kelurahanSelect.innerHTML = '<option value="">Gagal memuat data</option>';
     }
@@ -996,7 +1025,7 @@ async function fetchAllData() {
 
     while (retryCount < maxRetries) {
         try {
-            console.log(`🔄 fetchAllData: Attempt ${retryCount + 1}/${maxRetries} - Making GET request`);
+            console.log(`🔄 fetchAllData: Attempt ${retryCount + 1}/${maxRetries} - Making GET request to:`, apiUrl);
 
             const startTime = Date.now();
             const response = await fetch(apiUrl, {
@@ -1073,6 +1102,17 @@ async function fetchAllData() {
                     fiskal: result.fiskal?.length || 0,
                     targetPajakRetribusi: result.targetPajakRetribusi?.length || 0
                 });
+
+                // Specific logging for wilayah data
+                console.log('🔍 DEBUG: fetchAllData - Wilayah data details:');
+                console.log('- Wilayah array exists:', !!result.wilayah);
+                console.log('- Wilayah length:', result.wilayah?.length || 0);
+                if (result.wilayah && result.wilayah.length > 0) {
+                    console.log('- First few wilayah items:', result.wilayah.slice(0, 3));
+                    console.log('- Unique kecamatan from wilayah:', [...new Set(result.wilayah.map(item => item.Kecamatan))]);
+                } else {
+                    console.warn('⚠️ DEBUG: fetchAllData - Wilayah data is empty or undefined!');
+                }
 
             } catch (jsonError) {
                 console.error('❌ fetchAllData: JSON parsing failed:', jsonError);

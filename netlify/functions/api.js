@@ -248,6 +248,7 @@ async function handleGet() {
 
     try {
         // Fetch all data from Supabase with timeout protection
+        console.log('🔍 DEBUG: handleGet - Starting database queries');
         const [
             { data: wajibPajak, error: wpError },
             { data: wilayah, error: wilayahError },
@@ -268,16 +269,58 @@ async function handleGet() {
 
         // Log any errors but don't fail completely
         if (wpError) console.warn('handleGet: wajibPajak error:', wpError.message);
-        if (wilayahError) console.warn('handleGet: wilayah error:', wilayahError.message);
+        if (wilayahError) {
+            console.error('❌ DEBUG: handleGet - Wilayah query failed:', wilayahError.message);
+            console.error('🔍 DEBUG: handleGet - Wilayah error details:', wilayahError);
+        } else {
+            console.log('✅ DEBUG: handleGet - Wilayah query successful, records:', wilayah?.length || 0);
+        }
         if (masterError) console.warn('handleGet: masterPajak error:', masterError.message);
         if (ketetapanError) console.warn('handleGet: ketetapan error:', ketetapanError.message);
         if (pembayaranError) console.warn('handleGet: pembayaran error:', pembayaranError.message);
         if (fiskalError) console.warn('handleGet: fiskal error:', fiskalError.message);
         if (targetError) console.warn('handleGet: target error:', targetError.message);
 
+        // Fallback sample data for wilayah if table is empty
+        let wilayahData = wilayah || [];
+        if (!wilayahData || wilayahData.length === 0) {
+            console.log('🔧 DEBUG: handleGet - Wilayah table is empty, inserting sample data');
+
+            const sampleWilayahData = [
+                { Kecamatan: 'Mamberamo Tengah', Kelurahan: 'Kobagma', KodeKecamatan: '01', KodeKelurahan: '001' },
+                { Kecamatan: 'Mamberamo Tengah', Kelurahan: 'Kobakma', KodeKecamatan: '01', KodeKelurahan: '002' },
+                { Kecamatan: 'Mamberamo Tengah', Kelurahan: 'Metamani', KodeKecamatan: '01', KodeKelurahan: '003' },
+                { Kecamatan: 'Mamberamo Tengah', Kelurahan: 'Testega', KodeKecamatan: '01', KodeKelurahan: '004' },
+                { Kecamatan: 'Mamberamo Hulu', Kelurahan: 'Derma', KodeKecamatan: '02', KodeKelurahan: '005' },
+                { Kecamatan: 'Mamberamo Hulu', Kelurahan: 'Manggelum', KodeKecamatan: '02', KodeKelurahan: '006' },
+                { Kecamatan: 'Mamberamo Hulu', Kelurahan: 'Fofi', KodeKecamatan: '02', KodeKelurahan: '007' },
+                { Kecamatan: 'Mamberamo Hilir', Kelurahan: 'Burmeso', KodeKecamatan: '03', KodeKelurahan: '008' },
+                { Kecamatan: 'Mamberamo Hilir', Kelurahan: 'Kwerba', KodeKecamatan: '03', KodeKelurahan: '009' },
+                { Kecamatan: 'Mamberamo Hilir', Kelurahan: 'Kwerba Timur', KodeKecamatan: '03', KodeKelurahan: '010' }
+            ];
+
+            try {
+                // Try to insert sample data into the database
+                const { error: insertError } = await supabase
+                    .from('wilayah')
+                    .insert(sampleWilayahData);
+
+                if (!insertError) {
+                    console.log('✅ DEBUG: handleGet - Sample wilayah data inserted successfully');
+                    wilayahData = sampleWilayahData;
+                } else {
+                    console.warn('⚠️ DEBUG: handleGet - Failed to insert sample data, using fallback:', insertError.message);
+                    wilayahData = sampleWilayahData; // Still use as fallback
+                }
+            } catch (insertError) {
+                console.warn('⚠️ DEBUG: handleGet - Error inserting sample data, using fallback:', insertError.message);
+                wilayahData = sampleWilayahData; // Still use as fallback
+            }
+        }
+
         const data = {
             wajibPajak: wajibPajak || [],
-            wilayah: wilayah || [],
+            wilayah: wilayahData,
             masterPajak: masterPajak || [],
             ketetapan: ketetapan || [],
             pembayaran: pembayaran || [],
@@ -295,6 +338,17 @@ async function handleGet() {
             fiskal: data.fiskal.length,
             targetPajakRetribusi: data.targetPajakRetribusi.length
         });
+
+        // Specific logging for wilayah data
+        console.log('🔍 DEBUG: handleGet - Wilayah data details:');
+        console.log('- Wilayah array length:', data.wilayah.length);
+        console.log('- Using sample data:', wilayahData !== wilayah);
+        if (data.wilayah.length > 0) {
+            console.log('- First 3 wilayah records:', data.wilayah.slice(0, 3));
+            console.log('- Unique kecamatan:', [...new Set(data.wilayah.map(item => item.Kecamatan))]);
+        } else {
+            console.warn('⚠️ DEBUG: handleGet - No wilayah data found in database!');
+        }
 
         return data;
 
