@@ -485,13 +485,12 @@ async function handleCreateKetetapan(data) {
             
             if (countError) throw new Error('Gagal mengambil jumlah ketetapan: ' + countError.message);
             
-            // Generate nomor urut berdasarkan total count + 1 + timestamp untuk uniqueness
-            const baseSequence = (count || 0) + 1;
-            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
-            const nomorUrut = `${baseSequence.toString().padStart(4, '0')}${timestamp}`;
+            // Generate nomor urut berurutan tanpa timestamp
+            const nomorUrut = (count || 0) + 1;
+            const nomorUrutFormatted = nomorUrut.toString().padStart(4, '0');
             
-            // Gabungkan ID_Ketetapan dengan format yang lebih unik
-            const ID_Ketetapan = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+            // Gabungkan ID_Ketetapan dengan format berurutan
+            const ID_Ketetapan = `${nomorUrutFormatted}/${kodeSurat}/${bulanRomawi}/${tahun}`;
 
             // Coba insert data
             const { error } = await supabase
@@ -661,12 +660,11 @@ async function handleCreatePembayaran(data) {
                 .select('*', { count: 'exact', head: true });
             if (countError) throw new Error('Gagal mengambil nomor urut pembayaran: ' + countError.message);
             
-            const baseSequence = (count || 0) + 1;
-            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
-            const nomorUrut = `${baseSequence.toString().padStart(4, '0')}${timestamp}`;
+            const nomorUrut = (count || 0) + 1;
+            const nomorUrutFormatted = nomorUrut.toString().padStart(4, '0');
             
             // Gabungkan ID_Pembayaran
-            ID_Pembayaran = `${nomorUrut}/${kodeSurat}/${bulanRomawi}/${tahun}`;
+            ID_Pembayaran = `${nomorUrutFormatted}/${kodeSurat}/${bulanRomawi}/${tahun}`;
 
             const { error } = await supabase
                 .from('RiwayatPembayaran')
@@ -774,12 +772,11 @@ async function handleCreateFiskal(data) {
                 .select('*', { count: 'exact', head: true });
             if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
             
-            const baseSequence = (count || 0) + 1;
-            const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
-            const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
+            const nomorUrut = (count || 0) + 1;
+            const nomorUrutFormatted = nomorUrut.toString().padStart(3, '0');
             
             // Gabungkan nomor_fiskal
-            const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+            const nomor_fiskal = `${nomorUrutFormatted}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
 
             // Insert data ke tabel Fiskal
             const { error, data: inserted } = await supabase
@@ -853,9 +850,8 @@ async function handleGetNextFiskalNumber() {
             .select('*', { count: 'exact', head: true });
         if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
         
-        const baseSequence = (count || 0) + 1;
-        const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
-        const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
+        const nomorUrut = (count || 0) + 1;
+        const nomorUrutFormatted = nomorUrut.toString().padStart(3, '0');
 
         // Bulan romawi dan tahun
         const now = new Date();
@@ -863,7 +859,7 @@ async function handleGetNextFiskalNumber() {
         const tahun = now.getFullYear();
 
         // Gabungkan nomor_fiskal
-        const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+        const nomor_fiskal = `${nomorUrutFormatted}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
 
         return {
             nomor_fiskal,
@@ -950,12 +946,11 @@ async function handleAutoCreateFiskal(data) {
                         .select('*', { count: 'exact', head: true });
                     if (countError) throw new Error('Gagal mengambil nomor urut fiskal: ' + countError.message);
                     
-                    const baseSequence = (count || 0) + 1;
-                    const timestamp = Date.now().toString().slice(-3); // 3 digit terakhir timestamp
-                    const nomorUrut = `${baseSequence.toString().padStart(3, '0')}${timestamp}`;
+                    const nomorUrut = (count || 0) + 1;
+                    const nomorUrutFormatted = nomorUrut.toString().padStart(3, '0');
                     
                     // Gabungkan nomor_fiskal
-                    const nomor_fiskal = `${nomorUrut}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
+                    const nomor_fiskal = `${nomorUrutFormatted}/FKL/BPPKAD/${bulanRomawi}/${tahun}`;
 
                     // Insert data ke tabel Fiskal
                     const { error, data: inserted } = await supabase
