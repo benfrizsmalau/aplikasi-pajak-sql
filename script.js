@@ -19,7 +19,37 @@ document.fonts.onloadingerror = function(event) {
         source: event.source,
         error: event.error
     });
+
+    // Apply fallback font class to body
+    document.body.classList.add('font-fallback');
 };
+
+// Monitor successful font loading
+document.fonts.onloadingdone = function(event) {
+    console.log('✅ Font Loading Success:', event);
+    document.body.classList.remove('font-fallback');
+    document.body.classList.add('font-loaded');
+};
+
+// Check font loading status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading class initially
+    document.body.classList.add('font-loading');
+
+    // Check if fonts are already loaded
+    if (document.fonts.status === 'loaded') {
+        document.body.classList.remove('font-loading');
+        document.body.classList.add('font-loaded');
+    }
+
+    // Fallback timeout in case font events don't fire
+    setTimeout(function() {
+        document.body.classList.remove('font-loading');
+        if (!document.body.classList.contains('font-loaded')) {
+            document.body.classList.add('font-loaded');
+        }
+    }, 3000);
+});
 
 // Check for chrome extension font errors
 window.addEventListener('error', function(event) {
@@ -32,6 +62,43 @@ window.addEventListener('error', function(event) {
             colno: event.colno,
             error: event.error
         });
+
+        // Tampilkan pesan user-friendly bahwa aplikasi tetap berfungsi
+        if (!document.getElementById('font-error-notice')) {
+            const notice = document.createElement('div');
+            notice.id = 'font-error-notice';
+            notice.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 4px;
+                padding: 10px 15px;
+                font-size: 12px;
+                color: #856404;
+                z-index: 10000;
+                max-width: 300px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            `;
+            notice.innerHTML = `
+                <strong>ℹ️ Font Loading Notice:</strong><br>
+                Beberapa font dari extension browser tidak dapat dimuat, tetapi aplikasi tetap berfungsi normal dengan font fallback.
+            `;
+
+            // Auto-hide setelah 5 detik
+            setTimeout(() => {
+                if (notice.parentNode) {
+                    notice.parentNode.removeChild(notice);
+                }
+            }, 5000);
+
+            document.body.appendChild(notice);
+        }
+
+        // Prevent error from bubbling up
+        event.preventDefault();
+        return false;
     }
 });
 

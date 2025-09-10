@@ -1,9 +1,103 @@
 /* Style Global & Navigasi */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     padding: 0;
     margin: 0;
     background-color: #f7f7f7;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font Fallback untuk menghindari error Chrome extension */
+* {
+    font-family: inherit;
+}
+
+/* Specific font stacks untuk elemen berbeda */
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+button, input, select, textarea {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+code, pre {
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+/* Font Error Notice Styles */
+#font-error-notice {
+    position: fixed !important;
+    top: 10px !important;
+    right: 10px !important;
+    background: #fff3cd !important;
+    border: 1px solid #ffeaa7 !important;
+    border-radius: 4px !important;
+    padding: 10px 15px !important;
+    font-size: 12px !important;
+    color: #856404 !important;
+    z-index: 10000 !important;
+    max-width: 300px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Improve font rendering */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Fallback untuk font yang gagal dimuat */
+.font-fallback {
+    font-family: Arial, Helvetica, sans-serif !important;
+}
+
+/* Font loading optimization */
+@font-face {
+    font-family: 'System';
+    src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'),
+         local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+    font-display: swap;
+}
+
+/* Ensure all text remains readable even if fonts fail */
+html {
+    font-family: 'System', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+button, .btn-primary, .btn-secondary {
+    font-family: inherit;
+    font-weight: 500;
+}
+
+/* Loading states for better UX */
+.font-loading {
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.font-loaded {
+    opacity: 1;
 }
 /* Modern Header & Navigation */
 .main-header {
