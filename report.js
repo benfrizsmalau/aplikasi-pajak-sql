@@ -575,9 +575,12 @@ function updateFiskalReport(data) {
 }
 
 function updatePerformanceReport(data) {
-    const totalKetetapan = data.ketetapan.length;
-    const lunasKetetapan = data.ketetapan.filter(k => k.Status === 'Lunas').length;
-    const complianceRate = totalKetetapan > 0 ? (lunasKetetapan / totalKetetapan * 100).toFixed(1) : 0;
+    // Hitung kepatuhan berdasarkan pembayaran vs tagihan (bukan ketetapan lunas)
+    const totalTagihanSemua = data.ketetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
+    const totalBayarSemua = data.pembayaran
+        .filter(p => p.StatusPembayaran === 'Sukses')
+        .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+    const complianceRate = totalTagihanSemua > 0 ? (totalBayarSemua / totalTagihanSemua * 100).toFixed(1) : 0;
 
     // Hitung Target vs Realisasi (Real Data)
     const totalRealisasi = data.pembayaran
@@ -626,22 +629,28 @@ function updatePerformanceReport(data) {
     const tbody = document.getElementById('performanceTableBody');
     tbody.innerHTML = '';
 
-    // Hitung kinerja per wajib pajak
+    // Hitung kinerja per wajib pajak berdasarkan pembayaran vs tagihan
     const wpPerformance = {};
     (data.wajibPajak || []).forEach(wp => {
         const npwpd = wp.NPWPD;
         const wpKetetapan = data.ketetapan.filter(k => k.NPWPD === npwpd);
-        const wpPembayaran = data.pembayaran.filter(p => p.NPWPD === npwpd);
+        const wpPembayaran = data.pembayaran.filter(p => p.NPWPD === npwpd && p.StatusPembayaran === 'Sukses');
 
         const totalKetetapan = wpKetetapan.length;
         const ketetapanLunas = wpKetetapan.filter(k => k.Status === 'Lunas').length;
-        const totalTagihan = wpKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-        const totalBayar = wpPembayaran
-            .filter(p => p.StatusPembayaran === 'Sukses')
-            .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
 
-        const kepatuhan = totalKetetapan > 0 ? ((ketetapanLunas / totalKetetapan) * 100).toFixed(1) : 0;
+        // Hitung total tagihan dari semua ketetapan
+        const totalTagihan = wpKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
+
+        // Hitung total pembayaran yang sudah berhasil
+        const totalBayar = wpPembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+
+        // Hitung kepatuhan berdasarkan pembayaran vs tagihan (bukan ketetapan lunas)
+        const kepatuhan = totalTagihan > 0 ? ((totalBayar / totalTagihan) * 100).toFixed(1) : 0;
         const status = kepatuhan >= 80 ? 'Baik' : kepatuhan >= 50 ? 'Sedang' : 'Buruk';
+
+        // Hitung sisa tagihan
+        const sisaTagihan = Math.max(0, totalTagihan - totalBayar);
 
         wpPerformance[npwpd] = {
             namaUsaha: wp['Nama Usaha'] || '-',
@@ -650,6 +659,7 @@ function updatePerformanceReport(data) {
             ketetapanLunas,
             totalTagihan,
             totalBayar,
+            sisaTagihan,
             kepatuhan: parseFloat(kepatuhan),
             status
         };
@@ -670,6 +680,7 @@ function updatePerformanceReport(data) {
             <td>${perf.ketetapanLunas}</td>
             <td>Rp ${perf.totalTagihan.toLocaleString('id-ID')}</td>
             <td>Rp ${perf.totalBayar.toLocaleString('id-ID')}</td>
+            <td>Rp ${perf.sisaTagihan.toLocaleString('id-ID')}</td>
             <td>${perf.kepatuhan}%</td>
             <td><span class="status-badge ${perf.status === 'Baik' ? 'success' : perf.status === 'Sedang' ? 'warning' : 'danger'}">${perf.status}</span></td>
         `;
@@ -690,13 +701,23 @@ function updatePerformanceChart(data) {
     const targetData = new Array(12).fill(parseFloat(targetRealisasi));
 
     for (let month = 0; month < 12; month++) {
+        // Hitung kepatuhan bulanan berdasarkan pembayaran vs tagihan
         const monthKetetapan = data.ketetapan.filter(k => {
             if (!k.TanggalKetetapan) return false;
             const date = new Date(k.TanggalKetetapan);
             return date.getFullYear() === currentYear && date.getMonth() === month;
         });
-        const monthLunas = monthKetetapan.filter(k => k.Status === 'Lunas').length;
-        complianceData[month] = monthKetetapan.length > 0 ? (monthLunas / monthKetetapan.length * 100) : 0;
+
+        const monthPembayaran = data.pembayaran.filter(p => {
+            if (!p.TanggalBayar || p.StatusPembayaran !== 'Sukses') return false;
+            const date = new Date(p.TanggalBayar);
+            return date.getFullYear() === currentYear && date.getMonth() === month;
+        });
+
+        const monthTagihan = monthKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
+        const monthBayar = monthPembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+
+        complianceData[month] = monthTagihan > 0 ? (monthBayar / monthTagihan * 100) : 0;
     }
 
     window.performanceChartInstance = new Chart(ctx, {
