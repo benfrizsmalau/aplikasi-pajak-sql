@@ -6,6 +6,17 @@ document.addEventListener('DOMContentLoaded', function() {
     initRevenueReportFilters();
     loadReportData();
     setupDateRangeFilter();
+
+    // Setup event listeners untuk laporan potensi
+    document.getElementById('potensiMethod').addEventListener('change', function() {
+        generatePotensiReport();
+    });
+    document.getElementById('potensiYears').addEventListener('change', function() {
+        generatePotensiReport();
+    });
+    document.getElementById('growthRate').addEventListener('input', function() {
+        generatePotensiReport();
+    });
 });
 
 function initRevenueReportFilters() {
@@ -99,6 +110,9 @@ async function loadReportData() {
                 break;
             case 'performance':
                 updatePerformanceReport(filteredData);
+                break;
+            case 'potensi':
+                updatePotensiReport(filteredData);
                 break;
         }
 
@@ -877,4 +891,305 @@ function getNamaBulan(idx) {
 
 function exportExcel() {
     alert('Fitur export Excel akan segera tersedia');
+}
+
+// ==========================================
+// LAPORAN POTENSI PAJAK
+// ==========================================
+
+function updatePotensiReport(data) {
+    // Cek apakah elemen HTML sudah tersedia
+    const potensiSummary = document.getElementById('potensiSummary');
+    if (!potensiSummary) {
+        console.warn('Potensi report elements not ready yet');
+        return;
+    }
+
+    // Tampilkan pesan awal
+    potensiSummary.innerHTML = `
+        <div class="summary-card stat-blue" style="grid-column: 1 / -1; text-align: center;">
+            <h4>Laporan Potensi Pajak</h4>
+            <div class="summary-value">Siap Digenerate</div>
+            <div class="summary-change">⚙️</div>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                Pilih metode perhitungan dan klik "Generate Laporan" untuk melihat hasil analisis potensi pajak.
+            </p>
+        </div>
+    `;
+
+    // Kosongkan tabel dan kertas kerja
+    document.getElementById('potensiTableBody').innerHTML = '';
+    document.getElementById('methodologyContent').innerHTML = '';
+    document.getElementById('assumptionsContent').innerHTML = '';
+    document.getElementById('dataSourcesContent').innerHTML = '';
+    document.getElementById('recommendationsContent').innerHTML = '';
+}
+
+function generatePotensiReport() {
+    const method = document.getElementById('potensiMethod').value;
+    const years = parseInt(document.getElementById('potensiYears').value);
+    const growthRate = parseFloat(document.getElementById('growthRate').value) / 100;
+
+    console.log('Generating potensi report:', { method, years, growthRate });
+
+    // Gunakan reportData global yang sudah dimuat
+    const potensiData = calculatePotensiPajak(reportData, method, years, growthRate);
+
+    // Update ringkasan
+    updatePotensiSummary(potensiData);
+
+    // Update tabel detail
+    updatePotensiTable(potensiData, years);
+
+    // Update kertas kerja
+    updateWorkingPaper(potensiData, method, years, growthRate);
+}
+
+function calculatePotensiPajak(data, method, years, growthRate) {
+    const masterList = data.masterPajak || [];
+    const pembayaranList = data.pembayaran || [];
+    const targetList = data.targetPajakRetribusi || [];
+    const currentYear = new Date().getFullYear();
+
+    // Hitung realisasi saat ini per jenis pajak
+    const realisasiByKode = {};
+    pembayaranList.forEach(p => {
+        if (p.StatusPembayaran !== 'Sukses') return;
+        const ketetapan = (data.ketetapan || []).find(k => k.ID_Ketetapan === p.ID_Ketetapan);
+        if (!ketetapan) return;
+        const kode = ketetapan.KodeLayanan;
+        if (!realisasiByKode[kode]) realisasiByKode[kode] = 0;
+        realisasiByKode[kode] += parseFloat(p.JumlahBayar) || 0;
+    });
+
+    const potensiResult = {};
+
+    masterList.forEach(master => {
+        const kode = master.KodeLayanan;
+        const nama = master.NamaLayanan;
+        const realisasi = realisasiByKode[kode] || 0;
+
+        // Cari target tahun berjalan
+        const targetObj = targetList.find(t => t.KodeLayanan === kode && t.Tahun == currentYear);
+        const target = targetObj ? (parseFloat(targetObj.Target) || 0) : 0;
+
+        // Hitung potensi berdasarkan metode
+        let potensiTambahan = 0;
+        let baseValue = 0;
+
+        switch (method) {
+            case 'wp':
+                // Berdasarkan WP terdaftar - asumsikan rata-rata tagihan per WP
+                baseValue = realisasi; // Gunakan realisasi sebagai baseline
+                potensiTambahan = Math.max(0, target - realisasi);
+                break;
+
+            case 'historis':
+                // Berdasarkan data historis dengan growth rate
+                baseValue = realisasi;
+                potensiTambahan = realisasi * growthRate;
+                break;
+
+            case 'kombinasi':
+                // Kombinasi: 70% berdasarkan target, 30% berdasarkan growth
+                const targetGap = Math.max(0, target - realisasi);
+                const growthPotensi = realisasi * growthRate;
+                potensiTambahan = (targetGap * 0.7) + (growthPotensi * 0.3);
+                baseValue = realisasi;
+                break;
+        }
+
+        // Hitung proyeksi untuk beberapa tahun ke depan
+        const proyeksi = [];
+        let currentValue = realisasi + potensiTambahan;
+
+        for (let year = 1; year <= 5; year++) {
+            if (year <= years) {
+                // Untuk tahun yang dipilih, gunakan growth rate
+                currentValue = currentValue * (1 + growthRate);
+            } else {
+                // Untuk tahun di luar pilihan, tetap konstan
+                currentValue = currentValue;
+            }
+            proyeksi.push(Math.round(currentValue));
+        }
+
+        potensiResult[kode] = {
+            nama,
+            realisasi,
+            target,
+            potensiTambahan: Math.round(potensiTambahan),
+            proyeksi,
+            baseValue
+        };
+    });
+
+    return potensiResult;
+}
+
+function updatePotensiSummary(potensiData) {
+    const summaryContainer = document.getElementById('potensiSummary');
+    summaryContainer.innerHTML = '';
+
+    // Hitung total
+    let totalRealisasi = 0;
+    let totalTarget = 0;
+    let totalPotensi = 0;
+    let totalProyeksi1Tahun = 0;
+
+    Object.values(potensiData).forEach(item => {
+        totalRealisasi += item.realisasi;
+        totalTarget += item.target;
+        totalPotensi += item.potensiTambahan;
+        totalProyeksi1Tahun += item.proyeksi[0] || 0;
+    });
+
+    const summaryCards = [
+        {
+            title: 'Total Realisasi Saat Ini',
+            value: `Rp ${totalRealisasi.toLocaleString('id-ID')}`,
+            icon: '📊',
+            color: 'stat-blue'
+        },
+        {
+            title: 'Total Target Tahunan',
+            value: `Rp ${totalTarget.toLocaleString('id-ID')}`,
+            icon: '🎯',
+            color: 'stat-green'
+        },
+        {
+            title: 'Total Potensi Tambahan',
+            value: `Rp ${totalPotensi.toLocaleString('id-ID')}`,
+            icon: '💰',
+            color: 'stat-orange'
+        },
+        {
+            title: 'Proyeksi 1 Tahun',
+            value: `Rp ${totalProyeksi1Tahun.toLocaleString('id-ID')}`,
+            icon: '📈',
+            color: 'stat-purple'
+        }
+    ];
+
+    summaryCards.forEach(card => {
+        const cardElement = document.createElement('div');
+        cardElement.className = `summary-card ${card.color}`;
+        cardElement.innerHTML = `
+            <h4>${card.title}</h4>
+            <div class="summary-value">${card.value}</div>
+            <div class="summary-change">${card.icon}</div>
+        `;
+        summaryContainer.appendChild(cardElement);
+    });
+}
+
+function updatePotensiTable(potensiData, years) {
+    const tbody = document.getElementById('potensiTableBody');
+    tbody.innerHTML = '';
+
+    Object.values(potensiData).forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.nama}</td>
+            <td>Rp ${item.realisasi.toLocaleString('id-ID')}</td>
+            <td>Rp ${item.target.toLocaleString('id-ID')}</td>
+            <td>Rp ${item.potensiTambahan.toLocaleString('id-ID')}</td>
+            <td>Rp ${(item.proyeksi[0] || 0).toLocaleString('id-ID')}</td>
+            <td>Rp ${(item.proyeksi[1] || 0).toLocaleString('id-ID')}</td>
+            <td>Rp ${(item.proyeksi[2] || 0).toLocaleString('id-ID')}</td>
+            <td>Rp ${(item.proyeksi[3] || 0).toLocaleString('id-ID')}</td>
+            <td>Rp ${(item.proyeksi[4] || 0).toLocaleString('id-ID')}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateWorkingPaper(potensiData, method, years, growthRate) {
+    // Update metodologi
+    const methodologyContent = document.getElementById('methodologyContent');
+    let methodologyText = '';
+
+    switch (method) {
+        case 'wp':
+            methodologyText = `
+                <p><strong>Metode Berdasarkan WP Terdaftar:</strong></p>
+                <ul>
+                    <li>Potensi = Target Tahunan - Realisasi Saat Ini</li>
+                    <li>Fokus pada gap antara target yang ditetapkan vs pencapaian aktual</li>
+                    <li>Asumsi: Semua WP terdaftar akan berkontribusi sesuai target</li>
+                </ul>
+            `;
+            break;
+        case 'historis':
+            methodologyText = `
+                <p><strong>Metode Berdasarkan Data Historis:</strong></p>
+                <ul>
+                    <li>Potensi = Realisasi Saat Ini × Growth Rate (${(growthRate * 100).toFixed(1)}%)</li>
+                    <li>Fokus pada tren pertumbuhan historis</li>
+                    <li>Asumsi: Pertumbuhan akan berlanjut dengan rate konstan</li>
+                </ul>
+            `;
+            break;
+        case 'kombinasi':
+            methodologyText = `
+                <p><strong>Metode Kombinasi:</strong></p>
+                <ul>
+                    <li>Potensi = (Target Gap × 70%) + (Growth Potensi × 30%)</li>
+                    <li>Menggabungkan pendekatan target dan historis</li>
+                    <li>Asumsi: Balance antara pencapaian target dan pertumbuhan</li>
+                </ul>
+            `;
+            break;
+    }
+
+    methodologyContent.innerHTML = methodologyText;
+
+    // Update asumsi
+    const assumptionsContent = document.getElementById('assumptionsContent');
+    assumptionsContent.innerHTML = `
+        <ul>
+            <li>Growth Rate: ${(growthRate * 100).toFixed(1)}% per tahun</li>
+            <li>Jangka Waktu Analisis: ${years} tahun</li>
+            <li>Metode Perhitungan: ${method === 'wp' ? 'WP Terdaftar' : method === 'historis' ? 'Data Historis' : 'Kombinasi'}</li>
+            <li>Data Realisasi: Berdasarkan pembayaran yang berhasil (${Object.values(potensiData).reduce((sum, item) => sum + item.realisasi, 0).toLocaleString('id-ID')})</li>
+            <li>Data Target: Berdasarkan target yang ditetapkan untuk tahun berjalan</li>
+        </ul>
+    `;
+
+    // Update sumber data
+    const dataSourcesContent = document.getElementById('dataSourcesContent');
+    dataSourcesContent.innerHTML = `
+        <ul>
+            <li>Data Wajib Pajak: ${reportData.wajibPajak?.length || 0} records</li>
+            <li>Data Ketetapan: ${reportData.ketetapan?.length || 0} records</li>
+            <li>Data Pembayaran: ${reportData.pembayaran?.length || 0} records</li>
+            <li>Data Target: ${reportData.targetPajakRetribusi?.length || 0} records</li>
+            <li>Data Master Pajak: ${reportData.masterPajak?.length || 0} records</li>
+        </ul>
+        <p><em>Data diambil dari database sistem per tanggal ${new Date().toLocaleDateString('id-ID')}</em></p>
+    `;
+
+    // Update rekomendasi
+    const recommendationsContent = document.getElementById('recommendationsContent');
+    const totalPotensi = Object.values(potensiData).reduce((sum, item) => sum + item.potensiTambahan, 0);
+
+    recommendationsContent.innerHTML = `
+        <h6>Rekomendasi Kebijakan Penganggaran:</h6>
+        <ul>
+            <li><strong>Potensi Tambahan Total: Rp ${totalPotensi.toLocaleString('id-ID')}</strong></li>
+            <li>Tambahkan alokasi anggaran sebesar ${((totalPotensi / Object.values(potensiData).reduce((sum, item) => sum + item.realisasi, 0)) * 100).toFixed(1)}% dari realisasi saat ini</li>
+            <li>Fokus penggalian potensi pada jenis pajak dengan gap terbesar</li>
+            <li>Monitoring kinerja setiap 3 bulan untuk evaluasi pencapaian</li>
+            <li>Perencanaan strategis jangka ${years} tahun dengan growth rate ${(growthRate * 100).toFixed(1)}%</li>
+        </ul>
+
+        <h6>Prioritas Penggalian Potensi:</h6>
+        <ol>
+            ${Object.values(potensiData)
+                .sort((a, b) => b.potensiTambahan - a.potensiTambahan)
+                .slice(0, 3)
+                .map(item => `<li>${item.nama}: Rp ${item.potensiTambahan.toLocaleString('id-ID')} (${((item.potensiTambahan / totalPotensi) * 100).toFixed(1)}% dari total potensi)</li>`)
+                .join('')}
+        </ol>
+    `;
 }

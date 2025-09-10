@@ -53,6 +53,7 @@
                     <option value="pembayaran">Laporan Pembayaran</option>
                     <option value="fiskal">Laporan Fiskal</option>
                     <option value="performance">Laporan Kinerja</option>
+                    <option value="potensi">Laporan Potensi Pajak</option>
                 </select>
             </div>
             
@@ -318,6 +319,100 @@
                         </div>
                         <div class="metric-bar">
                             <div id="wpCompliance-fill" class="metric-fill" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- LAPORAN POTENSI PAJAK -->
+                <div id="potensiReport" class="report-section">
+                    <h3>Laporan Potensi Pajak</h3>
+                
+                    <!-- Kontrol Laporan Potensi -->
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label for="potensiMethod">Metode Perhitungan:</label>
+                            <select id="potensiMethod">
+                                <option value="wp">Berdasarkan WP Terdaftar</option>
+                                <option value="historis">Berdasarkan Data Historis</option>
+                                <option value="kombinasi">Kombinasi WP + Historis</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="potensiYears">Jangka Waktu (Tahun):</label>
+                            <select id="potensiYears">
+                                <option value="1">1 Tahun</option>
+                                <option value="2">2 Tahun</option>
+                                <option value="3" selected>3 Tahun</option>
+                                <option value="4">4 Tahun</option>
+                                <option value="5">5 Tahun</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="growthRate">Growth Rate (%):</label>
+                            <input type="number" id="growthRate" value="10" min="0" max="50" step="0.5">
+                        </div>
+                        <button onclick="generatePotensiReport()" class="btn-primary">Generate Laporan</button>
+                    </div>
+                
+                    <!-- Ringkasan Potensi -->
+                    <div class="summary-grid" id="potensiSummary">
+                        <!-- Summary cards akan diisi oleh JavaScript -->
+                    </div>
+                
+                    <!-- Tabel Potensi per Jenis Pajak -->
+                    <div class="table-container">
+                        <table id="potensiTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Jenis Pajak/Retribusi</th>
+                                    <th>Realisasi Saat Ini</th>
+                                    <th>Target Tahunan</th>
+                                    <th>Potensi Tambahan</th>
+                                    <th>Proyeksi 1 Tahun</th>
+                                    <th>Proyeksi 2 Tahun</th>
+                                    <th>Proyeksi 3 Tahun</th>
+                                    <th>Proyeksi 4 Tahun</th>
+                                    <th>Proyeksi 5 Tahun</th>
+                                </tr>
+                            </thead>
+                            <tbody id="potensiTableBody">
+                                <!-- Data akan diisi oleh JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                
+                    <!-- Kertas Kerja -->
+                    <div class="report-section">
+                        <h4>Kertas Kerja Perhitungan Potensi Pajak</h4>
+                
+                        <div class="working-paper">
+                            <div class="working-paper-section">
+                                <h5>1. Metodologi Perhitungan</h5>
+                                <div id="methodologyContent">
+                                    <!-- Konten metodologi akan diisi oleh JavaScript -->
+                                </div>
+                            </div>
+                
+                            <div class="working-paper-section">
+                                <h5>2. Asumsi yang Digunakan</h5>
+                                <div id="assumptionsContent">
+                                    <!-- Konten asumsi akan diisi oleh JavaScript -->
+                                </div>
+                            </div>
+                
+                            <div class="working-paper-section">
+                                <h5>3. Sumber Data</h5>
+                                <div id="dataSourcesContent">
+                                    <!-- Konten sumber data akan diisi oleh JavaScript -->
+                                </div>
+                            </div>
+                
+                            <div class="working-paper-section">
+                                <h5>4. Rekomendasi Kebijakan</h5>
+                                <div id="recommendationsContent">
+                                    <!-- Konten rekomendasi akan diisi oleh JavaScript -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
