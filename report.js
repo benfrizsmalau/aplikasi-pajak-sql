@@ -575,17 +575,35 @@ function updateFiskalReport(data) {
 }
 
 function updatePerformanceReport(data) {
-    // Hitung kepatuhan berdasarkan pembayaran vs tagihan (bukan ketetapan lunas)
+    // Hitung kepatuhan berdasarkan pembayaran vs tagihan dengan validasi yang ketat
     const totalTagihanSemua = data.ketetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-    const totalBayarSemua = data.pembayaran
-        .filter(p => p.StatusPembayaran === 'Sukses')
-        .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
-    const complianceRate = totalTagihanSemua > 0 ? (totalBayarSemua / totalTagihanSemua * 100).toFixed(1) : 0;
 
-    // Hitung Target vs Realisasi (Real Data)
-    const totalRealisasi = data.pembayaran
-        .filter(p => p.StatusPembayaran === 'Sukses')
-        .reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+    // Hitung total pembayaran yang terkait dengan ketetapan yang ada
+    let totalBayarSemua = 0;
+    data.ketetapan.forEach(ketetapan => {
+        const pembayaranKetetapan = data.pembayaran.filter(p =>
+            p.ID_Ketetapan === ketetapan.ID_Ketetapan &&
+            p.StatusPembayaran === 'Sukses'
+        );
+        pembayaranKetetapan.forEach(p => {
+            totalBayarSemua += parseFloat(p.JumlahBayar) || 0;
+        });
+    });
+
+    // Pastikan kepatuhan tidak melebihi 100%
+    const complianceRate = totalTagihanSemua > 0 ? Math.min((totalBayarSemua / totalTagihanSemua * 100), 100).toFixed(1) : 0;
+
+    // Hitung Target vs Realisasi (Real Data) dengan validasi ketat
+    let totalRealisasi = 0;
+    data.ketetapan.forEach(ketetapan => {
+        const pembayaranKetetapan = data.pembayaran.filter(p =>
+            p.ID_Ketetapan === ketetapan.ID_Ketetapan &&
+            p.StatusPembayaran === 'Sukses'
+        );
+        pembayaranKetetapan.forEach(p => {
+            totalRealisasi += parseFloat(p.JumlahBayar) || 0;
+        });
+    });
 
     const currentYear = new Date().getFullYear();
     const totalTarget = (reportData.targetPajakRetribusi || [])
@@ -634,20 +652,36 @@ function updatePerformanceReport(data) {
     (data.wajibPajak || []).forEach(wp => {
         const npwpd = wp.NPWPD;
         const wpKetetapan = data.ketetapan.filter(k => k.NPWPD === npwpd);
-        const wpPembayaran = data.pembayaran.filter(p => p.NPWPD === npwpd && p.StatusPembayaran === 'Sukses');
-
-        const totalKetetapan = wpKetetapan.length;
-        const ketetapanLunas = wpKetetapan.filter(k => k.Status === 'Lunas').length;
 
         // Hitung total tagihan dari semua ketetapan
         const totalTagihan = wpKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
 
-        // Hitung total pembayaran yang sudah berhasil
-        const totalBayar = wpPembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+        // Hitung total pembayaran yang BERKAITAN dengan ketetapan yang ada
+        let totalBayar = 0;
+        wpKetetapan.forEach(ketetapan => {
+            const pembayaranKetetapan = data.pembayaran.filter(p =>
+                p.ID_Ketetapan === ketetapan.ID_Ketetapan &&
+                p.StatusPembayaran === 'Sukses' &&
+                p.NPWPD === npwpd
+            );
+            pembayaranKetetapan.forEach(p => {
+                totalBayar += parseFloat(p.JumlahBayar) || 0;
+            });
+        });
 
-        // Hitung kepatuhan berdasarkan pembayaran vs tagihan (bukan ketetapan lunas)
-        const kepatuhan = totalTagihan > 0 ? ((totalBayar / totalTagihan) * 100).toFixed(1) : 0;
+        // Pastikan total bayar tidak melebihi total tagihan (maksimal 100%)
+        const kepatuhan = totalTagihan > 0 ? Math.min(((totalBayar / totalTagihan) * 100), 100).toFixed(1) : 0;
         const status = kepatuhan >= 80 ? 'Baik' : kepatuhan >= 50 ? 'Sedang' : 'Buruk';
+
+        // Hitung ketetapan lunas berdasarkan pembayaran
+        const ketetapanLunas = wpKetetapan.filter(k => {
+            const pembayaranK = data.pembayaran.filter(p =>
+                p.ID_Ketetapan === k.ID_Ketetapan &&
+                p.StatusPembayaran === 'Sukses'
+            );
+            const totalBayarK = pembayaranK.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
+            return totalBayarK >= (parseFloat(k.TotalTagihan) || 0);
+        }).length;
 
         // Hitung sisa tagihan
         const sisaTagihan = Math.max(0, totalTagihan - totalBayar);
@@ -655,7 +689,7 @@ function updatePerformanceReport(data) {
         wpPerformance[npwpd] = {
             namaUsaha: wp['Nama Usaha'] || '-',
             namaPemilik: wp['Nama Pemilik'] || '-',
-            totalKetetapan,
+            totalKetetapan: wpKetetapan.length,
             ketetapanLunas,
             totalTagihan,
             totalBayar,
@@ -698,26 +732,50 @@ function updatePerformanceChart(data) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
     const currentYear = new Date().getFullYear();
     const complianceData = new Array(12).fill(0);
-    const targetData = new Array(12).fill(parseFloat(targetRealisasi));
+
+    // Hitung ulang target realisasi untuk chart
+    const totalTargetChart = (reportData.targetPajakRetribusi || [])
+        .filter(t => t.Tahun == currentYear)
+        .reduce((sum, t) => sum + (parseFloat(t.Target) || 0), 0);
+
+    let totalRealisasiChart = 0;
+    data.ketetapan.forEach(ketetapan => {
+        const pembayaranKetetapan = data.pembayaran.filter(p =>
+            p.ID_Ketetapan === ketetapan.ID_Ketetapan &&
+            p.StatusPembayaran === 'Sukses'
+        );
+        pembayaranKetetapan.forEach(p => {
+            totalRealisasiChart += parseFloat(p.JumlahBayar) || 0;
+        });
+    });
+
+    const targetRealisasiChart = totalTargetChart > 0 ? Math.min((totalRealisasiChart / totalTargetChart * 100), 100).toFixed(1) : 0;
+    const targetData = new Array(12).fill(parseFloat(targetRealisasiChart));
 
     for (let month = 0; month < 12; month++) {
-        // Hitung kepatuhan bulanan berdasarkan pembayaran vs tagihan
+        // Hitung kepatuhan bulanan berdasarkan pembayaran vs tagihan dengan validasi ketat
         const monthKetetapan = data.ketetapan.filter(k => {
             if (!k.TanggalKetetapan) return false;
             const date = new Date(k.TanggalKetetapan);
             return date.getFullYear() === currentYear && date.getMonth() === month;
         });
 
-        const monthPembayaran = data.pembayaran.filter(p => {
-            if (!p.TanggalBayar || p.StatusPembayaran !== 'Sukses') return false;
-            const date = new Date(p.TanggalBayar);
-            return date.getFullYear() === currentYear && date.getMonth() === month;
+        let monthBayar = 0;
+        monthKetetapan.forEach(ketetapan => {
+            const pembayaranKetetapan = data.pembayaran.filter(p => {
+                if (!p.TanggalBayar || p.StatusPembayaran !== 'Sukses') return false;
+                const date = new Date(p.TanggalBayar);
+                return p.ID_Ketetapan === ketetapan.ID_Ketetapan &&
+                       date.getFullYear() === currentYear &&
+                       date.getMonth() === month;
+            });
+            pembayaranKetetapan.forEach(p => {
+                monthBayar += parseFloat(p.JumlahBayar) || 0;
+            });
         });
 
         const monthTagihan = monthKetetapan.reduce((sum, k) => sum + (parseFloat(k.TotalTagihan) || 0), 0);
-        const monthBayar = monthPembayaran.reduce((sum, p) => sum + (parseFloat(p.JumlahBayar) || 0), 0);
-
-        complianceData[month] = monthTagihan > 0 ? (monthBayar / monthTagihan * 100) : 0;
+        complianceData[month] = monthTagihan > 0 ? Math.min((monthBayar / monthTagihan * 100), 100) : 0;
     }
 
     window.performanceChartInstance = new Chart(ctx, {
@@ -725,7 +783,7 @@ function updatePerformanceChart(data) {
         data: {
             labels: months,
             datasets: [{
-                label: `Target Realisasi (${targetRealisasi}%)`,
+                label: `Target Realisasi (${targetRealisasiChart}%)`,
                 data: targetData,
                 borderColor: '#FF6384',
                 backgroundColor: 'rgba(255, 99, 132, 0.1)',
