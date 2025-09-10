@@ -5,6 +5,15 @@ const { createClient } = require('@supabase/supabase-js');
 // Kredensial ini dibaca dari Environment Variables di Netlify
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+// Validasi environment variables
+if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ MISSING ENVIRONMENT VARIABLES:');
+    console.error('- SUPABASE_URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
+    console.error('- SUPABASE_SERVICE_KEY:', supabaseKey ? '✅ Set' : '❌ Missing');
+    throw new Error('Required environment variables are missing. Please check Netlify environment settings.');
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const FOLDER_ID = "1x3EmFN0kM7x9Th0ZxsHEWX7hFNU6Vum8"; // ID Folder Google Drive Anda
@@ -55,14 +64,23 @@ async function getAuthClient() {
 
 // Handler utama Netlify Function
 exports.handler = async (event) => {
-    console.log('API Handler started for method:', event.httpMethod, 'path:', event.path);
+    console.log('🚀 API Handler started for method:', event.httpMethod, 'path:', event.path);
+    console.log('🌍 Environment check:', {
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_SERVICE_KEY,
+        hasGoogleCreds: !!process.env.GOOGLE_CREDENTIALS,
+        nodeEnv: process.env.NODE_ENV || 'development'
+    });
 
     // Pastikan Content-Type adalah application/json
     const headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Content-Type': 'application/json', // Tambahkan ini untuk memastikan response JSON
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
     };
 
     if (event.httpMethod === 'OPTIONS') {
@@ -75,11 +93,28 @@ exports.handler = async (event) => {
     }
 
     try {
-        console.log('API Request:', {
+        console.log('📥 API Request:', {
             method: event.httpMethod,
             path: event.path,
-            body: event.body ? JSON.parse(event.body) : null
+            hasBody: !!event.body,
+            bodyLength: event.body ? event.body.length : 0,
+            headers: event.headers
         });
+
+        // Validasi environment variables sebelum memproses request
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+            console.error('❌ Environment variables missing during request processing');
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({
+                    status: 'gagal',
+                    message: 'Server configuration error: Missing database credentials',
+                    timestamp: new Date().toISOString(),
+                    errorType: 'ConfigurationError'
+                })
+            };
+        }
 
         let responseData;
         if (event.httpMethod === 'GET') {
@@ -141,14 +176,18 @@ exports.handler = async (event) => {
         }
         
         const successResponse = { status: 'sukses', ...responseData };
-        console.log('API Success Response:', successResponse);
+        console.log('✅ API Success Response:', {
+            status: successResponse.status,
+            hasData: !!responseData,
+            dataKeys: responseData ? Object.keys(responseData) : []
+        });
 
         const body = JSON.stringify(successResponse);
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
 
-        console.log('API Handler: Body length:', body.length);
-        console.log('API Handler: Content-Length:', contentLength);
-        console.log('API Handler finished successfully');
+        console.log('📤 API Handler: Body length:', body.length);
+        console.log('📤 API Handler: Content-Length:', contentLength);
+        console.log('🎉 API Handler finished successfully');
 
         // Return response with minimal headers
         return {
@@ -162,17 +201,24 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error('API ERROR:', error);
-        console.error('API ERROR Stack:', error.stack);
+        console.error('❌ API ERROR:', error.message);
+        console.error('❌ API ERROR Stack:', error.stack);
+        console.error('❌ API ERROR Details:', {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+            details: error.details
+        });
 
         const errorResponse = {
             status: 'gagal',
             message: error.message || 'Terjadi error pada server.',
             timestamp: new Date().toISOString(),
-            errorType: error.name || 'UnknownError'
+            errorType: error.name || 'UnknownError',
+            environment: process.env.NODE_ENV || 'development'
         };
 
-        console.log('API Error Response:', errorResponse);
+        console.log('📤 API Error Response:', errorResponse);
 
         const body = JSON.stringify(errorResponse);
         const contentLength = Buffer.byteLength(body, 'utf8').toString();
@@ -198,23 +244,75 @@ exports.handler = async (event) => {
 // =================================================================
 
 async function handleGet() {
-    console.log('handleGet: Starting data fetch - FINAL VERSION');
+    console.log('handleGet: Starting data fetch - FIXED VERSION');
 
-    // FINAL APPROACH: Return minimal valid data structure
-    const data = {
-        wajibPajak: [],
-        wilayah: [],
-        masterPajak: [],
-        ketetapan: [],
-        pembayaran: [],
-        fiskal: [],
-        targetPajakRetribusi: []
-    };
+    try {
+        // Fetch all data from Supabase with timeout protection
+        const [
+            { data: wajibPajak, error: wpError },
+            { data: wilayah, error: wilayahError },
+            { data: masterPajak, error: masterError },
+            { data: ketetapan, error: ketetapanError },
+            { data: pembayaran, error: pembayaranError },
+            { data: fiskal, error: fiskalError },
+            { data: targetPajakRetribusi, error: targetError }
+        ] = await Promise.all([
+            queryWithTimeout(supabase.from('datawp').select('*')),
+            queryWithTimeout(supabase.from('wilayah').select('*')),
+            queryWithTimeout(supabase.from('MasterPajakRetribusi').select('*')),
+            queryWithTimeout(supabase.from('KetetapanPajak').select('*')),
+            queryWithTimeout(supabase.from('RiwayatPembayaran').select('*')),
+            queryWithTimeout(supabase.from('Fiskal').select('*')),
+            queryWithTimeout(supabase.from('TargetPajakRetribusi').select('*'))
+        ]);
 
-    console.log('handleGet: Returning empty data structure');
-    console.log('handleGet: Data structure keys:', Object.keys(data));
+        // Log any errors but don't fail completely
+        if (wpError) console.warn('handleGet: wajibPajak error:', wpError.message);
+        if (wilayahError) console.warn('handleGet: wilayah error:', wilayahError.message);
+        if (masterError) console.warn('handleGet: masterPajak error:', masterError.message);
+        if (ketetapanError) console.warn('handleGet: ketetapan error:', ketetapanError.message);
+        if (pembayaranError) console.warn('handleGet: pembayaran error:', pembayaranError.message);
+        if (fiskalError) console.warn('handleGet: fiskal error:', fiskalError.message);
+        if (targetError) console.warn('handleGet: target error:', targetError.message);
 
-    return data;
+        const data = {
+            wajibPajak: wajibPajak || [],
+            wilayah: wilayah || [],
+            masterPajak: masterPajak || [],
+            ketetapan: ketetapan || [],
+            pembayaran: pembayaran || [],
+            fiskal: fiskal || [],
+            targetPajakRetribusi: targetPajakRetribusi || []
+        };
+
+        console.log('handleGet: Data fetched successfully');
+        console.log('handleGet: Data counts:', {
+            wajibPajak: data.wajibPajak.length,
+            wilayah: data.wilayah.length,
+            masterPajak: data.masterPajak.length,
+            ketetapan: data.ketetapan.length,
+            pembayaran: data.pembayaran.length,
+            fiskal: data.fiskal.length,
+            targetPajakRetribusi: data.targetPajakRetribusi.length
+        });
+
+        return data;
+
+    } catch (error) {
+        console.error('handleGet: Error fetching data:', error);
+        
+        // Return empty structure as fallback but log the error
+        console.log('handleGet: Returning empty data structure due to error');
+        return {
+            wajibPajak: [],
+            wilayah: [],
+            masterPajak: [],
+            ketetapan: [],
+            pembayaran: [],
+            fiskal: [],
+            targetPajakRetribusi: []
+        };
+    }
 }
 
 // FUNGSI INI TELAH DIPERBAIKI

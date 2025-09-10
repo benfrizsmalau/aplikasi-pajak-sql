@@ -3,6 +3,10 @@
 const apiUrl = '/.netlify/functions/api';
 // --------------------
 
+// 🔍 DEBUG: Add function definition tracking
+console.log('🔍 DEBUG: Script loading - tracking function definitions');
+window.loadDashboardDataDefinitions = [];
+
 // Debug logging for font loading issues
 console.log('🔤 Font Loading Debug: Checking for font-related errors');
 console.log('🔤 Font Loading Debug: Document fonts:', document.fonts);
@@ -31,95 +35,7 @@ window.addEventListener('error', function(event) {
     }
 });
 
-// Tambahkan debugging yang lebih detail pada fungsi loadDashboardData
-async function loadDashboardData() {
-    console.log('🔄 loadDashboardData: Starting dashboard data load process');
-
-    const maxRetries = 3;
-    let lastError = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`🔄 loadDashboardData: Attempt ${attempt}/${maxRetries} - Making API request`);
-
-            const startTime = performance.now();
-            const response = await fetch('/.netlify/functions/api', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
-            const endTime = performance.now();
-
-            console.log(`✅ loadDashboardData: Response received in ${Math.round(endTime - startTime)}ms`);
-            console.log('📊 loadDashboardData: Response status:', response.status);
-            console.log('📋 loadDashboardData: Response headers:', response.headers);
-
-            // Debug response headers
-            for (let [key, value] of response.headers.entries()) {
-                console.log(`📄 Header ${key}: ${value}`);
-            }
-
-            console.log('📏 loadDashboardData: Content-Length:', response.headers.get('content-length'), 'Content-Type:', response.headers.get('content-type'));
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            // Clone response untuk debugging
-            const responseClone = response.clone();
-
-            // Cek apakah response body kosong
-            const text = await responseClone.text();
-            console.log('📝 Raw response text:', text);
-            console.log('📏 Response text length:', text.length);
-
-            if (!text || text.length === 0) {
-                console.log('⚠️ loadDashboardData: Empty response body detected');
-                throw new Error('Empty response body');
-            }
-
-            // Parse JSON
-            let data;
-            try {
-                data = JSON.parse(text);
-                console.log('✅ JSON parsed successfully:', data);
-            } catch (jsonError) {
-                console.error('❌ JSON parsing error:', jsonError);
-                console.log('🔍 Problematic text:', text.substring(0, 200));
-                throw new Error(`Invalid JSON response: ${jsonError.message}`);
-            }
-
-            if (!data || typeof data !== 'object') {
-                console.log('⚠️ loadDashboardData: Empty or invalid response detected');
-                console.log('🔍 loadDashboardData: Response details:', data);
-                throw new Error('Invalid data structure received');
-            }
-
-            console.log('🎉 loadDashboardData: Valid data received, processing...');
-
-            // Update dashboard dengan data yang diterima
-            updateDashboardWithData(data);
-            return data;
-
-        } catch (error) {
-            lastError = error;
-            console.error(`❌ loadDashboardData: Attempt ${attempt} failed:`, error);
-
-            if (attempt === maxRetries) {
-                console.error('💥 loadDashboardData: All attempts failed, using fallback');
-                setDashboardDefaults();
-                throw new Error(`Failed to load dashboard data after ${maxRetries} attempts: ${error.message}`);
-            } else {
-                // Wait before retry
-                const delay = Math.pow(2, attempt - 1) * 1000; // Exponential backoff
-                console.log(`⏳ Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-    }
-}
+// 🗑️ REMOVED: Old problematic loadDashboardData function - replaced with working version below
 
 // Fungsi untuk mengecek status server
 async function checkServerStatus() {
@@ -381,9 +297,10 @@ function replaceProblematicLoadDashboardData() {
 
 // FINAL CLEANUP - Hapus kode lama dan ganti dengan yang sudah bekerja
 
-// 1. GANTI fungsi loadDashboardData lama dengan yang baru
-async function loadDashboardData() {
-    console.log('🔄 loadDashboardData: Starting with working method...');
+// 🔍 DEBUG: Second loadDashboardData definition (REPLACEMENT ATTEMPT)
+async function loadDashboardData_OLD_V2() {
+    console.log('🚨 DEBUG: OLD loadDashboardData_V2 called - THIS SHOULD NOT HAPPEN');
+    console.log('� loadDashboardData_V2: Starting with working method...');
 
     try {
         const response = await fetch('/.netlify/functions/api', {
@@ -419,99 +336,7 @@ async function loadDashboardData() {
     }
 }
 
-// 2. PASTIKAN transformApiDataToDashboard sudah benar
-function transformApiDataToDashboard(apiData) {
-    console.log('🔄 Transforming API data to dashboard format...');
-
-    const stats = {
-        totalWp: apiData.wajibPajak ? apiData.wajibPajak.length : 0,
-        totalKetetapan: apiData.ketetapan ? apiData.ketetapan.length : 0,
-        totalPembayaran: apiData.pembayaran ? apiData.pembayaran.length : 0,
-        totalSkpdSkrd: 0, // Hitung dari data yang ada
-        totalSspdSsrd: 0, // Hitung dari data yang ada
-        totalFiskal: apiData.fiskal ? apiData.fiskal.length : 0,
-        totalNilaiKetetapan: 0,
-        totalNilaiSetoran: 0,
-        lastUpdated: new Date().toISOString(),
-        dataStatus: apiData.status
-    };
-
-    // Hitung total nilai ketetapan
-    if (apiData.ketetapan && apiData.ketetapan.length > 0) {
-        stats.totalNilaiKetetapan = apiData.ketetapan.reduce((total, item) => {
-            const nilai = parseFloat(item.jumlah_ketetapan || item.nilai || 0);
-            return total + nilai;
-        }, 0);
-    }
-
-    // Hitung total nilai pembayaran/setoran
-    if (apiData.pembayaran && apiData.pembayaran.length > 0) {
-        stats.totalNilaiSetoran = apiData.pembayaran.reduce((total, item) => {
-            const nilai = parseFloat(item.jumlah_bayar || item.nilai || 0);
-            return total + nilai;
-        }, 0);
-    }
-
-    console.log('📊 Calculated dashboard stats:', stats);
-    return stats;
-}
-
-// 3. PASTIKAN updateDashboardUI sudah benar
-function updateDashboardUI(stats) {
-    console.log('🎨 Updating dashboard UI with stats:', stats);
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(amount || 0);
-    };
-
-    const formatNumber = (num) => {
-        return new Intl.NumberFormat('id-ID').format(num || 0);
-    };
-
-    const updateElement = (id, value, formatter = null) => {
-        const element = document.getElementById(id);
-        if (element) {
-            const displayValue = formatter ? formatter(value) : (value || 'N/A');
-            element.textContent = displayValue;
-            console.log(`✅ Updated ${id}:`, displayValue);
-        }
-    };
-
-    // Update semua elemen dashboard
-    updateElement('totalWp', stats.totalWp, formatNumber);
-    updateElement('totalKetetapan', stats.totalKetetapan, formatNumber);
-    updateElement('totalPembayaran', stats.totalPembayaran, formatNumber);
-    updateElement('totalSkpdSkrd', stats.totalSkpdSkrd, formatNumber);
-    updateElement('totalSspdSsrd', stats.totalSspdSsrd, formatNumber);
-    updateElement('totalFiskal', stats.totalFiskal, formatNumber);
-    updateElement('totalNilaiKetetapan', stats.totalNilaiKetetapan, formatCurrency);
-    updateElement('totalNilaiSetoran', stats.totalNilaiSetoran, formatCurrency);
-
-    if (stats.lastUpdated) {
-        updateElement('lastUpdated', new Date(stats.lastUpdated).toLocaleString('id-ID'));
-    }
-
-    console.log('🎉 Dashboard UI updated successfully');
-}
-
-// 4. BERSIHKAN event listener - hanya gunakan satu method
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🚀 Dashboard initialization...');
-
-    try {
-        // Langsung gunakan loadDashboardData yang sudah diperbaiki
-        await loadDashboardData();
-        console.log('✅ Dashboard initialization complete');
-
-    } catch (error) {
-        console.error('❌ Dashboard initialization failed:', error);
-        setDashboardDefaults();
-    }
-});
+// 🗑️ REMOVED: Duplicate functions - using the main working version below
 
 // 5. OPTIONAL: Tambahkan favicon untuk menghilangkan 404
 function addFavicon() {
@@ -1034,6 +859,7 @@ async function postData(data) {
     console.log('📤 PostData: Sending request:', data);
     console.log('🔗 PostData: API URL:', apiUrl);
     console.log('📊 PostData: Request action:', data.action || 'unknown');
+    console.log('🔍 DEBUG: PostData called from:', new Error().stack.split('\n')[2]);
 
     try {
         const startTime = Date.now();
@@ -1150,6 +976,7 @@ async function fetchAllData() {
     const maxRetries = 3;
 
     console.log('🔄 fetchAllData: Starting data fetch process');
+    console.log('🔍 DEBUG: fetchAllData called from:', new Error().stack.split('\n')[2]);
 
     while (retryCount < maxRetries) {
         try {
@@ -1739,7 +1566,11 @@ function setDashboardDefaults() {
     }
 }
 
+// 🔍 DEBUG: Third loadDashboardData definition (CURRENT - SHOULD BE ACTIVE)
 async function loadDashboardData() {
+    console.log('✅ DEBUG: CURRENT loadDashboardData called - this is correct');
+    window.loadDashboardDataDefinitions.push('CURRENT_V3_CALLED');
+    
     let retryCount = 0;
     const maxRetries = 3;
 
@@ -2144,5 +1975,65 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
             },
             elements: { point: { hoverRadius: 8 } }
         }
+    });
+}
+
+// 🔧 PRODUCTION ERROR HANDLING - Tambahan untuk deployment Netlify
+function showConfigurationError() {
+    console.error('❌ Configuration error detected - showing user message');
+    
+    const dashboardElements = [
+        { id: 'totalWp', value: 'Config Error' },
+        { id: 'totalKetetapan', value: 'Config Error' },
+        { id: 'totalPembayaran', value: 'Config Error' },
+        { id: 'totalSkpdSkrd', value: 'Config Error' },
+        { id: 'totalSspdSsrd', value: 'Config Error' },
+        { id: 'totalFiskal', value: 'Config Error' },
+        { id: 'totalNilaiKetetapan', value: 'Konfigurasi Error' },
+        { id: 'totalNilaiSetoran', value: 'Konfigurasi Error' }
+    ];
+    
+    dashboardElements.forEach(({ id, value }) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+            element.style.color = '#dc3545'; // Red color for errors
+            element.title = 'Server configuration error. Please check environment variables.';
+        }
+    });
+    
+    // Show alert to user
+    setTimeout(() => {
+        alert('⚠️ Konfigurasi server bermasalah. Silakan hubungi administrator.\n\nConfiguration error detected. Please contact administrator.');
+    }, 1000);
+}
+
+// 🔧 DEPLOYMENT DIAGNOSTICS - Fungsi untuk membantu debugging deployment
+function runDeploymentDiagnostics() {
+    console.log('🔍 DEPLOYMENT DIAGNOSTICS:');
+    console.log('- Current URL:', window.location.href);
+    console.log('- API URL:', apiUrl);
+    console.log('- User Agent:', navigator.userAgent);
+    console.log('- Environment:', {
+        isLocalhost: window.location.hostname === 'localhost',
+        isNetlify: window.location.hostname.includes('netlify'),
+        protocol: window.location.protocol,
+        port: window.location.port
+    });
+    
+    // Test API endpoint availability
+    fetch(apiUrl, { method: 'HEAD' })
+        .then(response => {
+            console.log('✅ API endpoint reachable:', response.status);
+        })
+        .catch(error => {
+            console.error('❌ API endpoint not reachable:', error.message);
+        });
+}
+
+// Run diagnostics on page load for debugging
+if (window.location.hostname.includes('netlify') || window.location.hostname !== 'localhost') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(runDeploymentDiagnostics, 2000);
     });
 }
