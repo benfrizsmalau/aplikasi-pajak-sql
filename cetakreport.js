@@ -498,9 +498,9 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
   y += 7;
 
-  // Tabel header
-  const colX = [15, 35, 55, 85, 125, 155, 185, 215];
-  const colW = [18, 18, 28, 38, 28, 28, 28, 28];
+  // Tabel header - disesuaikan berdasarkan gambar
+  const colX = [15, 35, 75, 105, 145, 200, 235, 265];
+  const colW = [18, 38, 28, 38, 53, 33, 28, 28];
   const rowHeight = 7;
   const maxY = 195;
 
