@@ -645,11 +645,11 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
   y += 7;
 
-  // Tabel header
-  const colX = [15, 30, 50, 70, 90, 110, 130, 150, 170, 190];
-  const colW = [13, 18, 18, 18, 18, 18, 18, 18, 18, 18];
-  const rowHeight = 7;
-  const maxY = 195;
+  // Tabel header - layout yang lebih proporsional untuk A4 landscape
+  const colX = [15, 28, 48, 68, 88, 108, 128, 148, 168, 188];
+  const colW = [11, 18, 18, 18, 18, 18, 18, 18, 18, 18];
+  const rowHeight = 8;
+  const maxY = 190;
 
   function drawTableHeader(yPos) {
     pdf.setFont('helvetica', 'bold');
