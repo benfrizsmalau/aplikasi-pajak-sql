@@ -651,6 +651,9 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   const colCenter = colX.map((x, i) => x + colW[i] / 2);
   const colLeft = colX.map(x => x + 2);
 
+  // TAMBAHKAN BARIS INI: Deklarasi maxY untuk pagination
+  const maxY = 195;
+
   // Function untuk truncate text yang terlalu panjang
   function truncateText(text, maxWidth, fontSize = 6.5) {
     if (!text) return '';
