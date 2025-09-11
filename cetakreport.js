@@ -373,7 +373,7 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     pdf.text('No.', colX[0] + colW[0] / 2, yPos, { align: 'center' });
     pdf.text('NPWPD', colX[1] + colW[1] / 2, yPos, { align: 'center' });
     pdf.text('Nama Usaha', colX[2] + colW[2] / 2, yPos, { align: 'center' });
-    pdf.text('Nama Pemilik', colX[3] + colW[3] / 2, yPos, { align: 'center' });
+    pdf.text('Nama Pemilik', colX[3] + colW[3] / 2 - 10, yPos, { align: 'center' });
     pdf.text('Jenis WP', colX[4] + colW[4] / 2, yPos, { align: 'center' });
     pdf.text('Status', colX[5] + colW[5] / 2, yPos, { align: 'center' });
     pdf.text('Total Pembayaran', colX[6] + colW[6] / 2, yPos, { align: 'center' });
