@@ -517,9 +517,9 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
     pdf.text('NPWPD', colX[2] + colW[2] / 2, yPos, { align: 'center' });
     pdf.text('Jenis Pajak', colX[3] + colW[3] / 2 + 10, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
     pdf.text('Masa Pajak', colX[4] + colW[4] / 2 + 20, yPos, { align: 'center' }); // geser 2cm ke kanan
-    pdf.text('Total Tagihan', colX[5] + colW[5] / 2, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
-    pdf.text('Status', colX[6] + colW[6] / 2, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
-    pdf.text('Tanggal', colX[7] + colW[7] / 2 + 5, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
+    pdf.text('Total Tagihan', colX[5] + colW[5] / 2 + 20, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
+    pdf.text('Status', colX[6] + colW[6] / 2 + 20, yPos, { align: 'center' }); // geser 2cm ke kanan dari posisi sebelumnya
+    pdf.text('Tanggal', colX[7] + colW[7] / 2 + 15, yPos, { align: 'center' }); // geser 5mm ke kanan dari posisi sebelumnya
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
   }
