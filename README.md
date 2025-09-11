@@ -1,6 +1,6 @@
-# Aplikasi Sistem Informasi Pendapatan Daerah
+# SIMPADA MAMBERAMO RAYA
 
-Aplikasi modern untuk mengelola data wajib pajak, ketetapan, dan pembayaran pajak daerah.
+Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya - Aplikasi modern untuk mengelola data wajib pajak, ketetapan, dan pembayaran pajak daerah.
 
 ## Standar Tabel untuk Seluruh Aplikasi
 

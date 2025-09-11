@@ -265,12 +265,12 @@ async function exportPendapatanToPDF({
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Pendapatan_PAD.pdf');
@@ -431,12 +431,12 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Wajib_Pajak.pdf');
@@ -575,12 +575,12 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Ketetapan.pdf');
@@ -726,12 +726,12 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Pembayaran.pdf');
@@ -869,12 +869,12 @@ async function exportFiskalToPDF({ data, reportData, periodeLabel }) {
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Fiskal.pdf');
@@ -1063,12 +1063,12 @@ async function exportPerformanceToPDF({ data, reportData, periodeLabel }) {
   y += 6;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('KEPALA BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
   y += 18;
   pdf.setFont('helvetica', 'normal');
-  pdf.text('NAMA.', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
   y += 6;
-  pdf.text('NIP.', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
   pdf.save('Laporan_Kinerja.pdf');
