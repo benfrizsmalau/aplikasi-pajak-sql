@@ -675,7 +675,7 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
     let x = colX[0];
     for (let i = 0; i < colW.length; i++) {
       pdf.rect(x, yPos - 8 + 2, colW[i], 8, 'S');
-      x += colW[i] + TABLE_CONFIG.colGap;
+      x += colW[i] + 1.5;
     }
 
     // Header texts dengan positioning yang tepat
