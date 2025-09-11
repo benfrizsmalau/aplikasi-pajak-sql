@@ -645,140 +645,156 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
   y += 7;
 
-  // Column positions for pembayaran table
-  const colX = [15, 39, 63, 87, 111, 135, 159, 183, 207, 231];
-  const colW = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24];
-  const colCenter = colX.map((x, i) => x + colW[i] / 2);
-  const colLeft = colX.map(x => x + 2);
+  // PERBAIKAN UTAMA: Layout kolom yang lebih proporsional
+  const colX = [15, 30, 45, 65, 105, 125, 155, 185, 210, 235];
+  const colW = [15, 15, 20, 40, 20, 30, 30, 25, 25, 25];
+  const rowHeight = 8; // Tinggi baris diperbesar
+  const maxY = 190; // PERBAIKAN: Tambahkan maxY yang hilang
 
-  // TAMBAHKAN BARIS INI: Deklarasi maxY untuk pagination
-  const maxY = 195;
-
-  // Function untuk truncate text yang terlalu panjang
-  function truncateText(text, maxWidth, fontSize = 6.5) {
+  // Helper function untuk memotong teks
+  function truncateText(text, maxLength) {
     if (!text) return '';
-    pdf.setFontSize(fontSize);
-    const textWidth = pdf.getTextWidth(text);
-    if (textWidth <= maxWidth) return text;
-
-    // Hitung karakter maksimal yang muat
-    const avgCharWidth = textWidth / text.length;
-    const maxChars = Math.floor(maxWidth / avgCharWidth) - 3; // -3 untuk "..."
-
-    if (maxChars <= 0) return '';
-    return text.substring(0, maxChars) + '...';
+    const str = String(text);
+    return str.length > maxLength ? str.substring(0, maxLength - 3) + '...' : str;
   }
 
   function drawTableHeader(yPos) {
-    // Set font untuk header
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7);
+    pdf.setFontSize(8);
 
-    // Gambar border tabel
+    // Gambar border header
     let x = colX[0];
     for (let i = 0; i < colW.length; i++) {
-      pdf.rect(x, yPos - 8 + 2, colW[i], 8, 'S');
-      x += colW[i] + 1.5;
+      pdf.rect(x, yPos - rowHeight + 2, colW[i], rowHeight, 'S');
+      x += colW[i];
     }
 
-    // Header texts dengan positioning yang tepat
-    pdf.setFontSize(7);
-    pdf.text('No.', colCenter[0], yPos, { align: 'center' });
-    pdf.text('ID Pembayaran', colCenter[1], yPos, { align: 'center' });
-    pdf.text('NPWPD', colCenter[2], yPos, { align: 'center' });
-    pdf.text('Nama Usaha', colCenter[3], yPos, { align: 'center' });
-    pdf.text('ID Ketetapan', colCenter[4], yPos, { align: 'center' });
-    pdf.text('Tanggal Bayar', colCenter[5], yPos, { align: 'center' });
-    pdf.text('Jumlah Bayar', colCenter[6], yPos, { align: 'center' });
-    pdf.text('Metode Bayar', colCenter[7], yPos, { align: 'center' });
-    pdf.text('Operator', colCenter[8], yPos, { align: 'center' });
-    pdf.text('Status', colCenter[9], yPos, { align: 'center' });
+    // Header text dengan posisi yang diperbaiki
+    pdf.text('No.', colX[0] + colW[0]/2, yPos - 2, { align: 'center' });
+    pdf.text('ID', colX[1] + colW[1]/2, yPos - 4, { align: 'center' });
+    pdf.text('Pembayaran', colX[1] + colW[1]/2, yPos - 1, { align: 'center' });
 
-    // Reset font untuk data
+    pdf.text('NPWPD', colX[2] + colW[2]/2, yPos - 2, { align: 'center' });
+
+    pdf.text('Nama Usaha', colX[3] + colW[3]/2, yPos - 2, { align: 'center' });
+
+    pdf.text('ID', colX[4] + colW[4]/2, yPos - 4, { align: 'center' });
+    pdf.text('Ketetapan', colX[4] + colW[4]/2, yPos - 1, { align: 'center' });
+
+    pdf.text('Tanggal', colX[5] + colW[5]/2, yPos - 4, { align: 'center' });
+    pdf.text('Bayar', colX[5] + colW[5]/2, yPos - 1, { align: 'center' });
+
+    pdf.text('Jumlah Bayar', colX[6] + colW[6]/2, yPos - 2, { align: 'center' });
+
+    pdf.text('Metode', colX[7] + colW[7]/2, yPos - 4, { align: 'center' });
+    pdf.text('Bayar', colX[7] + colW[7]/2, yPos - 1, { align: 'center' });
+
+    pdf.text('Operator', colX[8] + colW[8]/2, yPos - 2, { align: 'center' });
+    pdf.text('Status', colX[9] + colW[9]/2, yPos - 2, { align: 'center' });
+
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(7);
   }
 
   function drawTableRow(r, idx, yPos) {
-    // Gambar border tabel
+    // Gambar border row
     let x = colX[0];
     for (let i = 0; i < colW.length; i++) {
-      pdf.rect(x, yPos - 8 + 2, colW[i], 8, 'S');
-      x += colW[i] + 1.5;
+      pdf.rect(x, yPos - rowHeight + 2, colW[i], rowHeight, 'S');
+      x += colW[i];
     }
 
-    // Data dengan text truncation untuk mencegah overflow
-    pdf.setFontSize(6.5);
-    pdf.text(String(idx + 1), colCenter[0], yPos, { align: 'center' });
+    // Data dengan truncation yang tepat
+    pdf.setFontSize(7);
 
-    const truncatedIdPembayaran = truncateText(r.idPembayaran, colW[1] - 4, 6.5);
-    pdf.text(truncatedIdPembayaran, colLeft[1], yPos, { align: 'left', maxWidth: colW[1] - 4 });
+    // No - center
+    pdf.text(String(idx + 1), colX[0] + colW[0]/2, yPos - 2, { align: 'center' });
 
-    const truncatedNpwpd = truncateText(r.npwpd, colW[2] - 4, 6.5);
-    pdf.text(truncatedNpwpd, colLeft[2], yPos, { align: 'left', maxWidth: colW[2] - 4 });
+    // ID Pembayaran - truncate ke 10 karakter
+    const idPembayaran = truncateText(r.idPembayaran, 10);
+    pdf.text(idPembayaran, colX[1] + 1, yPos - 2, { align: 'left', maxWidth: colW[1] - 2 });
 
-    const truncatedNamaUsaha = truncateText(r.namaUsaha, colW[3] - 4, 6.5);
-    pdf.text(truncatedNamaUsaha, colLeft[3], yPos, { align: 'left', maxWidth: colW[3] - 4 });
+    // NPWPD - truncate ke 12 karakter
+    const npwpd = truncateText(r.npwpd, 12);
+    pdf.text(npwpd, colX[2] + 1, yPos - 2, { align: 'left', maxWidth: colW[2] - 2 });
 
-    const truncatedIdKetetapan = truncateText(r.idKetetapan, colW[4] - 4, 6.5);
-    pdf.text(truncatedIdKetetapan, colLeft[4], yPos, { align: 'left', maxWidth: colW[4] - 4 });
+    // Nama Usaha - truncate ke 25 karakter
+    const namaUsaha = truncateText(r.namaUsaha, 25);
+    pdf.text(namaUsaha, colX[3] + 1, yPos - 2, { align: 'left', maxWidth: colW[3] - 2 });
 
-    const truncatedTanggalBayar = truncateText(r.tanggalBayar, colW[5] - 4, 6.5);
-    pdf.text(truncatedTanggalBayar, colLeft[5], yPos, { align: 'left', maxWidth: colW[5] - 4 });
+    // ID Ketetapan - truncate ke 12 karakter
+    const idKetetapan = truncateText(r.idKetetapan, 12);
+    pdf.text(idKetetapan, colX[4] + 1, yPos - 2, { align: 'left', maxWidth: colW[4] - 2 });
 
-    pdf.text(formatRupiahPdfShort(r.jumlahBayar), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
+    // Tanggal Bayar - format tanggal pendek
+    const tanggal = r.tanggalBayar === '-' ? '-' : r.tanggalBayar.replace(/\//g, '/');
+    pdf.text(tanggal, colX[5] + 1, yPos - 2, { align: 'left', maxWidth: colW[5] - 2 });
 
-    const truncatedMetodeBayar = truncateText(r.metodeBayar, colW[7] - 4, 6.5);
-    pdf.text(truncatedMetodeBayar, colLeft[7], yPos, { align: 'left', maxWidth: colW[7] - 4 });
+    // Jumlah Bayar - align right
+    pdf.text(formatRupiahPdfShort(r.jumlahBayar), colX[6] + colW[6] - 1, yPos - 2, {
+      align: 'right', maxWidth: colW[6] - 2
+    });
 
-    const truncatedOperator = truncateText(r.operator, colW[8] - 4, 6.5);
-    pdf.text(truncatedOperator, colLeft[8], yPos, { align: 'left', maxWidth: colW[8] - 4 });
+    // Metode Bayar - truncate ke 15 karakter
+    const metodeBayar = truncateText(r.metodeBayar, 15);
+    pdf.text(metodeBayar, colX[7] + 1, yPos - 2, { align: 'left', maxWidth: colW[7] - 2 });
 
-    const truncatedStatus = truncateText(r.status, colW[9] - 4, 6.5);
-    pdf.text(truncatedStatus, colLeft[9], yPos, { align: 'left', maxWidth: colW[9] - 4 });
+    // Operator - truncate ke 15 karakter
+    const operator = truncateText(r.operator, 15);
+    pdf.text(operator, colX[8] + 1, yPos - 2, { align: 'left', maxWidth: colW[8] - 2 });
+
+    // Status - truncate ke 12 karakter
+    const status = truncateText(r.status, 12);
+    pdf.text(status, colX[9] + 1, yPos - 2, { align: 'left', maxWidth: colW[9] - 2 });
   }
 
+  // Gambar header
   drawTableHeader(y);
-  y += 8;
+  y += rowHeight;
 
-  // Tabel isi
+  // Gambar data dengan pagination yang benar
   pembayaranList.forEach((r, idx) => {
     if (y > maxY) {
       pdf.addPage();
-      y = 18;
+      y = 25; // Start lebih tinggi di halaman baru
       drawTableHeader(y);
-      y += 8;
+      y += rowHeight;
     }
     drawTableRow(r, idx, y);
-    y += 8;
+    y += rowHeight;
   });
 
-  // Penutup
-  if (y > maxY - 30) {
+  // Penutup dengan positioning yang diperbaiki
+  if (y > maxY - 50) {
     pdf.addPage();
-    y = 18;
+    y = 25;
   }
-  y += 10;
+  y += 15;
+
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
-  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y, { align: 'left' });
-  y += 10;
-  const xTanggal = 15 + 18 + 18 + 18 + 18; // 15 + 18*4 = 95
-  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
+  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y);
+  y += 15;
+
+  // Signature section
+  const xTanggal = 150;
+  pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y);
   y += 7;
-  pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
-  y += 10;
+  pdf.text('Dibuat di : Burmeso', xTanggal, y);
+  y += 12;
+
   pdf.setFont('helvetica', 'bold');
-  pdf.text('An. KEPALA BADAN PENDAPATAN', xTanggal, y, { align: 'left' });
+  pdf.text('An. KEPALA BADAN PENDAPATAN', xTanggal, y);
   y += 6;
-  pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
+  pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y);
   y += 6;
-  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
-  y += 18;
+  pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y);
+  y += 20;
+
   pdf.setFont('helvetica', 'normal');
-  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
+  pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y);
   y += 6;
-  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
+  pdf.text('NIP. 19750212 200909 1 001', xTanggal, y);
 
   // Simpan PDF
   pdf.save('Laporan_Pembayaran.pdf');
