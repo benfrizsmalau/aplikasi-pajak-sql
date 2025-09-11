@@ -1,6 +1,7 @@
 {
-  "name": "proyek-pajak-backend-final",
+  "name": "simpada-mamberamo",
   "version": "1.0.0",
+  "description": "SIMPADA MAMBERAMO RAYA - Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya untuk mengelola data wajib pajak, ketetapan, dan pembayaran pajak daerah dengan mudah dan efisien",
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
     "google-auth-library": "^9.0.0",
