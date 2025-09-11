@@ -354,11 +354,11 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(11);
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
-  y += 7;
+  y += 17; // tambah 10mm (1cm) untuk menghindari tumpang tindih
 
   // Tabel header - diperlebar untuk menghindari terpotong
-  const colX = [15, 35, 65, 120, 165, 200, 235];
-  const colW = [18, 28, 53, 43, 33, 33, 45];
+  const colX = [15, 35, 65, 120, 165, 200, 215];
+  const colW = [18, 28, 53, 43, 33, 33, 65];
   const rowHeight = 10.5; // 1.5 cm
   const maxY = 180; // dikurangi untuk memberi ruang signature
 
@@ -393,7 +393,7 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     pdf.text(r.namaPemilik, colX[3] + 2, yPos, { align: 'left', maxWidth: colW[3] - 4 });
     pdf.text(r.jenisWp, colX[4] + 2, yPos, { align: 'left', maxWidth: colW[4] - 4 });
     pdf.text(r.status, colX[5] + 2, yPos, { align: 'left', maxWidth: colW[5] - 4 });
-    pdf.text(formatRupiahPdfShort(r.totalPembayaran), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
+    pdf.text(formatRupiahPdfShort(r.totalPembayaran), colX[6] + colW[6] - 2 - 20, yPos, { align: 'right', maxWidth: colW[6] - 4 }); // geser 2cm ke kiri
   }
 
   drawTableHeader(y);
