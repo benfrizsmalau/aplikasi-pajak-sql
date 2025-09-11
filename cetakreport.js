@@ -357,8 +357,8 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header
-  const colX = [15, 35, 65, 115, 155, 185, 215, 255];
-  const colW = [18, 28, 48, 38, 28, 28, 38, 38];
+  const colX = [15, 35, 65, 115, 155, 185, 215];
+  const colW = [18, 28, 48, 38, 28, 28, 38];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -499,8 +499,8 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header
-  const colX = [15, 35, 55, 85, 125, 155, 185, 215, 245];
-  const colW = [18, 18, 28, 38, 28, 28, 28, 28, 28];
+  const colX = [15, 35, 55, 85, 125, 155, 185, 215];
+  const colW = [18, 18, 28, 38, 28, 28, 28, 28];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -646,8 +646,8 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header
-  const colX = [15, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230];
-  const colW = [13, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18];
+  const colX = [15, 30, 50, 70, 90, 110, 130, 150, 170, 190];
+  const colW = [13, 18, 18, 18, 18, 18, 18, 18, 18, 18];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -795,8 +795,8 @@ async function exportFiskalToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header
-  const colX = [15, 35, 55, 85, 125, 155, 185, 215];
-  const colW = [18, 18, 38, 38, 28, 28, 28, 28];
+  const colX = [15, 35, 55, 85, 125, 155, 185];
+  const colW = [18, 18, 38, 38, 28, 28, 28];
   const rowHeight = 7;
   const maxY = 195;
 
@@ -981,8 +981,8 @@ async function exportPerformanceToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header
-  const colX = [15, 30, 50, 80, 100, 120, 140, 160, 180, 200, 220, 240];
-  const colW = [13, 18, 28, 18, 18, 18, 18, 18, 18, 18, 18, 18];
+  const colX = [15, 30, 50, 80, 100, 120, 140, 160, 180, 200, 220];
+  const colW = [13, 18, 28, 18, 18, 18, 18, 18, 18, 18, 18];
   const rowHeight = 7;
   const maxY = 195;
 
