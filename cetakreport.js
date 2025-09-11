@@ -556,7 +556,7 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   });
 
   // Penutup
-  if (y > maxY - 30) {
+  if (y > TABLE_CONFIG.maxY - 30) {
     pdf.addPage();
     y = 18;
   }
