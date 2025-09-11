@@ -646,8 +646,8 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   y += 7;
 
   // Tabel header - layout yang lebih luas untuk A4 landscape dengan kolom yang lebih proporsional
-  const colX = [15, 30, 55, 85, 115, 145, 175, 205, 235, 265];
-  const colW = [13, 23, 28, 28, 28, 28, 28, 28, 28, 28];
+  const colX = [15, 35, 65, 95, 135, 175, 205, 235, 265, 295];
+  const colW = [18, 28, 28, 38, 38, 28, 28, 28, 28, 28];
   const rowHeight = 10;
   const maxY = 185;
 
