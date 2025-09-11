@@ -533,11 +533,11 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
     pdf.text(String(idx + 1), colX[0] + colW[0] / 2, yPos, { align: 'center' });
     pdf.text(r.idKetetapan, colX[1] + 2, yPos, { align: 'left', maxWidth: colW[1] - 4 });
     pdf.text(r.npwpd, colX[2] + 2, yPos, { align: 'left', maxWidth: colW[2] - 4 });
-    pdf.text(r.jenisPajak, colX[3] + 2 + 10, yPos, { align: 'left', maxWidth: colW[3] - 4 }); // geser 2cm ke kanan sesuai header
-    pdf.text(r.masaPajak, colX[4] + 2 + 20, yPos, { align: 'left', maxWidth: colW[4] - 4 }); // geser 2cm ke kanan sesuai header
-    pdf.text(formatRupiahPdfShort(r.totalTagihan), colX[5] + colW[5] - 2, yPos, { align: 'right', maxWidth: colW[5] - 4 }); // geser 2cm ke kanan dari posisi sebelumnya
-    pdf.text(r.status, colX[6] + 2, yPos, { align: 'left', maxWidth: colW[6] - 4 }); // sesuai header yang sudah digeser
-    pdf.text(r.tanggal, colX[7] + 2 + 5, yPos, { align: 'left', maxWidth: colW[7] - 4 }); // geser sesuai header
+    pdf.text(r.jenisPajak, colX[3] + 2 + 15, yPos, { align: 'left', maxWidth: colW[3] - 4 }); // tambah 5mm dari posisi sebelumnya
+    pdf.text(r.masaPajak, colX[4] + 2 + 25, yPos, { align: 'left', maxWidth: colW[4] - 4 }); // tambah 5mm dari posisi sebelumnya
+    pdf.text(formatRupiahPdfShort(r.totalTagihan), colX[5] + colW[5] - 2 + 5, yPos, { align: 'right', maxWidth: colW[5] - 4 }); // tambah 5mm ke kanan
+    pdf.text(r.status, colX[6] + 2 + 20, yPos, { align: 'left', maxWidth: colW[6] - 4 }); // geser 2cm ke kanan
+    pdf.text(r.tanggal, colX[7] + 2 + 15, yPos, { align: 'left', maxWidth: colW[7] - 4 }); // geser 1cm ke kanan dari posisi sebelumnya
   }
 
   drawTableHeader(y);
