@@ -376,7 +376,7 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     pdf.text('Nama Pemilik', colX[3] + colW[3] / 2 - 5, yPos, { align: 'center' }); // 5mm ke kanan dari posisi sebelumnya
     pdf.text('Jenis WP', colX[4] + colW[4] / 2 - 10, yPos, { align: 'center' }); // 1cm ke kiri
     pdf.text('Status', colX[5] + colW[5] / 2 - 10, yPos, { align: 'center' }); // 1cm ke kiri
-    pdf.text('Total Pembayaran', colX[6] + colW[6] / 2 - 15, yPos, { align: 'center' }); // 1.5cm ke kiri
+    pdf.text('Total Pembayaran', colX[6] + colW[6] / 2, yPos, { align: 'center' }); // kembali ke posisi tengah
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
   }
@@ -393,7 +393,7 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     pdf.text(r.namaPemilik, colX[3] + 2, yPos, { align: 'left', maxWidth: colW[3] - 4 });
     pdf.text(r.jenisWp, colX[4] + 2, yPos, { align: 'left', maxWidth: colW[4] - 4 });
     pdf.text(r.status, colX[5] + 2, yPos, { align: 'left', maxWidth: colW[5] - 4 });
-    pdf.text(formatRupiahPdfShort(r.totalPembayaran), colX[6] + colW[6] - 2 - 20, yPos, { align: 'right', maxWidth: colW[6] - 4 }); // geser 2cm ke kiri
+    pdf.text(formatRupiahPdfShort(r.totalPembayaran), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 }); // kembali ke posisi normal
   }
 
   drawTableHeader(y);
