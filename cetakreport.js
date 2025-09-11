@@ -356,11 +356,11 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
   y += 7;
 
-  // Tabel header
-  const colX = [15, 35, 65, 115, 155, 185, 215];
-  const colW = [18, 28, 48, 38, 28, 28, 38];
-  const rowHeight = 7;
-  const maxY = 195;
+  // Tabel header - diperlebar untuk menghindari terpotong
+  const colX = [15, 35, 65, 120, 165, 200, 235];
+  const colW = [18, 28, 53, 43, 33, 33, 45];
+  const rowHeight = 10.5; // 1.5 cm
+  const maxY = 180; // dikurangi untuk memberi ruang signature
 
   function drawTableHeader(yPos) {
     pdf.setFont('helvetica', 'bold');
@@ -373,10 +373,10 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     pdf.text('No.', colX[0] + colW[0] / 2, yPos, { align: 'center' });
     pdf.text('NPWPD', colX[1] + colW[1] / 2, yPos, { align: 'center' });
     pdf.text('Nama Usaha', colX[2] + colW[2] / 2, yPos, { align: 'center' });
-    pdf.text('Nama Pemilik', colX[3] + colW[3] / 2 - 10, yPos, { align: 'center' });
-    pdf.text('Jenis WP', colX[4] + colW[4] / 2, yPos, { align: 'center' });
-    pdf.text('Status', colX[5] + colW[5] / 2, yPos, { align: 'center' });
-    pdf.text('Total Pembayaran', colX[6] + colW[6] / 2, yPos, { align: 'center' });
+    pdf.text('Nama Pemilik', colX[3] + colW[3] / 2 - 5, yPos, { align: 'center' }); // 5mm ke kanan dari posisi sebelumnya
+    pdf.text('Jenis WP', colX[4] + colW[4] / 2 - 10, yPos, { align: 'center' }); // 1cm ke kiri
+    pdf.text('Status', colX[5] + colW[5] / 2 - 10, yPos, { align: 'center' }); // 1cm ke kiri
+    pdf.text('Total Pembayaran', colX[6] + colW[6] / 2 - 15, yPos, { align: 'center' }); // 1.5cm ke kiri
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
   }
@@ -411,31 +411,31 @@ async function exportWpToPDF({ data, reportData, periodeLabel }) {
     y += rowHeight;
   });
 
-  // Penutup
-  if (y > maxY - 30) {
+  // Penutup - pastikan ada ruang cukup untuk signature, jika tidak pindah ke halaman baru
+  if (y > maxY - 60) { // butuh minimal 60mm untuk signature
     pdf.addPage();
     y = 18;
   }
-  y += 10;
+  y += 15;
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
   pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', colX[0], y, { align: 'left' });
-  y += 10;
-  const xTanggal = colX[4] + colW[4];
+  y += 15;
+  const xTanggal = colX[3] + colW[3]; // posisi lebih proporsional
   pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
-  y += 7;
+  y += 8;
   pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
-  y += 10;
+  y += 12;
   pdf.setFont('helvetica', 'bold');
   pdf.text('An. KEPALA BADAN PENDAPATAN', xTanggal, y, { align: 'left' });
-  y += 6;
+  y += 7;
   pdf.text('PENGELOLAAN KEUANGAN DAN ASET DAERAH', xTanggal, y, { align: 'left' });
-  y += 6;
+  y += 7;
   pdf.text('STAF BIDANG PENDAPATAN', xTanggal, y, { align: 'left' });
-  y += 18;
+  y += 20;
   pdf.setFont('helvetica', 'normal');
   pdf.text('BENFRIZS C REYNOLDS, SE', xTanggal, y, { align: 'left' });
-  y += 6;
+  y += 7;
   pdf.text('NIP. 19750212 200909 1 001', xTanggal, y, { align: 'left' });
 
   // Simpan PDF
