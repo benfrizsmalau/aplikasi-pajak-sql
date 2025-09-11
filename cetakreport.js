@@ -556,7 +556,7 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   });
 
   // Penutup
-  if (y > TABLE_CONFIG.maxY - 30) {
+  if (y > maxY - 30) {
     pdf.addPage();
     y = 18;
   }
@@ -645,59 +645,14 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   pdf.text(`Periode: ${periodeLabel}`, pageWidth / 2, y, { align: 'center' });
   y += 7;
 
-  // Layout system yang lebih akurat untuk positioning
-  const TABLE_CONFIG = {
-    marginLeft: 15,
-    marginRight: 15,
-    pageWidth: 297,
-    colCount: 10,
-    colWidth: 24, // (267 - 15 - 15) / 10 = 23.7, dibulatkan ke 24
-    colGap: 1.5,
-    rowHeight: 8,
-    headerFontSize: 7,
-    dataFontSize: 6.5,
-    maxY: 185
-  };
-
-  // Calculate column positions
-  const colX = [];
-  const colW = [];
-  const colCenter = [];
-  const colLeft = [];
-
-  for (let i = 0; i < TABLE_CONFIG.colCount; i++) {
-    const x = TABLE_CONFIG.marginLeft + (i * (TABLE_CONFIG.colWidth + TABLE_CONFIG.colGap));
-    colX.push(x);
-    colW.push(TABLE_CONFIG.colWidth);
-    colCenter.push(x + TABLE_CONFIG.colWidth / 2);
-    colLeft.push(x + 2);
-  }
-
-  // Helper functions untuk positioning yang konsisten
-  function centerTextInColumn(text, colIndex, yPos, fontSize = TABLE_CONFIG.dataFontSize) {
-    pdf.setFontSize(fontSize);
-    pdf.text(text, colCenter[colIndex], yPos, { align: 'center' });
-  }
-
-  function leftTextInColumn(text, colIndex, yPos, maxWidth = null, fontSize = TABLE_CONFIG.dataFontSize) {
-    pdf.setFontSize(fontSize);
-    const width = maxWidth || (colW[colIndex] - 4);
-    pdf.text(text, colLeft[colIndex], yPos, {
-      align: 'left',
-      maxWidth: width
-    });
-  }
-
-  function rightTextInColumn(text, colIndex, yPos, fontSize = TABLE_CONFIG.dataFontSize) {
-    pdf.setFontSize(fontSize);
-    pdf.text(text, colX[colIndex] + colW[colIndex] - 2, yPos, {
-      align: 'right',
-      maxWidth: colW[colIndex] - 4
-    });
-  }
+  // Column positions for pembayaran table
+  const colX = [15, 39, 63, 87, 111, 135, 159, 183, 207, 231];
+  const colW = [24, 24, 24, 24, 24, 24, 24, 24, 24, 24];
+  const colCenter = colX.map((x, i) => x + colW[i] / 2);
+  const colLeft = colX.map(x => x + 2);
 
   // Function untuk truncate text yang terlalu panjang
-  function truncateText(text, maxWidth, fontSize = TABLE_CONFIG.dataFontSize) {
+  function truncateText(text, maxWidth, fontSize = 6.5) {
     if (!text) return '';
     pdf.setFontSize(fontSize);
     const textWidth = pdf.getTextWidth(text);
@@ -714,83 +669,85 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   function drawTableHeader(yPos) {
     // Set font untuk header
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(TABLE_CONFIG.headerFontSize);
+    pdf.setFontSize(7);
 
     // Gambar border tabel
     let x = colX[0];
     for (let i = 0; i < colW.length; i++) {
-      pdf.rect(x, yPos - TABLE_CONFIG.rowHeight + 2, colW[i], TABLE_CONFIG.rowHeight, 'S');
+      pdf.rect(x, yPos - 8 + 2, colW[i], 8, 'S');
       x += colW[i] + TABLE_CONFIG.colGap;
     }
 
     // Header texts dengan positioning yang tepat
-    centerTextInColumn('No.', 0, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('ID Pembayaran', 1, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('NPWPD', 2, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Nama Usaha', 3, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('ID Ketetapan', 4, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Tanggal Bayar', 5, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Jumlah Bayar', 6, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Metode Bayar', 7, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Operator', 8, yPos, TABLE_CONFIG.headerFontSize);
-    centerTextInColumn('Status', 9, yPos, TABLE_CONFIG.headerFontSize);
+    pdf.setFontSize(7);
+    pdf.text('No.', colCenter[0], yPos, { align: 'center' });
+    pdf.text('ID Pembayaran', colCenter[1], yPos, { align: 'center' });
+    pdf.text('NPWPD', colCenter[2], yPos, { align: 'center' });
+    pdf.text('Nama Usaha', colCenter[3], yPos, { align: 'center' });
+    pdf.text('ID Ketetapan', colCenter[4], yPos, { align: 'center' });
+    pdf.text('Tanggal Bayar', colCenter[5], yPos, { align: 'center' });
+    pdf.text('Jumlah Bayar', colCenter[6], yPos, { align: 'center' });
+    pdf.text('Metode Bayar', colCenter[7], yPos, { align: 'center' });
+    pdf.text('Operator', colCenter[8], yPos, { align: 'center' });
+    pdf.text('Status', colCenter[9], yPos, { align: 'center' });
 
     // Reset font untuk data
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(TABLE_CONFIG.dataFontSize);
+    pdf.setFontSize(6.5);
   }
 
   function drawTableRow(r, idx, yPos) {
     // Gambar border tabel
     let x = colX[0];
     for (let i = 0; i < colW.length; i++) {
-      pdf.rect(x, yPos - TABLE_CONFIG.rowHeight + 2, colW[i], TABLE_CONFIG.rowHeight, 'S');
-      x += colW[i] + TABLE_CONFIG.colGap;
+      pdf.rect(x, yPos - 8 + 2, colW[i], 8, 'S');
+      x += colW[i] + 1.5;
     }
 
     // Data dengan text truncation untuk mencegah overflow
-    centerTextInColumn(String(idx + 1), 0, yPos);
+    pdf.setFontSize(6.5);
+    pdf.text(String(idx + 1), colCenter[0], yPos, { align: 'center' });
 
-    const truncatedIdPembayaran = truncateText(r.idPembayaran, colW[1] - 4);
-    leftTextInColumn(truncatedIdPembayaran, 1, yPos);
+    const truncatedIdPembayaran = truncateText(r.idPembayaran, colW[1] - 4, 6.5);
+    pdf.text(truncatedIdPembayaran, colLeft[1], yPos, { align: 'left', maxWidth: colW[1] - 4 });
 
-    const truncatedNpwpd = truncateText(r.npwpd, colW[2] - 4);
-    leftTextInColumn(truncatedNpwpd, 2, yPos);
+    const truncatedNpwpd = truncateText(r.npwpd, colW[2] - 4, 6.5);
+    pdf.text(truncatedNpwpd, colLeft[2], yPos, { align: 'left', maxWidth: colW[2] - 4 });
 
-    const truncatedNamaUsaha = truncateText(r.namaUsaha, colW[3] - 4);
-    leftTextInColumn(truncatedNamaUsaha, 3, yPos);
+    const truncatedNamaUsaha = truncateText(r.namaUsaha, colW[3] - 4, 6.5);
+    pdf.text(truncatedNamaUsaha, colLeft[3], yPos, { align: 'left', maxWidth: colW[3] - 4 });
 
-    const truncatedIdKetetapan = truncateText(r.idKetetapan, colW[4] - 4);
-    leftTextInColumn(truncatedIdKetetapan, 4, yPos);
+    const truncatedIdKetetapan = truncateText(r.idKetetapan, colW[4] - 4, 6.5);
+    pdf.text(truncatedIdKetetapan, colLeft[4], yPos, { align: 'left', maxWidth: colW[4] - 4 });
 
-    const truncatedTanggalBayar = truncateText(r.tanggalBayar, colW[5] - 4);
-    leftTextInColumn(truncatedTanggalBayar, 5, yPos);
+    const truncatedTanggalBayar = truncateText(r.tanggalBayar, colW[5] - 4, 6.5);
+    pdf.text(truncatedTanggalBayar, colLeft[5], yPos, { align: 'left', maxWidth: colW[5] - 4 });
 
-    rightTextInColumn(formatRupiahPdfShort(r.jumlahBayar), 6, yPos);
+    pdf.text(formatRupiahPdfShort(r.jumlahBayar), colX[6] + colW[6] - 2, yPos, { align: 'right', maxWidth: colW[6] - 4 });
 
-    const truncatedMetodeBayar = truncateText(r.metodeBayar, colW[7] - 4);
-    leftTextInColumn(truncatedMetodeBayar, 7, yPos);
+    const truncatedMetodeBayar = truncateText(r.metodeBayar, colW[7] - 4, 6.5);
+    pdf.text(truncatedMetodeBayar, colLeft[7], yPos, { align: 'left', maxWidth: colW[7] - 4 });
 
-    const truncatedOperator = truncateText(r.operator, colW[8] - 4);
-    leftTextInColumn(truncatedOperator, 8, yPos);
+    const truncatedOperator = truncateText(r.operator, colW[8] - 4, 6.5);
+    pdf.text(truncatedOperator, colLeft[8], yPos, { align: 'left', maxWidth: colW[8] - 4 });
 
-    const truncatedStatus = truncateText(r.status, colW[9] - 4);
-    leftTextInColumn(truncatedStatus, 9, yPos);
+    const truncatedStatus = truncateText(r.status, colW[9] - 4, 6.5);
+    pdf.text(truncatedStatus, colLeft[9], yPos, { align: 'left', maxWidth: colW[9] - 4 });
   }
 
   drawTableHeader(y);
-  y += TABLE_CONFIG.rowHeight;
+  y += 8;
 
   // Tabel isi
   pembayaranList.forEach((r, idx) => {
-    if (y > TABLE_CONFIG.maxY) {
+    if (y > maxY) {
       pdf.addPage();
       y = 18;
       drawTableHeader(y);
-      y += TABLE_CONFIG.rowHeight;
+      y += 8;
     }
     drawTableRow(r, idx, y);
-    y += TABLE_CONFIG.rowHeight;
+    y += 8;
   });
 
   // Penutup
@@ -801,9 +758,9 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   y += 10;
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10);
-  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', colX[0], y, { align: 'left' });
+  pdf.text('Demikian laporan ini kami sampaikan, atas perhatiannya kami sampaikan terima kasih.', 15, y, { align: 'left' });
   y += 10;
-  const xTanggal = colX[4] + colW[4];
+  const xTanggal = 15 + 18 + 18 + 18 + 18; // 15 + 18*4 = 95
   pdf.text('Tanggal : ' + formatTanggalCetak(new Date()), xTanggal, y, { align: 'left' });
   y += 7;
   pdf.text('Dibuat di : Burmeso', xTanggal, y, { align: 'left' });
