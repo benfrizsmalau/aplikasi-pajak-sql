@@ -586,7 +586,7 @@ async function exportKetetapanToPDF({ data, reportData, periodeLabel }) {
   pdf.save('Laporan_Ketetapan.pdf');
 }
 
-// Fungsi export PDF untuk Laporan Pembayaran - VERSI DIPERBAIKI
+// Fungsi export PDF untuk Laporan Pembayaran
 async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
   const pembayaranList = (data.pembayaran || []).map(p => {
     const wpData = (reportData.wajibPajak || []).find(wp => wp.NPWPD === p.NPWPD);
@@ -704,49 +704,48 @@ async function exportPembayaranToPDF({ data, reportData, periodeLabel }) {
       x += colW[i];
     }
 
-    // Data dengan font yang lebih besar dan truncation yang lebih generous
-    pdf.setFontSize(8);
+    // Data dengan truncation yang tepat
+    pdf.setFontSize(7);
 
     // No - center
-    pdf.text(String(idx + 1), colX[0] + colW[0]/2, yPos - 3, { align: 'center' });
+    pdf.text(String(idx + 1), colX[0] + colW[0]/2, yPos - 2, { align: 'center' });
 
-    // ID Pembayaran - tampilkan lebih banyak karakter (18 char)
-    const idPembayaran = truncateText(r.idPembayaran, 18);
-    pdf.text(idPembayaran, colX[1] + 1, yPos - 3, { align: 'left', maxWidth: colW[1] - 2 });
+    // ID Pembayaran - truncate ke 10 karakter
+    const idPembayaran = truncateText(r.idPembayaran, 10);
+    pdf.text(idPembayaran, colX[1] + 1, yPos - 2, { align: 'left', maxWidth: colW[1] - 2 });
 
-    // NPWPD - tampilkan lebih banyak karakter (18 char)
-    const npwpd = truncateText(r.npwpd, 18);
-    pdf.text(npwpd, colX[2] + 1, yPos - 3, { align: 'left', maxWidth: colW[2] - 2 });
+    // NPWPD - truncate ke 12 karakter
+    const npwpd = truncateText(r.npwpd, 12);
+    pdf.text(npwpd, colX[2] + 1, yPos - 2, { align: 'left', maxWidth: colW[2] - 2 });
 
-    // Nama Usaha - tampilkan lebih banyak karakter (35 char)
-    const namaUsaha = truncateText(r.namaUsaha, 35);
-    pdf.text(namaUsaha, colX[3] + 1, yPos - 3, { align: 'left', maxWidth: colW[3] - 2 });
+    // Nama Usaha - truncate ke 25 karakter
+    const namaUsaha = truncateText(r.namaUsaha, 25);
+    pdf.text(namaUsaha, colX[3] + 1, yPos - 2, { align: 'left', maxWidth: colW[3] - 2 });
 
-    // ID Ketetapan - tampilkan lebih banyak karakter (15 char)
-    const idKetetapan = truncateText(r.idKetetapan, 15);
-    pdf.text(idKetetapan, colX[4] + 1, yPos - 3, { align: 'left', maxWidth: colW[4] - 2 });
+    // ID Ketetapan - truncate ke 12 karakter
+    const idKetetapan = truncateText(r.idKetetapan, 12);
+    pdf.text(idKetetapan, colX[4] + 1, yPos - 2, { align: 'left', maxWidth: colW[4] - 2 });
 
-    // Tanggal Bayar - format tanggal yang lebih readable
-    const tanggal = r.tanggalBayar === '-' ? '-' : r.tanggalBayar;
-    pdf.text(tanggal, colX[5] + 1, yPos - 3, { align: 'left', maxWidth: colW[5] - 2 });
+    // Tanggal Bayar - format tanggal pendek
+    const tanggal = r.tanggalBayar === '-' ? '-' : r.tanggalBayar.replace(/\//g, '/');
+    pdf.text(tanggal, colX[5] + 1, yPos - 2, { align: 'left', maxWidth: colW[5] - 2 });
 
-    // Jumlah Bayar - align right dengan format yang lebih compact
-    const jumlahStr = formatRupiahPdfShort(r.jumlahBayar);
-    pdf.text(jumlahStr, colX[6] + colW[6] - 1, yPos - 3, {
+    // Jumlah Bayar - align right
+    pdf.text(formatRupiahPdfShort(r.jumlahBayar), colX[6] + colW[6] - 1, yPos - 2, {
       align: 'right', maxWidth: colW[6] - 2
     });
 
-    // Metode Bayar - tampilkan lebih banyak karakter (20 char)
-    const metodeBayar = truncateText(r.metodeBayar, 20);
-    pdf.text(metodeBayar, colX[7] + 1, yPos - 3, { align: 'left', maxWidth: colW[7] - 2 });
+    // Metode Bayar - truncate ke 15 karakter
+    const metodeBayar = truncateText(r.metodeBayar, 15);
+    pdf.text(metodeBayar, colX[7] + 1, yPos - 2, { align: 'left', maxWidth: colW[7] - 2 });
 
-    // Operator - tampilkan lebih banyak karakter (18 char)
-    const operator = truncateText(r.operator, 18);
-    pdf.text(operator, colX[8] + 1, yPos - 3, { align: 'left', maxWidth: colW[8] - 2 });
+    // Operator - truncate ke 15 karakter
+    const operator = truncateText(r.operator, 15);
+    pdf.text(operator, colX[8] + 1, yPos - 2, { align: 'left', maxWidth: colW[8] - 2 });
 
-    // Status - tampilkan lebih banyak karakter (12 char)
+    // Status - truncate ke 12 karakter
     const status = truncateText(r.status, 12);
-    pdf.text(status, colX[9] + 1, yPos - 3, { align: 'left', maxWidth: colW[9] - 2 });
+    pdf.text(status, colX[9] + 1, yPos - 2, { align: 'left', maxWidth: colW[9] - 2 });
   }
 
   // Gambar header
