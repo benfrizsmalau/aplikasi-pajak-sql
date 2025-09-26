@@ -805,24 +805,56 @@ async function handleUpdateWpFormSubmit(event) {
     }
 }
 
+async function validateKodeLayanan(kodeLayanan) {
+    try {
+        console.log('🔍 DEBUG: Validating kodeLayanan:', kodeLayanan);
+        const data = await fetchAllData();
+        const master = data.masterPajak.find(m => m.KodeLayanan === kodeLayanan);
+        if (!master) {
+            throw new Error(`Kode layanan ${kodeLayanan} tidak ditemukan di master pajak`);
+        }
+        console.log('✅ DEBUG: Kode layanan valid:', master);
+        return master;
+    } catch (error) {
+        console.error('❌ DEBUG: Kode layanan validation failed:', error);
+        throw error;
+    }
+}
+
 async function handleKetetapanFormSubmit(event) {
     event.preventDefault();
     const submitButton = document.getElementById('submitKetetapanButton');
     const statusDiv = document.getElementById('status');
     submitButton.disabled = true; submitButton.textContent = 'Membuat Ketetapan...'; statusDiv.style.display = 'none';
+
     try {
+        const kodeLayanan = document.getElementById('ketetapanLayanan').value;
+
+        // Validasi kode layanan sebelum mengirim
+        console.log('🔍 DEBUG: Starting ketetapan form validation');
+        const masterData = await validateKodeLayanan(kodeLayanan);
+        console.log('✅ DEBUG: Master data validation passed:', masterData);
+
         const dataToSend = {
-            action: 'createKetetapan', npwpd: document.getElementById('ketetapanNpwpd').value,
-            kodeLayanan: document.getElementById('ketetapanLayanan').value, masaPajak: document.getElementById('ketetapanMasaPajak').value,
-            jumlahPokok: document.getElementById('ketetapanJumlahPokok').value, tglTunggakan: document.getElementById('tglTunggakan').value,
+            action: 'createKetetapan',
+            npwpd: document.getElementById('ketetapanNpwpd').value,
+            kodeLayanan: kodeLayanan,
+            masaPajak: document.getElementById('ketetapanMasaPajak').value,
+            jumlahPokok: document.getElementById('ketetapanJumlahPokok').value,
+            tglTunggakan: document.getElementById('tglTunggakan').value,
             catatan: document.getElementById('catatan').value
         };
+
+        console.log('📤 DEBUG: Sending ketetapan data:', dataToSend);
         const result = await postData(dataToSend);
+        console.log('✅ DEBUG: Ketetapan creation successful:', result);
+
         showStatus(result.message || 'Ketetapan berhasil dibuat!', true, 'status');
         event.target.reset();
         const npwpdFromUrl = new URLSearchParams(window.location.search).get('npwpd');
         if (npwpdFromUrl) document.getElementById('ketetapanNpwpd').value = npwpdFromUrl;
     } catch (error) {
+        console.error('❌ DEBUG: Ketetapan creation failed:', error);
         showStatus('Gagal membuat ketetapan: ' + error.message, false, 'status');
     } finally {
         submitButton.disabled = false; submitButton.textContent = 'Buat Ketetapan';
@@ -948,9 +980,22 @@ async function postData(data) {
                 console.log('✅ PostData: Returning success for empty OK response');
                 return { status: 'sukses', message: 'Operation completed successfully' };
             } else {
-                // If response is not OK and empty, throw error with status
-                console.error('❌ PostData: Throwing error for non-OK empty response');
-                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+                // If response is not OK and empty, try to get error details
+                console.error('❌ PostData: Non-OK empty response, trying to get error details');
+                let errorMessage = `HTTP error! status: ${response.status} ${response.statusText}`;
+
+                try {
+                    // Try to get response text for more details
+                    const errorText = await response.text();
+                    if (errorText) {
+                        console.error('❌ PostData: Error response text:', errorText);
+                        errorMessage += ` - Details: ${errorText.substring(0, 200)}`;
+                    }
+                } catch (textError) {
+                    console.warn('⚠️ PostData: Could not read error response text:', textError);
+                }
+
+                throw new Error(errorMessage);
             }
         }
 

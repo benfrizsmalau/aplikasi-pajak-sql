@@ -425,22 +425,30 @@ async function handleDeleteWp(data) {
 // =================================================================
 
 async function handleCreateKetetapan(data) {
+    console.log('🔍 DEBUG: handleCreateKetetapan called with data:', data);
+
     const now = new Date();
     const bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
     const tahun = now.getFullYear();
 
     // Ambil data master pajak untuk tipe dan nama layanan
+    console.log('🔍 DEBUG: Querying master pajak for KodeLayanan:', data.kodeLayanan);
     let tipeLayanan = '';
     let namaLayanan = '';
     try {
-        const { data: master } = await supabase
+        const { data: master, error: masterError } = await supabase
             .from('MasterPajakRetribusi')
             .select('Tipe,NamaLayanan')
             .eq('KodeLayanan', data.kodeLayanan)
             .single();
+
+        console.log('🔍 DEBUG: Master pajak query result:', { master, masterError });
+
         tipeLayanan = master ? master.Tipe : '';
         namaLayanan = master ? master.NamaLayanan : '';
+        console.log('🔍 DEBUG: Extracted tipeLayanan:', tipeLayanan, 'namaLayanan:', namaLayanan);
     } catch (e) {
+        console.error('❌ DEBUG: Error querying master pajak:', e);
         tipeLayanan = '';
         namaLayanan = '';
     }
@@ -457,6 +465,8 @@ async function handleCreateKetetapan(data) {
         kodeSurat = 'SKRD';
     }
 
+    console.log('🔍 DEBUG: Determined kodeSurat:', kodeSurat, 'for tipeLayanan:', tipeLayanan, 'namaLayanan:', namaLayanan);
+
     // Logika tanggal dan denda
     const tanggalKetetapan = now; // Tanggal ketetapan selalu tanggal saat ini
     let denda = 0;
@@ -467,10 +477,13 @@ async function handleCreateKetetapan(data) {
         if (today.getDate() > tanggalTunggakan.getDate()) bulanTunggakan += 1;
         if (bulanTunggakan < 1) bulanTunggakan = 1;
         denda = bulanTunggakan * 0.02 * Number(data.jumlahPokok);
+        console.log('🔍 DEBUG: Calculated denda:', denda, 'for bulanTunggakan:', bulanTunggakan);
     }
     denda = Math.round(denda);
     const jumlahPokok = Number(data.jumlahPokok);
     const totalTagihan = jumlahPokok + denda;
+
+    console.log('🔍 DEBUG: Final calculations - jumlahPokok:', jumlahPokok, 'denda:', denda, 'totalTagihan:', totalTagihan);
 
     // Retry logic untuk mengatasi race condition
     let maxRetries = 5;
@@ -478,44 +491,61 @@ async function handleCreateKetetapan(data) {
     
     while (retryCount < maxRetries) {
         try {
+            console.log(`🔄 DEBUG: Attempt ${retryCount + 1}/${maxRetries} - Getting count`);
+
             // Gunakan count untuk mendapatkan nomor urut yang lebih reliable
             const { count, error: countError } = await supabase
                 .from('KetetapanPajak')
                 .select('*', { count: 'exact', head: true });
-            
-            if (countError) throw new Error('Gagal mengambil jumlah ketetapan: ' + countError.message);
-            
+
+            console.log('📊 DEBUG: Count query result:', { count, countError });
+
+            if (countError) {
+                console.error('❌ DEBUG: Count query failed:', countError);
+                throw new Error('Gagal mengambil jumlah ketetapan: ' + countError.message);
+            }
+
             // Generate nomor urut berurutan tanpa timestamp
             const nomorUrut = (count || 0) + 1;
             const nomorUrutFormatted = nomorUrut.toString().padStart(4, '0');
-            
+
             // Gabungkan ID_Ketetapan dengan format berurutan
             const ID_Ketetapan = `${nomorUrutFormatted}/${kodeSurat}/${bulanRomawi}/${tahun}`;
 
+            console.log('🆔 DEBUG: Generated ID_Ketetapan:', ID_Ketetapan);
+
             // Coba insert data
+            const insertData = {
+                ID_Ketetapan,
+                KodeLayanan: data.kodeLayanan,
+                NPWPD: data.npwpd,
+                MasaPajak: data.masaPajak,
+                TanggalKetetapan: tanggalKetetapan,
+                TanggalTunggakan: data.tglTunggakan ? new Date(data.tglTunggakan).toISOString() : null,
+                JumlahPokok: jumlahPokok,
+                Denda: denda,
+                TotalTagihan: totalTagihan,
+                Status: 'Belum Lunas',
+                Catatan: data.catatan || ''
+            };
+
+            console.log('💾 DEBUG: Insert data prepared:', insertData);
+
             const { error } = await supabase
                 .from('KetetapanPajak')
-                .insert([{
-                    ID_Ketetapan,
-                    KodeLayanan: data.kodeLayanan,
-                    NPWPD: data.npwpd,
-                    MasaPajak: data.masaPajak,
-                    TanggalKetetapan: tanggalKetetapan,
-                    TanggalTunggakan: data.tglTunggakan ? new Date(data.tglTunggakan).toISOString() : null,
-                    JumlahPokok: jumlahPokok,
-                    Denda: denda,
-                    TotalTagihan: totalTagihan,
-                    Status: 'Belum Lunas',
-                    Catatan: data.catatan || ''
-                }]);
+                .insert([insertData]);
+
+            console.log('💾 DEBUG: Insert result error:', error);
 
             if (!error) {
+                console.log('✅ DEBUG: Ketetapan created successfully');
                 // Berhasil, keluar dari loop
                 return { message: 'Ketetapan berhasil dibuat!', id_ketetapan: ID_Ketetapan };
             }
 
             // Jika error adalah duplicate key, coba lagi
             if (error.message && error.message.includes('duplicate key')) {
+                console.warn('⚠️ DEBUG: Duplicate key error, retrying...');
                 retryCount++;
                 if (retryCount >= maxRetries) {
                     throw new Error('Gagal membuat ketetapan setelah beberapa percobaan: ' + error.message);
@@ -524,10 +554,12 @@ async function handleCreateKetetapan(data) {
                 await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
                 continue;
             } else {
+                console.error('❌ DEBUG: Insert failed with non-duplicate error:', error);
                 // Error lain, langsung throw
                 throw new Error('Gagal membuat ketetapan: ' + error.message);
             }
         } catch (e) {
+            console.error('❌ DEBUG: Exception in retry loop:', e);
             if (retryCount >= maxRetries - 1) {
                 throw e;
             }
