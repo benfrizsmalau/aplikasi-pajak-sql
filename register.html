@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SIMPADA MAMBERAMO RAYA</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #1976d2;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            border-color: #1976d2;
+            outline: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body id="page-register">
+
+    <div class="instansi-header">
+        <img src="images/logo.png" alt="Logo" class="instansi-logo">
+        <div class="instansi-text">
+            <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
+            <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <nav>
+            <a href="index.html">Dasbor</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
+            <a href="lihat-data.html">Lihat Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
+            <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html" class="active">Register</a>
+            <a href="daftar-fiskal.html">Daftar Fiskal</a>
+            <a href="review-wajib-pajak.html">Review Data WP</a>
+            <a href="report.html">Laporan</a>
+            <a href="target.html">Target Pajak & Retribusi</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <main class="container">
+            <div class="content-header">
+                <h2>📋 Register Data</h2>
+                <p>Register Ketetapan dan Pembayaran</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'tab-ketetapan')">Register Ketetapan</button>
+                <button class="tab-button" onclick="openTab(event, 'tab-pembayaran')">Register Pembayaran</button>
+            </div>
+
+            <!-- Tab content Ketetapan -->
+            <div id="tab-ketetapan" class="tab-content active">
+                <div class="standard-search-filter">
+                    <div class="search-box">
+                        <input type="text" id="searchInputKetetapan" placeholder="Cari data ketetapan...">
+                    </div>
+                    <div class="filter-box" style="display: flex; gap: 10px; align-items: center;">
+                        <select id="filterBulanKetetapan" class="filter-select">
+                            <option value="">Semua Bulan</option>
+                            <option value="0">Januari</option>
+                            <option value="1">Februari</option>
+                            <option value="2">Maret</option>
+                            <option value="3">April</option>
+                            <option value="4">Mei</option>
+                            <option value="5">Juni</option>
+                            <option value="6">Juli</option>
+                            <option value="7">Agustus</option>
+                            <option value="8">September</option>
+                            <option value="9">Oktober</option>
+                            <option value="10">November</option>
+                            <option value="11">Desember</option>
+                        </select>
+                        <select id="filterTahunKetetapan" class="filter-select">
+                            <!-- Diisi via JS -->
+                        </select>
+                        <button onclick="cetakRegister('ketetapan')" class="btn-primary"
+                            style="background-color: #28a745;">🖨️ Cetak Register (F4)</button>
+                    </div>
+                </div>
+                <div class="standard-table-container">
+                    <div class="table-header">
+                        <h3>📊 Register Ketetapan</h3>
+                        <div class="table-info">
+                            <span id="totalKetetapan">Total: 0 ketetapan</span>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <table id="ketetapanTable" class="standard-table">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>ID Ketetapan</th>
+                                    <th>NPWPD</th>
+                                    <th>Nama Usaha</th>
+                                    <th>Jenis Pajak</th>
+                                    <th>Masa Pajak</th>
+                                    <th>Total Tagihan</th>
+                                    <th>Status</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="9" class="table-loading">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab content Pembayaran -->
+            <div id="tab-pembayaran" class="tab-content">
+                <div class="standard-search-filter">
+                    <div class="search-box">
+                        <input type="text" id="searchInputPembayaran" placeholder="Cari data pembayaran...">
+                    </div>
+                    <div class="filter-box" style="display: flex; gap: 10px; align-items: center;">
+                        <select id="filterBulanPembayaran" class="filter-select">
+                            <option value="">Semua Bulan</option>
+                            <option value="0">Januari</option>
+                            <option value="1">Februari</option>
+                            <option value="2">Maret</option>
+                            <option value="3">April</option>
+                            <option value="4">Mei</option>
+                            <option value="5">Juni</option>
+                            <option value="6">Juli</option>
+                            <option value="7">Agustus</option>
+                            <option value="8">September</option>
+                            <option value="9">Oktober</option>
+                            <option value="10">November</option>
+                            <option value="11">Desember</option>
+                        </select>
+                        <select id="filterTahunPembayaran" class="filter-select">
+                            <!-- Diisi via JS -->
+                        </select>
+                        <button onclick="cetakRegister('pembayaran')" class="btn-primary"
+                            style="background-color: #28a745;">🖨️ Cetak Register (F4)</button>
+                    </div>
+                </div>
+                <div class="standard-table-container">
+                    <div class="table-header">
+                        <h3>📊 Register Pembayaran</h3>
+                        <div class="table-info">
+                            <span id="totalPembayaran">Total: 0 pembayaran</span>
+                        </div>
+                    </div>
+                    <div class="table-content">
+                        <table id="pembayaranTable" class="standard-table">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>ID Pembayaran</th>
+                                    <th>ID Ketetapan</th>
+                                    <th>NPWPD</th>
+                                    <th>Tanggal Bayar</th>
+                                    <th>Jumlah Bayar</th>
+                                    <th>Metode</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" class="table-loading">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="register-report.js"></script>
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabContent, tabButtons;
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].style.display = "none";
+                tabContent[i].classList.remove("active");
+            }
+            tabButtons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].className = tabButtons[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+
+        (function () {
+            let allData = {
+                ketetapan: [],
+                pembayaran: [],
+                wajibPajak: [],
+                masterPajak: []
+            };
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadData();
+                setupSearch();
+            });
+
+            async function loadData() {
+                try {
+                    const response = await fetch('/.netlify/functions/api', { cache: 'no-store' });
+                    if (!response.ok) throw new Error('Gagal fetch API');
+                    const data = await response.json();
+                    allData = data;
+
+                    displayKetetapan(allData.ketetapan);
+                    displayPembayaran(allData.pembayaran);
+                } catch (error) {
+                    console.error('Error load data:', error);
+                    alert('Gagal memuat data');
+                }
+            }
+
+            function displayKetetapan(data) {
+                const totalKetetapan = document.getElementById('totalKetetapan');
+                totalKetetapan.textContent = `Total: ${data.length} ketetapan`;
+
+                const processedData = data.map((item, index) => {
+                    const wp = allData.wajibPajak.find(w => w.NPWPD === item.NPWPD) || {};
+                    const master = allData.masterPajak.find(m => m.KodeLayanan === item.KodeLayanan);
+                    return {
+                        ...item,
+                        index: index + 1,
+                        namaUsaha: wp['Nama Usaha'] || '-',
+                        namaLayanan: master ? master.NamaLayanan : item.KodeLayanan || '-'
+                    };
+                });
+
+                const tableConfig = {
+                    columns: [
+                        { key: 'index', label: 'No', type: 'text' },
+                        { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
+                        { key: 'NPWPD', label: 'NPWPD', type: 'link', linkUrl: 'detail.html?npwpd=', linkKey: 'NPWPD' },
+                        { key: 'namaUsaha', label: 'Nama Usaha', type: 'text' },
+                        { key: 'namaLayanan', label: 'Jenis Pajak', type: 'text' },
+                        { key: 'MasaPajak', label: 'Masa Pajak', type: 'text' },
+                        { key: 'TotalTagihan', label: 'Total Tagihan', type: 'rupiah' },
+                        { key: 'Status', label: 'Status', type: 'status', statusColors: { 'Lunas': 'green', 'Belum Lunas': 'red' } },
+                        { key: 'TanggalKetetapan', label: 'Tanggal', type: 'date' }
+                    ],
+                    emptyMessage: 'Tidak ada data ketetapan.'
+                };
+
+                createStandardTable('ketetapanTable', processedData, tableConfig);
+            }
+
+            function displayPembayaran(data) {
+                const totalPembayaran = document.getElementById('totalPembayaran');
+                totalPembayaran.textContent = `Total: ${data.length} pembayaran`;
+
+                const processedData = data.map((item, index) => ({
+                    ...item,
+                    index: index + 1
+                }));
+
+                const tableConfig = {
+                    columns: [
+                        { key: 'index', label: 'No', type: 'text' },
+                        { key: 'ID_Pembayaran', label: 'ID Pembayaran', type: 'text' },
+                        { key: 'ID_Ketetapan', label: 'ID Ketetapan', type: 'text' },
+                        { key: 'NPWPD', label: 'NPWPD', type: 'text' },
+                        { key: 'TanggalBayar', label: 'Tanggal Bayar', type: 'date' },
+                        { key: 'JumlahBayar', label: 'Jumlah Bayar', type: 'rupiah' },
+                        { key: 'MetodeBayar', label: 'Metode', type: 'text' },
+                        { key: 'StatusPembayaran', label: 'Status', type: 'status', statusColors: { 'Sukses': 'green', 'Gagal': 'red' } }
+                    ],
+                    emptyMessage: 'Tidak ada data pembayaran.'
+                };
+
+                createStandardTable('pembayaranTable', processedData, tableConfig);
+            }
+
+            function setupSearch() {
+                const searchK = document.getElementById('searchInputKetetapan');
+                const bulanK = document.getElementById('filterBulanKetetapan');
+                const tahunK = document.getElementById('filterTahunKetetapan');
+
+                const filterKetetapan = () => {
+                    const searchTerm = searchK.value.toLowerCase();
+                    const b = bulanK.value;
+                    const t = tahunK.value;
+
+                    const filtered = allData.ketetapan.filter(item => {
+                        const wp = allData.wajibPajak.find(w => w.NPWPD === item.NPWPD) || {};
+                        const date = new Date(item.TanggalKetetapan);
+                        const matchSearch = (
+                            item.ID_Ketetapan?.toLowerCase().includes(searchTerm) ||
+                            item.NPWPD?.toLowerCase().includes(searchTerm) ||
+                            wp['Nama Usaha']?.toLowerCase().includes(searchTerm)
+                        );
+                        const matchBulan = b === '' || date.getMonth() == b;
+                        const matchTahun = t === '' || date.getFullYear() == t;
+                        return matchSearch && matchBulan && matchTahun;
+                    });
+                    displayKetetapan(filtered);
+                };
+
+                searchK.addEventListener('input', filterKetetapan);
+                bulanK.addEventListener('change', filterKetetapan);
+                tahunK.addEventListener('change', filterKetetapan);
+
+                const searchP = document.getElementById('searchInputPembayaran');
+                const bulanP = document.getElementById('filterBulanPembayaran');
+                const tahunP = document.getElementById('filterTahunPembayaran');
+
+                const filterPembayaran = () => {
+                    const searchTerm = searchP.value.toLowerCase();
+                    const b = bulanP.value;
+                    const t = tahunP.value;
+
+                    const filtered = allData.pembayaran.filter(item => {
+                        const wp = allData.wajibPajak.find(w => w.NPWPD === item.NPWPD) || {};
+                        const date = new Date(item.TanggalBayar);
+                        const matchSearch = (
+                            item.ID_Pembayaran?.toLowerCase().includes(searchTerm) ||
+                            item.ID_Ketetapan?.toLowerCase().includes(searchTerm) ||
+                            item.NPWPD?.toLowerCase().includes(searchTerm) ||
+                            wp['Nama Usaha']?.toLowerCase().includes(searchTerm)
+                        );
+                        const matchBulan = b === '' || date.getMonth() == b;
+                        const matchTahun = t === '' || date.getFullYear() == t;
+                        return matchSearch && matchBulan && matchTahun;
+                    });
+                    displayPembayaran(filtered);
+                };
+
+                searchP.addEventListener('input', filterPembayaran);
+                bulanP.addEventListener('change', filterPembayaran);
+                tahunP.addEventListener('change', filterPembayaran);
+            }
+        })();
+    </script>
+    <div class="watermark-footer">MADE BY REYNOLDS</div>
+</body>
+
+</html>

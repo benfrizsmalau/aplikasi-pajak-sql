@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan - SIMPADA MAMBERAMO RAYA</title>
     <link rel="stylesheet" href="style.css">
     <script>
-  
+
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
+
 <body id="page-report">
 
     <div class="instansi-header">
@@ -19,19 +21,24 @@
         <div class="instansi-text">
             <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
             <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
-            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
         </div>
     </div>
 
     <div class="sidebar-menu">
         <nav>
             <a href="index.html">Dasbor</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
             <a href="lihat-data.html">Lihat Data WP</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
             <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html">Register</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="report.html" class="active">Laporan</a>
             <a href="target.html">Target Pajak & Retribusi</a>
@@ -40,7 +47,7 @@
 
     <div class="main-content">
         <h2>Laporan dan Analisis</h2>
-        
+
         <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-group">
@@ -55,7 +62,7 @@
                     <option value="performance">Laporan Kinerja</option>
                 </select>
             </div>
-            
+
             <div class="filter-group" id="dateRangeFilter">
                 <label for="dateRange">Periode:</label>
                 <select id="dateRange" onchange="loadReportData()">
@@ -70,14 +77,14 @@
             <div class="filter-group" id="revenueYearFilter" style="display: none;">
                 <label for="dateRangeTahun">Tahun:</label>
                 <select id="dateRangeTahun"></select>
-            </div>           
+            </div>
             <div class="filter-group" id="customDateGroup" style="display: none;">
                 <label for="startDate">Dari:</label>
                 <input type="date" id="startDate" onchange="loadReportData()">
                 <label for="endDate">Sampai:</label>
                 <input type="date" id="endDate" onchange="loadReportData()">
             </div>
-            
+
             <div class="filter-group">
                 <button onclick="exportReport()" class="btn-primary">📄 Export PDF</button>
                 <button onclick="exportExcel()" class="btn-secondary">📊 Export Excel</button>
@@ -86,7 +93,7 @@
 
         <!-- Report Content -->
         <div id="reportContent">
-            
+
             <!-- Summary Report -->
             <div id="summaryReport" class="report-section">
                 <h3>Ringkasan Umum</h3>
@@ -112,7 +119,7 @@
                         <div class="summary-change positive">+8.7% dari bulan lalu</div>
                     </div>
                 </div>
-                
+
                 <div class="chart-container">
                     <canvas id="summaryChart" height="300"></canvas>
                 </div>
@@ -145,7 +152,7 @@
                         <div class="wp-value" id="inactiveWpCount">0</div>
                     </div>
                 </div>
-                
+
                 <div class="table-container">
                     <table id="wpTable" class="data-table">
                         <thead>
@@ -186,7 +193,7 @@
                         <div class="ketetapan-value" id="totalNilaiKetetapan">Rp 0</div>
                     </div>
                 </div>
-                
+
                 <div class="table-container">
                     <table id="ketetapanTable" class="data-table">
                         <thead>
@@ -272,7 +279,7 @@
                         <div class="fiskal-value" id="expiredFiskalCount">0</div>
                     </div>
                 </div>
-                
+
                 <div class="table-container">
                     <table id="fiskalTable" class="data-table">
                         <thead>
@@ -321,8 +328,8 @@
                         </div>
                     </div>
                 </div>
-                
-                
+
+
                 <div class="table-container">
                     <table id="performanceTable" class="data-table">
                         <thead>
@@ -352,11 +359,10 @@
         </div>
     </div>
     <!-- Library untuk export PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="report.js"></script>
     <script src="cetakreport.js"></script>
 </body>
+
 </html>
-
-

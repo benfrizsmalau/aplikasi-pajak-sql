@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lihat Data - SIMPADA MAMBERAMO RAYA</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body id="page-lihat-wp">
 
     <div class="instansi-header">
@@ -13,19 +15,24 @@
         <div class="instansi-text">
             <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
             <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
-            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
         </div>
     </div>
 
     <div class="sidebar-menu">
         <nav>
             <a href="index.html">Dasbor</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
             <a href="lihat-data.html" class="active">Lihat Data WP</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
             <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html">Register</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="review-wajib-pajak.html">Review Data WP</a>
             <a href="report.html">Laporan</a>
@@ -36,27 +43,33 @@
     <div class="main-content">
         <main class="container">
             <h2 style="margin-bottom: 24px; color: #2c3e50; font-size: 1.4rem;">👥 Data Wajib Pajak Terdaftar</h2>
-            
-            <div style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 12px rgba(60,60,120,0.08); margin-bottom: 24px;">
+
+            <div
+                style="background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 12px rgba(60,60,120,0.08); margin-bottom: 24px;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="searchInput" style="font-size: 0.95rem; color: #3a4a5d; margin-bottom: 8px;">🔍 Cari Wajib Pajak</label>
-                    <input type="text" id="searchInput" placeholder="Ketik NPWPD atau Nama Usaha untuk mencari..." style="font-size: 0.95rem; padding: 12px 16px; border-radius: 8px;">
+                    <label for="searchInput" style="font-size: 0.95rem; color: #3a4a5d; margin-bottom: 8px;">🔍 Cari
+                        Wajib Pajak</label>
+                    <input type="text" id="searchInput" placeholder="Ketik NPWPD atau Nama Usaha untuk mencari..."
+                        style="font-size: 0.95rem; padding: 12px 16px; border-radius: 8px;">
                     <div class="form-helper">Cari berdasarkan NPWPD, nama usaha, atau nama pemilik</div>
                 </div>
             </div>
 
-            <div style="overflow-x:auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(60,60,120,0.08);">
+            <div
+                style="overflow-x:auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(60,60,120,0.08);">
                 <table id="dataTable">
                     <thead>
-                        </thead>
+                    </thead>
                     <tbody>
-                        <tr><td colspan="12" style="text-align: center; padding: 40px; color: #666;">Memuat data...</td></tr>
+                        <tr>
+                            <td colspan="12" style="text-align: center; padding: 40px; color: #666;">Memuat data...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
-    
+
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -104,7 +117,9 @@
                         <div class="form-helper">Kecamatan akan terisi otomatis</div>
                     </div>
                 </div>
-                <p style="font-size: 0.85rem; color: #666; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px;">⚠️ Fitur edit foto tidak tersedia saat ini. Foto dapat diubah melalui menu Tambah Data WP.</p>
+                <p
+                    style="font-size: 0.85rem; color: #666; margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    ⚠️ Fitur edit foto tidak tersedia saat ini. Foto dapat diubah melalui menu Tambah Data WP.</p>
                 <button type="submit" id="updateButton" style="margin-top: 16px;">💾 Simpan Perubahan</button>
                 <div id="editStatus"></div>
             </form>
@@ -114,6 +129,5 @@
     <script src="script.js"></script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
+
 </html>
-
-

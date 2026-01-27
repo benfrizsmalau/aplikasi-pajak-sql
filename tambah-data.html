@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <!-- Hapus Choices.js -->
 </head>
+
 <body id="page-tambah-wp">
 
     <div class="instansi-header">
@@ -14,19 +16,24 @@
         <div class="instansi-text">
             <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
             <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
-            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
         </div>
     </div>
 
     <div class="sidebar-menu">
         <nav>
             <a href="index.html">Dasbor</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;" class="active">Tambah Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;" class="active">Tambah Data WP</a>
             <a href="lihat-data.html">Lihat Data WP</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
             <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html">Register</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="review-wajib-pajak.html">Review Data WP</a>
             <a href="report.html">Laporan</a>
@@ -37,77 +44,84 @@
     <div class="main-content">
         <h2 class="form-title"><span class="form-title-icon">📝</span> Tambah Data Wajib Pajak</h2>
         <div class="wp-form-card">
-        <form id="pajakForm">
-            <div class="form-group full-width" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <input type="checkbox" id="generateNpwpd" style="width: auto;">
-                <label for="generateNpwpd" style="margin: 0;">Buat NPWPD Otomatis (untuk Wajib Pajak Baru)</label>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="npwpd">NPWPD <small class="form-helper">(Nomor Pokok Wajib Pajak Daerah)</small></label>
-                    <input type="text" id="npwpd" required placeholder="Ketik NPWPD manual...">
+            <form id="pajakForm">
+                <div class="form-group full-width"
+                    style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="generateNpwpd" style="width: auto;">
+                    <label for="generateNpwpd" style="margin: 0;">Buat NPWPD Otomatis (untuk Wajib Pajak Baru)</label>
                 </div>
-                <div class="form-group">
-                    <label for="namaUsaha">Nama Usaha <small class="form-helper">(Nama Perusahaan)</small></label>
-                    <input type="text" id="namaUsaha" required placeholder="Nama Usaha">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="npwpd">NPWPD <small class="form-helper">(Nomor Pokok Wajib Pajak
+                                Daerah)</small></label>
+                        <input type="text" id="npwpd" required placeholder="Ketik NPWPD manual...">
+                    </div>
+                    <div class="form-group">
+                        <label for="namaUsaha">Nama Usaha <small class="form-helper">(Nama Perusahaan)</small></label>
+                        <input type="text" id="namaUsaha" required placeholder="Nama Usaha">
+                    </div>
+                    <div class="form-group">
+                        <label for="namaPemilik">Nama Pemilik <small class="form-helper">(Nama Pemilik Usaha atau Kuasa
+                                Pemilik Usaha)</small></label>
+                        <input type="text" id="namaPemilik" required placeholder="Nama Pemilik">
+                    </div>
+                    <div class="form-group">
+                        <label for="nikKtp">NIK KTP <small class="form-helper">(Masukkan 16 Digit Nomor Induk
+                                Kependudukan)</small></label>
+                        <input type="text" id="nikKtp" required placeholder="NIK KTP">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="alamat">Alamat <small class="form-helper">(Alamat lengkap usaha atau
+                                domisili)</small></label>
+                        <input type="text" id="alamat" required placeholder="Alamat">
+                    </div>
+                    <div class="form-group">
+                        <label for="telephone">Telephone <small class="form-helper">(Nomor telepon aktif yang bisa
+                                dihubungi)</small></label>
+                        <input type="text" id="telephone" required placeholder="Nomor Telepon">
+                    </div>
+                    <div class="form-group">
+                        <label for="kecamatan">Kecamatan <small class="form-helper">(Pilih sesuai lokasi
+                                usaha)</small></label>
+                        <select id="kecamatan" required>
+                            <option value="">-- Pilih Kecamatan --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kelurahan">Kelurahan <small class="form-helper">(Pilih sesuai lokasi
+                                usaha)</small></label>
+                        <select id="kelurahan" required>
+                            <option value="">-- Pilih Kelurahan --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fotoPemilik">Foto Pemilik</label>
+                        <input type="file" id="fotoPemilik" accept="image/*" style="max-width: 220px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="fotoTempatUsaha">Foto Tempat Usaha</label>
+                        <input type="file" id="fotoTempatUsaha" accept="image/*" style="max-width: 220px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="fotoKtp">Foto KTP</label>
+                        <input type="file" id="fotoKtp" accept="image/*" style="max-width: 220px;">
+                    </div>
+                    <div class="form-group" id="jenisWpGroup" style="display: none;">
+                        <label for="jenisWp">Jenis Wajib Pajak</label>
+                        <select id="jenisWp">
+                            <option value="1">Pribadi</option>
+                            <option value="2">Badan Usaha</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="namaPemilik">Nama Pemilik <small class="form-helper">(Nama Pemilik Usaha atau Kuasa Pemilik Usaha)</small></label>
-                    <input type="text" id="namaPemilik" required placeholder="Nama Pemilik">
-                </div>
-                <div class="form-group">
-                    <label for="nikKtp">NIK KTP <small class="form-helper">(Masukkan 16 Digit Nomor Induk Kependudukan)</small></label>
-                    <input type="text" id="nikKtp" required placeholder="NIK KTP">
-                </div>
-                <div class="form-group full-width">
-                    <label for="alamat">Alamat <small class="form-helper">(Alamat lengkap usaha atau domisili)</small></label>
-                    <input type="text" id="alamat" required placeholder="Alamat">
-                </div>
-                <div class="form-group">
-                    <label for="telephone">Telephone <small class="form-helper">(Nomor telepon aktif yang bisa dihubungi)</small></label>
-                    <input type="text" id="telephone" required placeholder="Nomor Telepon">
-                </div>
-                <div class="form-group">
-                    <label for="kecamatan">Kecamatan <small class="form-helper">(Pilih sesuai lokasi usaha)</small></label>
-                    <select id="kecamatan" required>
-                        <option value="">-- Pilih Kecamatan --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="kelurahan">Kelurahan <small class="form-helper">(Pilih sesuai lokasi usaha)</small></label>
-                    <select id="kelurahan" required>
-                        <option value="">-- Pilih Kelurahan --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fotoPemilik">Foto Pemilik</label>
-                    <input type="file" id="fotoPemilik" accept="image/*" style="max-width: 220px;">
-                </div>
-                <div class="form-group">
-                    <label for="fotoTempatUsaha">Foto Tempat Usaha</label>
-                    <input type="file" id="fotoTempatUsaha" accept="image/*" style="max-width: 220px;">
-                </div>
-                <div class="form-group">
-                    <label for="fotoKtp">Foto KTP</label>
-                    <input type="file" id="fotoKtp" accept="image/*" style="max-width: 220px;">
-                </div>
-                <div class="form-group" id="jenisWpGroup" style="display: none;">
-                    <label for="jenisWp">Jenis Wajib Pajak</label>
-                    <select id="jenisWp">
-                        <option value="1">Pribadi</option>
-                        <option value="2">Badan Usaha</option>
-                    </select>
-                </div>
-            </div>
-            <button type="submit" id="submitButton">Kirim Data</button>
-            <div id="status"></div>
-        </form>
+                <button type="submit" id="submitButton">Kirim Data</button>
+                <div id="status"></div>
+            </form>
         </div>
     </div>
     <script src="script.js"></script>
     <!-- Hapus Choices.js -->
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
+
 </html>
-
-

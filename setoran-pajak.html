@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setoran Pajak - SIMPADA MAMBERAMO RAYA</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body id="page-setoran-pajak">
 
     <div class="instansi-header">
@@ -13,19 +15,24 @@
         <div class="instansi-text">
             <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
             <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
-            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
         </div>
     </div>
 
     <div class="sidebar-menu">
         <nav>
             <a href="index.html">Dasbor</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
             <a href="lihat-data.html">Lihat Data WP</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
             <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;" class="active">Setoran Pajak</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;" class="active">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html">Register</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="review-wajib-pajak.html">Review Data WP</a>
             <a href="report.html">Laporan</a>
@@ -37,8 +44,9 @@
         <main class="container">
             <div class="wp-form-card">
                 <h2 class="form-title">💰 Form Setoran Pajak</h2>
-                <p style="margin-bottom: 20px; color: #666; font-size: 0.95rem;">Halaman ini digunakan untuk mencatat setoran pajak secara otomatis berdasarkan ketetapan yang sudah ada.</p>
-                
+                <p style="margin-bottom: 20px; color: #666; font-size: 0.95rem;">Halaman ini digunakan untuk mencatat
+                    setoran pajak secara otomatis berdasarkan ketetapan yang sudah ada.</p>
+
                 <form id="formSetoranPajak">
                     <div class="form-grid">
                         <div class="form-group">
@@ -101,100 +109,100 @@
             </div>
         </main>
     </div>
-    
+
     <script type="module">
-    import { fetchData, createData } from './dataService.js';
-    // Konfigurasi API URL Netlify
-    // const apiUrl = '/.netlify/functions/api'; // Tidak perlu lagi
+        import { fetchData, createData } from './dataService.js';
+        // Konfigurasi API URL Netlify
+        // const apiUrl = '/.netlify/functions/api'; // Tidak perlu lagi
 
-    let dataWajibPajak = [];
-    let dataKetetapan = [];
+        let dataWajibPajak = [];
+        let dataKetetapan = [];
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        const npwpdSelect = document.getElementById('npwpdSelect');
-        const ketetapanSelect = document.getElementById('ketetapanSelect');
-        const namaUsahaInput = document.getElementById('namaUsaha');
-        const masaPajakInput = document.getElementById('masaPajak');
-        const jumlahTagihanInput = document.getElementById('jumlahTagihan');
-        const operatorInput = document.getElementById('operator');
-        const formSetoran = document.getElementById('formSetoranPajak');
-        const statusSetoran = document.getElementById('statusSetoran');
+        document.addEventListener('DOMContentLoaded', async () => {
+            const npwpdSelect = document.getElementById('npwpdSelect');
+            const ketetapanSelect = document.getElementById('ketetapanSelect');
+            const namaUsahaInput = document.getElementById('namaUsaha');
+            const masaPajakInput = document.getElementById('masaPajak');
+            const jumlahTagihanInput = document.getElementById('jumlahTagihan');
+            const operatorInput = document.getElementById('operator');
+            const formSetoran = document.getElementById('formSetoranPajak');
+            const statusSetoran = document.getElementById('statusSetoran');
 
-        try {
-            const data = await fetchData();
-            dataWajibPajak = data.wajibPajak || [];
-            dataKetetapan = data.ketetapan || [];
-            // Isi NPWPD
-            npwpdSelect.innerHTML = '<option value="">-- Pilih NPWPD --</option>';
-            dataWajibPajak.forEach(wp => {
-                const option = document.createElement('option');
-                option.value = wp.NPWPD;
-                option.textContent = wp.NPWPD + ' - ' + (wp['Nama Usaha'] || '');
-                npwpdSelect.appendChild(option);
-            });
-        } catch (error) {
-            npwpdSelect.innerHTML = '<option value="">Gagal memuat data</option>';
-        }
-
-        npwpdSelect.addEventListener('change', function() {
-            const selectedNpwpd = this.value;
-            // Reset field
-            ketetapanSelect.innerHTML = '<option value="">-- Pilih Ketetapan --</option>';
-            ketetapanSelect.disabled = true;
-            namaUsahaInput.value = '';
-            masaPajakInput.value = '';
-            jumlahTagihanInput.value = '';
-            if (!selectedNpwpd) return;
-            // Cari ketetapan yang belum lunas (pakai nama kolom sesuai sheet)
-            const ketetapanBelumLunas = dataKetetapan.filter(k => k.NPWPD === selectedNpwpd && k.Status === 'Belum Lunas');
-            if (ketetapanBelumLunas.length > 0) {
-                ketetapanSelect.disabled = false;
-                ketetapanBelumLunas.forEach(k => {
-                    const option = document.createElement('option');
-                    option.value = k.ID_Ketetapan;
-                    option.textContent = k.ID_Ketetapan + ' - ' + (k.MasaPajak || '') + ' - Tagihan: ' + (k.TotalTagihan || '');
-                    option.dataset.masaPajak = k.MasaPajak || '';
-                    option.dataset.jumlahTagihan = k.TotalTagihan || '';
-                    option.dataset.namaUsaha = (dataWajibPajak.find(wp => wp.NPWPD === selectedNpwpd)?.['Nama Usaha']) || '';
-                    ketetapanSelect.appendChild(option);
-                });
-            } else {
-                ketetapanSelect.disabled = true;
-            }
-        });
-
-        ketetapanSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            namaUsahaInput.value = selectedOption?.dataset.namaUsaha || '';
-            masaPajakInput.value = selectedOption?.dataset.masaPajak || '';
-            jumlahTagihanInput.value = selectedOption?.dataset.jumlahTagihan || '';
-        });
-
-        formSetoran.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            statusSetoran.textContent = '';
-            const idKetetapan = ketetapanSelect.value;
-            const npwpd = npwpdSelect.value;
-            const tanggalBayar = document.getElementById('tanggalBayar').value;
-            const jumlahBayar = document.getElementById('jumlahBayar').value;
-            const metodeBayar = document.getElementById('metodeBayar').value;
-            const operator = operatorInput.value;
-            const waktuInput = new Date().toISOString();
-            const statusPembayaran = 'Sukses';
-            // Cek ulang status ketetapan sebelum submit (antisipasi data tidak sinkron)
-            const ketetapan = dataKetetapan.find(k => k.ID_Ketetapan === idKetetapan);
-            if (!idKetetapan || !npwpd || !tanggalBayar || !jumlahBayar || !metodeBayar || !operator) {
-                statusSetoran.textContent = 'Semua field wajib diisi!';
-                statusSetoran.style.color = 'red';
-                return;
-            }
-            if (!ketetapan || ketetapan.Status !== 'Belum Lunas') {
-                statusSetoran.textContent = 'Ketetapan ini sudah lunas atau tidak valid!';
-                statusSetoran.style.color = 'red';
-                return;
-            }
             try {
-                const resJson = await createData('createPembayaran', {
+                const data = await fetchData();
+                dataWajibPajak = data.wajibPajak || [];
+                dataKetetapan = data.ketetapan || [];
+                // Isi NPWPD
+                npwpdSelect.innerHTML = '<option value="">-- Pilih NPWPD --</option>';
+                dataWajibPajak.forEach(wp => {
+                    const option = document.createElement('option');
+                    option.value = wp.NPWPD;
+                    option.textContent = wp.NPWPD + ' - ' + (wp['Nama Usaha'] || '');
+                    npwpdSelect.appendChild(option);
+                });
+            } catch (error) {
+                npwpdSelect.innerHTML = '<option value="">Gagal memuat data</option>';
+            }
+
+            npwpdSelect.addEventListener('change', function () {
+                const selectedNpwpd = this.value;
+                // Reset field
+                ketetapanSelect.innerHTML = '<option value="">-- Pilih Ketetapan --</option>';
+                ketetapanSelect.disabled = true;
+                namaUsahaInput.value = '';
+                masaPajakInput.value = '';
+                jumlahTagihanInput.value = '';
+                if (!selectedNpwpd) return;
+                // Cari ketetapan yang belum lunas (pakai nama kolom sesuai sheet)
+                const ketetapanBelumLunas = dataKetetapan.filter(k => k.NPWPD === selectedNpwpd && k.Status === 'Belum Lunas');
+                if (ketetapanBelumLunas.length > 0) {
+                    ketetapanSelect.disabled = false;
+                    ketetapanBelumLunas.forEach(k => {
+                        const option = document.createElement('option');
+                        option.value = k.ID_Ketetapan;
+                        option.textContent = k.ID_Ketetapan + ' - ' + (k.MasaPajak || '') + ' - Tagihan: ' + (k.TotalTagihan || '');
+                        option.dataset.masaPajak = k.MasaPajak || '';
+                        option.dataset.jumlahTagihan = k.TotalTagihan || '';
+                        option.dataset.namaUsaha = (dataWajibPajak.find(wp => wp.NPWPD === selectedNpwpd)?.['Nama Usaha']) || '';
+                        ketetapanSelect.appendChild(option);
+                    });
+                } else {
+                    ketetapanSelect.disabled = true;
+                }
+            });
+
+            ketetapanSelect.addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                namaUsahaInput.value = selectedOption?.dataset.namaUsaha || '';
+                masaPajakInput.value = selectedOption?.dataset.masaPajak || '';
+                jumlahTagihanInput.value = selectedOption?.dataset.jumlahTagihan || '';
+            });
+
+            formSetoran.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                statusSetoran.textContent = '';
+                const idKetetapan = ketetapanSelect.value;
+                const npwpd = npwpdSelect.value;
+                const tanggalBayar = document.getElementById('tanggalBayar').value;
+                const jumlahBayar = document.getElementById('jumlahBayar').value;
+                const metodeBayar = document.getElementById('metodeBayar').value;
+                const operator = operatorInput.value;
+                const waktuInput = new Date().toISOString();
+                const statusPembayaran = 'Sukses';
+                // Cek ulang status ketetapan sebelum submit (antisipasi data tidak sinkron)
+                const ketetapan = dataKetetapan.find(k => k.ID_Ketetapan === idKetetapan);
+                if (!idKetetapan || !npwpd || !tanggalBayar || !jumlahBayar || !metodeBayar || !operator) {
+                    statusSetoran.textContent = 'Semua field wajib diisi!';
+                    statusSetoran.style.color = 'red';
+                    return;
+                }
+                if (!ketetapan || ketetapan.Status !== 'Belum Lunas') {
+                    statusSetoran.textContent = 'Ketetapan ini sudah lunas atau tidak valid!';
+                    statusSetoran.style.color = 'red';
+                    return;
+                }
+                try {
+                    const resJson = await createData('createPembayaran', {
                         id_ketetapan: idKetetapan,
                         npwpd: npwpd,
                         tanggalBayar: tanggalBayar,
@@ -203,29 +211,28 @@
                         waktuInput: waktuInput,
                         operator: operator,
                         statusPembayaran: statusPembayaran
-                });
-                if (resJson.status === 'sukses') {
-                    statusSetoran.textContent = 'Pembayaran berhasil dicatat!';
-                    statusSetoran.style.color = 'green';
-                    formSetoran.reset();
-                    ketetapanSelect.disabled = true;
-                    namaUsahaInput.value = '';
-                    masaPajakInput.value = '';
-                    jumlahTagihanInput.value = '';
-                    window.location.href = 'daftar-ketetapan.html'; // Redirect otomatis ke daftar ketetapan
-                } else {
-                    statusSetoran.textContent = resJson.message || 'Gagal mencatat pembayaran!';
+                    });
+                    if (resJson.status === 'sukses') {
+                        statusSetoran.textContent = 'Pembayaran berhasil dicatat!';
+                        statusSetoran.style.color = 'green';
+                        formSetoran.reset();
+                        ketetapanSelect.disabled = true;
+                        namaUsahaInput.value = '';
+                        masaPajakInput.value = '';
+                        jumlahTagihanInput.value = '';
+                        window.location.href = 'daftar-ketetapan.html'; // Redirect otomatis ke daftar ketetapan
+                    } else {
+                        statusSetoran.textContent = resJson.message || 'Gagal mencatat pembayaran!';
+                        statusSetoran.style.color = 'red';
+                    }
+                } catch (err) {
+                    statusSetoran.textContent = 'Terjadi error saat mengirim data!';
                     statusSetoran.style.color = 'red';
                 }
-            } catch (err) {
-                statusSetoran.textContent = 'Terjadi error saat mengirim data!';
-                statusSetoran.style.color = 'red';
-            }
+            });
         });
-    });
     </script>
     <div class="watermark-footer">MADE BY REYNOLDS</div>
 </body>
-</html> 
 
-
+</html>

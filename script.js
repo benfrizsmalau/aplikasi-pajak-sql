@@ -12,7 +12,7 @@ console.log('🔤 Font Loading Debug: Checking for font-related errors');
 console.log('🔤 Font Loading Debug: Document fonts:', document.fonts);
 
 // Monitor for font loading errors
-document.fonts.onloadingerror = function(event) {
+document.fonts.onloadingerror = function (event) {
     console.error('❌ Font Loading Error:', event);
     console.log('🔍 Font Loading Debug: Failed font details:', {
         family: event.family,
@@ -22,7 +22,7 @@ document.fonts.onloadingerror = function(event) {
 };
 
 // Check for chrome extension font errors
-window.addEventListener('error', function(event) {
+window.addEventListener('error', function (event) {
     if (event.message && event.message.includes('chrome-extension') && event.message.includes('font')) {
         console.warn('⚠️ Chrome Extension Font Error Detected:', event.message);
         console.log('🔍 Chrome Extension Debug: Error details:', {
@@ -107,7 +107,7 @@ function monitorNetworkRequests() {
     // Override fetch untuk monitoring
     const originalFetch = window.fetch;
 
-    window.fetch = async function(...args) {
+    window.fetch = async function (...args) {
         const [url, options] = args;
         console.log('🌐 Network Request:', url, options);
 
@@ -293,7 +293,7 @@ function replaceProblematicLoadDashboardData() {
     // Override fungsi yang bermasalah
     window.originalLoadDashboardData = window.loadDashboardData;
 
-    window.loadDashboardData = async function() {
+    window.loadDashboardData = async function () {
         console.log('🔄 Using fixed loadDashboardData...');
         return await testDirectApiCall();
     };
@@ -380,14 +380,14 @@ let dashboardLoadingState = {
 // 🔧 MAIN DOMContentLoaded - Consolidated all initialization
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Main initialization: Starting application...');
-    
+
     // 1. Setup favicon and cleanup
     addFavicon();
-    
+
     // 2. Page routing
     const pageId = document.body.id;
     console.log('📄 Detected page ID:', pageId || 'none (assuming dashboard)');
-    
+
     switch (pageId) {
         case 'page-dashboard':
             console.log('🏠 Initializing dashboard page...');
@@ -397,12 +397,27 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'page-lihat-wp': initLihatWpPage(); break;
         case 'page-tambah-ketetapan': initKetetapanPage(); break;
         case 'page-detail-wp': initDetailPage(); break;
+        // Pages that handle their own initialization via internal scripts
+        case 'page-daftar-ketetapan':
+        case 'page-daftar-pembayaran':
+        case 'page-daftar-fiskal':
+        case 'page-register':
+        case 'page-report':
+        case 'page-target':
+        case 'page-review-wajib-pajak':
+            console.log(`📄 Page specialized logic handled by ${pageId} internal script.`);
+            break;
         default:
-            console.log('🏠 No specific page ID, assuming dashboard...');
-            initDashboardPage();
+            // Don't assume dashboard for unknown page IDs anymore
+            if (pageId) {
+                console.log(`ℹ️ Page ID '${pageId}' detected, no specific initialization in script.js.`);
+            } else {
+                console.log('🏠 No page ID found, assuming dashboard for legacy compatibility...');
+                initDashboardPage();
+            }
             break;
     }
-    
+
     // 3. Run deployment diagnostics if in production
     if (window.location.hostname.includes('netlify') || window.location.hostname !== 'localhost') {
         setTimeout(runDeploymentDiagnostics, 2000);
@@ -421,8 +436,8 @@ async function initDashboardPage() {
         console.log('Dashboard already loading, skipping...');
         return;
     }
-    
-    if (dashboardLoadingState.failureCount >= dashboardLoadingState.maxRetries && 
+
+    if (dashboardLoadingState.failureCount >= dashboardLoadingState.maxRetries &&
         (now - dashboardLoadingState.lastAttempt) < dashboardLoadingState.cooldownPeriod) {
         console.log('Dashboard in cooldown period, setting defaults...');
         setDashboardDefaults();
@@ -436,20 +451,20 @@ async function initDashboardPage() {
     try {
         // Set default values first to ensure UI is in consistent state
         setDashboardDefaults();
-        
+
         // Attempt to load dashboard data
         await loadDashboardData();
-        
+
         // Reset failure count on success
         dashboardLoadingState.failureCount = 0;
-        
+
     } catch (error) {
         console.error("Error di Dasbor:", error);
         dashboardLoadingState.failureCount++;
-        
+
         // Ensure defaults are set on error
         setDashboardDefaults();
-        
+
         // Show user-friendly error message
         const errorElements = ['totalWp', 'totalKetetapan', 'totalPembayaran'];
         errorElements.forEach(id => {
@@ -459,7 +474,7 @@ async function initDashboardPage() {
                 element.style.color = '#666';
             }
         });
-        
+
     } finally {
         // Always reset loading state
         dashboardLoadingState.isLoading = false;
@@ -508,7 +523,7 @@ async function initTambahWpPage() {
         kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
 
         // Saat kecamatan dipilih, isi kelurahan sesuai kecamatan
-        kecamatanSelect.addEventListener('change', function() {
+        kecamatanSelect.addEventListener('change', function () {
             console.log('🔍 DEBUG: initTambahWpPage - Kecamatan changed to:', this.value);
             kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
             if (!this.value) return;
@@ -557,7 +572,7 @@ async function initTambahWpPage() {
         const wilayahCocok = dataWilayahGlobal.find(w => w.Kelurahan === e.target.value);
         kecamatanSelect.value = wilayahCocok ? wilayahCocok.Kecamatan : '';
     });
-    
+
     form.addEventListener('submit', handleWpFormSubmit);
 }
 
@@ -568,10 +583,10 @@ async function initLihatWpPage() {
         dataWilayahGlobal = data.wilayah || [];
         populateWpDataTable(dataWajibPajakGlobal);
         setupWpEditModal();
-        
+
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
-            const filteredData = dataWajibPajakGlobal.filter(item => 
+            const filteredData = dataWajibPajakGlobal.filter(item =>
                 String(item.NPWPD).toLowerCase().includes(searchTerm) ||
                 String(item['Nama Usaha']).toLowerCase().includes(searchTerm)
             );
@@ -594,7 +609,7 @@ async function initKetetapanPage() {
         npwpdInput.readOnly = true;
         npwpdInput.style.backgroundColor = '#e9ecef';
     }
-    
+
     try {
         const data = await fetchAllData();
         const masterPajakData = data.masterPajak || [];
@@ -631,18 +646,18 @@ async function initDetailPage() {
         aksiContent.innerHTML = `<a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; background: #999; color: white; border-radius: 8px; font-weight: 500; cursor: not-allowed;"><span>📋</span>Buat Ketetapan Baru</a>`;
         displayDetailData(item);
         displayPhotos(item);
-        
+
         // Load riwayat ketetapan
         const riwayatKetetapan = dataKetetapanGlobal.filter(k => k.NPWPD == npwpd);
         displayKetetapanHistory(riwayatKetetapan, data.masterPajak || []);
-        
+
         // Load riwayat pembayaran
         const riwayatPembayaran = (data.pembayaran || []).filter(p => p.NPWPD == npwpd);
         displayPembayaranHistory(riwayatPembayaran);
-        
+
         // Load status fiskal
         displayFiskalStatus(npwpd, data);
-        
+
         setupKetetapanEditModal();
     } catch (error) {
         detailContent.innerHTML = `<p style="color: red;">${error.message}</p>`;
@@ -659,7 +674,7 @@ async function handleWpFormSubmit(event) {
     const submitButton = document.getElementById('submitButton');
     const statusDiv = document.getElementById('status');
     submitButton.disabled = true; submitButton.textContent = 'Mengirim...'; statusDiv.style.display = 'none';
-    
+
     const generateMode = document.getElementById('generateNpwpd').checked;
     const kelurahanSelect = document.getElementById('kelurahan');
     const kecamatanSelect = document.getElementById('kecamatan');
@@ -732,10 +747,10 @@ async function handleWpFormSubmit(event) {
             dataToSend.npwpd = npwpd;
             dataToSend.jenisWp = "Lama";
         }
-        
+
         const result = await postData(dataToSend);
         showStatus(result.message || 'Data WP berhasil dibuat!', true);
-        event.target.reset(); 
+        event.target.reset();
         document.getElementById('kecamatan').value = '';
         document.getElementById('generateNpwpd').checked = false;
         document.getElementById('npwpd').readOnly = false;
@@ -886,13 +901,13 @@ async function handleDeleteKetetapanClick(idKetetapan) {
 }
 
 function handleEditKetetapanClick(idKetetapan) {
-    const dataToEdit = dataKetetapanGlobal.find(item => 
+    const dataToEdit = dataKetetapanGlobal.find(item =>
         String(item.ID_Ketetapan).trim() === String(idKetetapan).trim()
     );
-    if (!dataToEdit) { 
-        console.warn('Data ketetapan tidak ditemukan! ID:', idKetetapan, 'List:', dataKetetapanGlobal.map(d=>d.ID_Ketetapan));
-        alert('Data ketetapan tidak ditemukan!'); 
-        return; 
+    if (!dataToEdit) {
+        console.warn('Data ketetapan tidak ditemukan! ID:', idKetetapan, 'List:', dataKetetapanGlobal.map(d => d.ID_Ketetapan));
+        alert('Data ketetapan tidak ditemukan!');
+        return;
     }
     document.getElementById('editKetetapanId').value = dataToEdit.ID_Ketetapan;
     document.getElementById('editKetetapanMasaPajak').value = dataToEdit.MasaPajak;
@@ -1290,14 +1305,14 @@ function displayDetailData(item) {
             fotoSlot.innerHTML = `<div style='width:120px;height:150px;background:#e3e8ee;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#888;'>Tidak ada foto</div><p>Foto Pemilik</p>`;
         }
         dataSlot.innerHTML = `<dl class="detail-grid">
-            <dt>NPWPD</dt><dd>${item.NPWPD||'-'}</dd>
-            <dt>Nama Usaha</dt><dd>${item['Nama Usaha']||'-'}</dd>
-            <dt>Nama Pemilik</dt><dd>${item['Nama Pemilik']||'-'}</dd>
-            <dt>NIK</dt><dd>${item['NIK KTP']||'-'}</dd>
-            <dt>Alamat Usaha</dt><dd>${item.Alamat||'-'}</dd>
-            <dt>No. Telepon</dt><dd>${item.Telephone||'-'}</dd>
-            <dt>Kelurahan</dt><dd>${item.Kelurahan||'-'}</dd>
-            <dt>Kecamatan</dt><dd>${item.Kecamatan||'-'}</dd>
+            <dt>NPWPD</dt><dd>${item.NPWPD || '-'}</dd>
+            <dt>Nama Usaha</dt><dd>${item['Nama Usaha'] || '-'}</dd>
+            <dt>Nama Pemilik</dt><dd>${item['Nama Pemilik'] || '-'}</dd>
+            <dt>NIK</dt><dd>${item['NIK KTP'] || '-'}</dd>
+            <dt>Alamat Usaha</dt><dd>${item.Alamat || '-'}</dd>
+            <dt>No. Telepon</dt><dd>${item.Telephone || '-'}</dd>
+            <dt>Kelurahan</dt><dd>${item.Kelurahan || '-'}</dd>
+            <dt>Kecamatan</dt><dd>${item.Kecamatan || '-'}</dd>
         </dl>`;
     }
 }
@@ -1362,18 +1377,18 @@ function fileToBase64(file) {
 function displayKetetapanHistory(riwayatData, masterPajakData) {
     const tbody = document.querySelector('#ketetapanTable tbody');
     if (!tbody) return;
-    
+
     if (riwayatData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 20px; color: #666;">Belum ada riwayat ketetapan.</td></tr>';
         return;
     }
-    
+
     tbody.innerHTML = '';
     riwayatData.forEach((item, index) => {
         // Cari nama layanan dari master pajak
         const masterPajak = masterPajakData.find(mp => mp.KodeLayanan === item.KodeLayanan);
         const namaLayanan = masterPajak ? masterPajak.NamaLayanan : item.KodeLayanan || '-';
-        
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${index + 1}</td>
@@ -1398,12 +1413,12 @@ function displayKetetapanHistory(riwayatData, masterPajakData) {
 function displayPembayaranHistory(riwayatData) {
     const tbody = document.querySelector('#pembayaranTable tbody');
     if (!tbody) return;
-    
+
     if (riwayatData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 20px; color: #666;">Belum ada riwayat pembayaran.</td></tr>';
         return;
     }
-    
+
     tbody.innerHTML = '';
     riwayatData.forEach((item, index) => {
         const tr = document.createElement('tr');
@@ -1429,20 +1444,20 @@ function displayFiskalStatus(npwpd, data) {
     const pembayaran = data.pembayaran || [];
     const ketetapan = data.ketetapan || [];
     const masterPajak = data.masterPajak || [];
-    
+
     // Kelompokkan pembayaran per NPWPD
     const pembayaranWP = pembayaran.filter(p => p.NPWPD === npwpd);
-    
+
     let lunasReklame = false;
     let lunasSampah = false;
-    
+
     pembayaranWP.forEach(bayar => {
         const ket = ketetapan.find(k => k.ID_Ketetapan === bayar.ID_Ketetapan);
         if (!ket) return;
-        
+
         const master = masterPajak.find(m => m.KodeLayanan === ket.KodeLayanan);
         if (!master) return;
-        
+
         if (master.NamaLayanan && master.NamaLayanan.toLowerCase().includes('reklame') && bayar.StatusPembayaran === 'Sukses') {
             lunasReklame = true;
         }
@@ -1450,21 +1465,21 @@ function displayFiskalStatus(npwpd, data) {
             lunasSampah = true;
         }
     });
-    
+
     // Update status
-    document.getElementById('statusReklame').innerHTML = lunasReklame ? 
-        '<span style="color: green; font-weight: bold;">✅ Lunas</span>' : 
+    document.getElementById('statusReklame').innerHTML = lunasReklame ?
+        '<span style="color: green; font-weight: bold;">✅ Lunas</span>' :
         '<span style="color: red; font-weight: bold;">❌ Belum Lunas</span>';
-    
-    document.getElementById('statusSampah').innerHTML = lunasSampah ? 
-        '<span style="color: green; font-weight: bold;">✅ Lunas</span>' : 
+
+    document.getElementById('statusSampah').innerHTML = lunasSampah ?
+        '<span style="color: green; font-weight: bold;">✅ Lunas</span>' :
         '<span style="color: red; font-weight: bold;">❌ Belum Lunas</span>';
-    
+
     const statusFiskal = lunasReklame && lunasSampah;
-    document.getElementById('statusFiskalOverall').innerHTML = statusFiskal ? 
-        '<span style="color: green; font-weight: bold;">✅ Memenuhi Syarat</span>' : 
+    document.getElementById('statusFiskalOverall').innerHTML = statusFiskal ?
+        '<span style="color: green; font-weight: bold;">✅ Memenuhi Syarat</span>' :
         '<span style="color: red; font-weight: bold;">❌ Belum Memenuhi Syarat</span>';
-    
+
     // Hitung jatuh tempo fiskal (1 tahun dari pembayaran terakhir)
     if (statusFiskal && pembayaranWP.length > 0) {
         const pembayaranSukses = pembayaranWP.filter(p => p.StatusPembayaran === 'Sukses');
@@ -1484,10 +1499,10 @@ function displayFiskalStatus(npwpd, data) {
 // Fungsi helper untuk format rupiah
 function formatRupiah(angka) {
     if (!angka) return 'Rp 0';
-    return new Intl.NumberFormat('id-ID', { 
-        style: 'currency', 
-        currency: 'IDR', 
-        minimumFractionDigits: 0 
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
     }).format(angka);
 }
 
@@ -1495,17 +1510,17 @@ function formatRupiah(angka) {
 function createStandardTable(tableId, data, config) {
     const tableHead = document.querySelector(`#${tableId} thead`);
     const tableBody = document.querySelector(`#${tableId} tbody`);
-    
+
     if (!tableHead || !tableBody) return;
-    
+
     tableHead.innerHTML = '';
     tableBody.innerHTML = '';
-    
+
     if (data.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="${config.columns.length + (config.showCheckbox ? 1 : 0) + (config.actions ? 1 : 0)}" style="text-align: center; padding: 40px; color: #666;">${config.emptyMessage || 'Tidak ada data ditemukan.'}</td></tr>`;
         return;
     }
-    
+
     // Buat header
     const headerRow = document.createElement('tr');
     // Kolom checkbox jika diaktifkan
@@ -1526,7 +1541,7 @@ function createStandardTable(tableId, data, config) {
         headerRow.appendChild(actionTh);
     }
     tableHead.appendChild(headerRow);
-    
+
     // Buat baris data
     data.forEach((rowData, index) => {
         const row = document.createElement('tr');
@@ -1556,8 +1571,8 @@ function createStandardTable(tableId, data, config) {
                 const statusColor = column.statusColors[cellData] || '#666';
                 cellData = `<span style="color: ${statusColor}; font-weight: bold;">${cellData}</span>`;
             } else if (column.type === 'photo') {
-                cellData = cellData && cellData.startsWith('http') ? 
-                    `<a href="${cellData}" target="_blank">Lihat Foto</a>` : 
+                cellData = cellData && cellData.startsWith('http') ?
+                    `<a href="${cellData}" target="_blank">Lihat Foto</a>` :
                     (cellData || '');
             }
             if (column.type === 'link' || column.type === 'status' || column.type === 'photo') {
@@ -1595,13 +1610,13 @@ function createStandardTable(tableId, data, config) {
 // Fungsi untuk membuat search dan filter standar
 function setupStandardSearchFilter(searchInputId, filterSelects, data, displayFunction) {
     const searchInput = document.getElementById(searchInputId);
-    
+
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             performStandardSearch(data, displayFunction);
         });
     }
-    
+
     filterSelects.forEach(filterConfig => {
         const filterSelect = document.getElementById(filterConfig.id);
         if (filterSelect) {
@@ -1615,24 +1630,24 @@ function setupStandardSearchFilter(searchInputId, filterSelects, data, displayFu
 function performStandardSearch(data, displayFunction) {
     const searchInput = document.querySelector('input[id*="search"]');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-    
+
     let filteredData = data;
-    
+
     if (searchTerm) {
         filteredData = data.filter(item => {
-            return Object.values(item).some(value => 
+            return Object.values(item).some(value =>
                 value && value.toString().toLowerCase().includes(searchTerm)
             );
         });
     }
-    
+
     displayFunction(filteredData);
 }
 
 
 function setDashboardDefaults() {
     console.log('Setting dashboard default values');
-    
+
     // List of dashboard elements to set defaults for
     const dashboardElements = [
         { id: 'totalWp', value: '0' },
@@ -1644,7 +1659,7 @@ function setDashboardDefaults() {
         { id: 'totalNilaiKetetapan', value: 'Rp 0' },
         { id: 'totalNilaiSetoran', value: 'Rp 0' }
     ];
-    
+
     // Safely set default values for each element
     dashboardElements.forEach(({ id, value }) => {
         try {
@@ -1652,14 +1667,13 @@ function setDashboardDefaults() {
             if (element) {
                 element.textContent = value;
                 element.style.color = ''; // Reset any error styling
-            } else {
-                console.warn(`setDashboardDefaults: Element with id '${id}' not found`);
             }
+            // SILENT: No warning logged to reduce console noise on non-dashboard pages
         } catch (error) {
             console.error(`setDashboardDefaults: Error setting ${id}:`, error);
         }
     });
-    
+
     // Clear any existing chart
     try {
         if (window.dashboardChartInstance) {
@@ -1675,7 +1689,7 @@ function setDashboardDefaults() {
 async function loadDashboardData() {
     console.log('✅ DEBUG: CURRENT loadDashboardData called - this is correct');
     window.loadDashboardDataDefinitions.push('CURRENT_V3_CALLED');
-    
+
     let retryCount = 0;
     const maxRetries = 3;
 
@@ -1720,7 +1734,7 @@ async function loadDashboardData() {
                 setDashboardDefaults();
                 return; // Exit gracefully without throwing error
             }
-            
+
             console.log('✅ loadDashboardData: Valid JSON response detected, proceeding to parse...');
 
             // Handle non-OK HTTP responses
@@ -1813,19 +1827,19 @@ function updateDashboardWithData(data) {
         const pembayaran = data.pembayaran || [];
         const targetList = data.targetPajakRetribusi || [];
         const tahunBerjalan = new Date().getFullYear();
-        
+
         // Hitung total target tahun berjalan
         const totalTargetTahun = targetList.filter(t => t.Tahun == tahunBerjalan).reduce((sum, t) => sum + (parseFloat(t.Target) || 0), 0);
-        
+
         // Hitung statistik lama
         const totalWpElement = document.getElementById('totalWp');
         const totalKetetapanElement = document.getElementById('totalKetetapan');
         const totalPembayaranElement = document.getElementById('totalPembayaran');
-        
+
         if (totalWpElement) totalWpElement.textContent = wajibPajak.length;
         if (totalKetetapanElement) totalKetetapanElement.textContent = ketetapan.length;
         if (totalPembayaranElement) totalPembayaranElement.textContent = pembayaran.length;
-        
+
         // Hitung SKPD/SKRD (ketetapan yang sudah lunas)
         const ketetapanLunas = ketetapan.filter(k => {
             const pembayaranKetetapan = pembayaran.filter(p => p.ID_Ketetapan === k.ID_Ketetapan);
@@ -1833,19 +1847,19 @@ function updateDashboardWithData(data) {
         });
         const totalSkpdSkrdElement = document.getElementById('totalSkpdSkrd');
         if (totalSkpdSkrdElement) totalSkpdSkrdElement.textContent = ketetapanLunas.length;
-        
+
         // Hitung SSPD/SSRD (pembayaran sukses)
         const pembayaranSukses = pembayaran.filter(p => p.StatusPembayaran === 'Sukses');
         const totalSspdSsrdElement = document.getElementById('totalSspdSsrd');
         if (totalSspdSsrdElement) totalSspdSsrdElement.textContent = pembayaranSukses.length;
-        
+
         // Hitung Fiskal (NPWPD yang sudah lunas reklame dan sampah)
         const npwpdMap = {};
         pembayaran.forEach(row => {
             if (!npwpdMap[row.NPWPD]) npwpdMap[row.NPWPD] = [];
             npwpdMap[row.NPWPD].push(row);
         });
-        
+
         let totalFiskal = 0;
         Object.keys(npwpdMap).forEach(npwpd => {
             let lunasReklame = false;
@@ -1862,28 +1876,28 @@ function updateDashboardWithData(data) {
         });
         const totalFiskalElement = document.getElementById('totalFiskal');
         if (totalFiskalElement) totalFiskalElement.textContent = totalFiskal;
-        
+
         // Hitung total nilai ketetapan
         const totalNilaiKetetapan = ketetapan.reduce((sum, k) => {
             return sum + (parseFloat(k.TotalTagihan) || 0);
         }, 0);
         const totalNilaiKetetapanElement = document.getElementById('totalNilaiKetetapan');
         if (totalNilaiKetetapanElement) totalNilaiKetetapanElement.textContent = `Rp ${totalNilaiKetetapan.toLocaleString('id-ID')}`;
-        
+
         // Hitung total nilai setoran
         const totalNilaiSetoran = pembayaranSukses.reduce((sum, p) => {
             return sum + (parseFloat(p.JumlahBayar) || 0);
         }, 0);
         const totalNilaiSetoranElement = document.getElementById('totalNilaiSetoran');
         if (totalNilaiSetoranElement) totalNilaiSetoranElement.textContent = `Rp ${totalNilaiSetoran.toLocaleString('id-ID')}`;
-        
+
         // Update grafik per bulan (tambahkan target bulanan)
         if (typeof updateDashboardChart === 'function') {
             updateDashboardChart(ketetapan, pembayaran, totalTargetTahun);
         }
-        
+
         console.log('loadDashboardData: Dashboard updated successfully');
-        
+
     } catch (error) {
         console.error('updateDashboardWithData: Error updating dashboard:', error);
         setDashboardDefaults();
@@ -1980,7 +1994,14 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
     });
     // Data target bulanan (bagi rata)
     const targetBulanan = new Array(12).fill(totalTargetTahun / 12);
-    const ctx = document.getElementById('dashboardChart').getContext('2d');
+
+    const chartElement = document.getElementById('dashboardChart');
+    if (!chartElement) {
+        console.warn('updateDashboardChart: Element with id "dashboardChart" not found');
+        return;
+    }
+
+    const ctx = chartElement.getContext('2d');
     if (window.dashboardChartInstance) {
         window.dashboardChartInstance.destroy();
     }
@@ -2048,7 +2069,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     mode: 'index',
                     intersect: false,
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const value = context.parsed.y;
                             return context.dataset.label + ': Rp ' + value.toLocaleString('id-ID');
                         }
@@ -2067,7 +2088,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
                     title: { display: true, text: 'Nilai (Rupiah)', font: { size: 14, weight: 'bold' } },
                     ticks: {
                         font: { size: 12 },
-                        callback: function(value) {
+                        callback: function (value) {
                             if (value >= 1000000000) {
                                 return 'Rp ' + (value / 1000000000).toFixed(1) + 'M';
                             } else if (value >= 1000000) {
@@ -2088,7 +2109,7 @@ function updateDashboardChart(ketetapan, pembayaran, totalTargetTahun) {
 // 🔧 PRODUCTION ERROR HANDLING - Tambahan untuk deployment Netlify
 function showConfigurationError() {
     console.error('❌ Configuration error detected - showing user message');
-    
+
     const dashboardElements = [
         { id: 'totalWp', value: 'Config Error' },
         { id: 'totalKetetapan', value: 'Config Error' },
@@ -2099,7 +2120,7 @@ function showConfigurationError() {
         { id: 'totalNilaiKetetapan', value: 'Konfigurasi Error' },
         { id: 'totalNilaiSetoran', value: 'Konfigurasi Error' }
     ];
-    
+
     dashboardElements.forEach(({ id, value }) => {
         const element = document.getElementById(id);
         if (element) {
@@ -2108,7 +2129,7 @@ function showConfigurationError() {
             element.title = 'Server configuration error. Please check environment variables.';
         }
     });
-    
+
     // Show alert to user
     setTimeout(() => {
         alert('⚠️ Konfigurasi server bermasalah. Silakan hubungi administrator.\n\nConfiguration error detected. Please contact administrator.');
@@ -2127,7 +2148,7 @@ function runDeploymentDiagnostics() {
         protocol: window.location.protocol,
         port: window.location.port
     });
-    
+
     // Test API endpoint availability
     fetch(apiUrl, { method: 'HEAD' })
         .then(response => {

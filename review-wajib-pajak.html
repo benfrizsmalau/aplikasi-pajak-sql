@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Review Data Wajib Pajak - SIMPADA MAMBERAMO RAYA</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body id="page-review-wajib-pajak">
 
     <div class="instansi-header">
@@ -13,19 +15,24 @@
         <div class="instansi-text">
             <div class="instansi-title">SIMPADA MAMBERAMO RAYA</div>
             <div class="instansi-sub">Sistem Informasi Manajemen Pandapatan Asli Daerah Kabupaten Mamberamo Raya</div>
-            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA</div>
+            <div class="instansi-sub2">BADAN PENDAPATAN PENGELOLAAN KEUANGAN DAN ASET DAERAH KABUPATEN MAMBERAMO RAYA
+            </div>
         </div>
     </div>
 
     <div class="sidebar-menu">
         <nav>
             <a href="index.html">Dasbor</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Tambah Data WP</a>
             <a href="lihat-data.html">Lihat Data WP</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Buat Ketetapan</a>
             <a href="daftar-ketetapan.html">Daftar Ketetapan</a>
-            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;" style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
+            <a href="#" onclick="alert('Menu ini dinonaktifkan karena sudah beralih ke aplikasi baru.'); return false;"
+                style="cursor: not-allowed; opacity: 0.6;">Setoran Pajak</a>
             <a href="daftar-pembayaran.html">Daftar Pembayaran</a>
+            <a href="register.html">Register</a>
             <a href="daftar-fiskal.html">Daftar Fiskal</a>
             <a href="review-wajib-pajak.html" class="active">Review Data WP</a>
             <a href="report.html">Laporan</a>
@@ -38,8 +45,10 @@
             <div class="content-header">
                 <h2>📋 Review Data Wajib Pajak</h2>
                 <p>Review dan approve data wajib pajak dari aplikasi eksternal "Pendataan WP Bolt"</p>
-                <div class="info-box" style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                    <strong>ℹ️ Informasi Penting:</strong> Data WP tanpa NPWPD akan otomatis dibuatkan NPWPD saat proses approve. Pastikan data lainnya (Nama Usaha, Nama Pemilik, NIK KTP, dll) sudah lengkap.
+                <div class="info-box"
+                    style="background: #e3f2fd; border: 1px solid #2196f3; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong>ℹ️ Informasi Penting:</strong> Data WP tanpa NPWPD akan otomatis dibuatkan NPWPD saat proses
+                    approve. Pastikan data lainnya (Nama Usaha, Nama Pemilik, NIK KTP, dll) sudah lengkap.
                 </div>
             </div>
 
@@ -73,7 +82,7 @@
                         <span id="totalRecords">Total: 0 data</span>
                     </div>
                 </div>
-                
+
                 <!-- Aksi Terpusat -->
                 <div style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center;">
                     <select id="aksiInbox" style="width: 110px;">
@@ -83,7 +92,7 @@
                     </select>
                     <button id="prosesAksiInbox" disabled>Proses</button>
                 </div>
-                
+
                 <div class="table-content">
                     <table id="inboxTable" class="standard-table">
                         <thead>
@@ -124,7 +133,8 @@
                 <div id="detailContent">
                     <!-- Detail data akan diisi di sini -->
                 </div>
-                <div id="npwpdInfo" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; display: none;">
+                <div id="npwpdInfo"
+                    style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; display: none;">
                     <strong>⚠️ NPWPD akan dibuat otomatis</strong> karena data ini tidak memiliki NPWPD.
                 </div>
             </div>
@@ -164,6 +174,5 @@
 
     <script type="module" src="review-wajib-pajak.js"></script>
 </body>
-</html> 
 
-
+</html>
